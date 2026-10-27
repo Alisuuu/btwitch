@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: alive-bot
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install --omit=dev --legacy-peer-deps
+    startCommand: node server.js
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: PORT
+        value: 10000
+      - key: NODE_ENV
+        value: production
+      - key: TWITCH_CLIENT_ID
+        value: 04ajnvlju5loqchkmzfl7v622veib6
+      - key: TWITCH_BOT_NICK
+        value: alivebot1
+      - key: TWITCH_BOT_TOKEN
+        sync: false
+      - key: TWITCH_BOT_REFRESH_TOKEN
+        sync: false
+      - key: AUTO_START_BOT
+        value: "1"
+      - key: DISCORD_BOT_TOKEN
+        sync: false

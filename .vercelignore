@@ -1,0 +1,9 @@
+.env*
+node_modules/
+data/
+README.md
+text.txt
+server.js
+smoke.test.mjs
+.git/
+.gitignore

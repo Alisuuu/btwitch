@@ -1,0 +1,1135 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Alive Bot — Studio Dashboard</title>
+<link rel="preconnect" href="https://i.ytimg.com">
+<link rel="dns-prefetch" href="https://i.ytimg.com">
+<link rel="preconnect" href="https://www.youtube.com">
+<link rel="dns-prefetch" href="https://www.youtube.com">
+<link rel="icon" type="image/webp" href="/img/ic_splash_logo.webp">
+<link rel="stylesheet" href="/css/panel.css?v=1.1.0">
+<script>
+  function buildTwitchAuthUrl() {
+    var cid = '04ajnvlju5loqchkmzfl7v622veib6';
+    try {
+      var saved = localStorage.getItem('alive.clientId');
+      if (saved && saved.trim() && saved !== 'gp762nuuoqcoxypju8c569th9wz7q5') {
+        cid = saved.trim();
+      } else {
+        localStorage.setItem('alive.clientId', cid);
+      }
+    } catch(e){}
+    var origin = window.location.origin || (window.location.protocol + '//' + window.location.host);
+    var redirect = origin.replace(/\/$/, '') + '/oauth.html';
+    return 'https://id.twitch.tv/oauth2/authorize' +
+      '?client_id=' + encodeURIComponent(cid) +
+      '&redirect_uri=' + encodeURIComponent(redirect) +
+      '&response_type=token' +
+      '&scope=' + encodeURIComponent('chat:read chat:edit') +
+      '&force_verify=true';
+  }
+  function handleTwitchLogin(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    window.location.href = buildTwitchAuthUrl();
+    return false;
+  }
+  function updateTwitchAuthLinks() {
+    var url = buildTwitchAuthUrl();
+    ['btnTwitchTop', 'btnTwitchDiscord', 'btnAuthQuickStreamer'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) {
+        if (el.tagName && el.tagName.toLowerCase() === 'a') el.href = url;
+        el.onclick = handleTwitchLogin;
+      }
+    });
+    document.querySelectorAll('.btn-twitch-auth').forEach(function(el) {
+      if (el.tagName && el.tagName.toLowerCase() === 'a') el.href = url;
+      el.onclick = handleTwitchLogin;
+    });
+  }
+  window.buildAuthUrl = buildTwitchAuthUrl;
+  window.handleTwitchLogin = handleTwitchLogin;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateTwitchAuthLinks);
+  } else {
+    updateTwitchAuthLinks();
+  }
+</script>
+</head>
+<body>
+
+<!-- Auth Gate (Bloqueio de Segurança para Guia Anônima / Não Autenticado) -->
+<div class="auth-gate-overlay" id="authGate" style="display:none;">
+  <div class="auth-gate-card">
+    <div class="auth-gate-logo">
+      <img src="/img/ic_splash_logo.webp" alt="Alive Bot">
+    </div>
+    <h2>Painel do Streamer</h2>
+    <p>Acesse o painel para gerenciar a fila de músicas, comandos e notificações do Alive Bot no seu canal.</p>
+
+    <!-- Botão Oficial: Entrar com a Twitch -->
+    <button class="btn twitch-btn large" id="btnAuthQuickStreamer" type="button" style="width:100%;margin-bottom:12px;justify-content:center;background:#9146FF;color:#fff;font-weight:600;font-size:15px;display:inline-flex;align-items:center;gap:10px;padding:12px 20px;border-radius:8px;border:none;cursor:pointer;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
+      <span>Entrar com a Twitch</span>
+    </button>
+
+    <div class="auth-gate-footer">
+      <span>Painel restrito ao streamer. Suas configurações ficam protegidas e vinculadas à sua conta.</span>
+    </div>
+  </div>
+</div>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="brand">
+      <div class="logo">
+        <img src="/img/ic_splash_logo.webp" alt="Alive Bot" class="brand-img">
+      </div>
+      <div class="brand-info">
+        <strong>ALIVE BOT</strong>
+        <small>twitch music studio</small>
+      </div>
+    </div>
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="fila">
+      <span data-icon="list-music" data-size="15"></span>
+      <span class="tab-label-full">Estúdio &amp; Fila</span>
+      <span class="tab-label-short">Estúdio</span>
+    </button>
+    <button class="tab" data-tab="widget">
+      <span data-icon="tv" data-size="15"></span>
+      <span class="tab-label-full">Widget</span>
+      <span class="tab-label-short">Widget</span>
+    </button>
+    <button class="tab" data-tab="comandos">
+      <span data-icon="terminal" data-size="15"></span>
+      <span class="tab-label-full">Comandos</span>
+      <span class="tab-label-short">Cmds</span>
+    </button>
+    <button class="tab" data-tab="timers">
+      <span data-icon="clock" data-size="15"></span>
+      <span class="tab-label-full">Temporizadores</span>
+      <span class="tab-label-short">Timers</span>
+    </button>
+    <button class="tab" data-tab="config">
+      <span data-icon="settings" data-size="15"></span>
+      <span class="tab-label-full">Configuração</span>
+      <span class="tab-label-short">Config</span>
+    </button>
+    <button class="tab" data-tab="discord" id="tabDiscordBtn" title="Configurar Notificações no Discord">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+      <span class="tab-label-full">Discord Live</span>
+      <span class="tab-label-short">Discord</span>
+    </button>
+  </nav>
+
+  <div class="top-actions">
+    <div class="user-profile-menu" id="userProfileMenu" hidden>
+      <button class="user-pill-btn" id="userPillBtn" type="button" aria-haspopup="true" aria-expanded="false" title="Menu da conta">
+        <img class="user-avatar" id="userAvatar" src="/img/ic_splash_logo.webp" alt="">
+        <span class="user-name" id="userDisplayName">streamer</span>
+        <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="user-dropdown" id="userDropdown" hidden>
+        <div class="dropdown-header">
+          <strong id="dropdownUser">@streamer</strong>
+          <small id="dropdownChannel">Canal: #streamer</small>
+        </div>
+        <button class="dropdown-item danger" id="btnLogout" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+          Sair da Conta
+        </button>
+      </div>
+    </div>
+    <a class="btn twitch-btn small btn-twitch-auth" id="btnTwitchTop" title="Entrar com a Twitch" href="#" onclick="handleTwitchLogin(event);">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
+      <span>Entrar com a Twitch</span>
+    </a>
+    <button class="btn ghost small" id="btnWidget" title="Abrir widget em nova janela" type="button">
+      <span data-icon="external-link" data-size="13"></span>
+      <span>Widget</span>
+    </button>
+    <button class="btn primary small" id="btnCopyWidget" title="Copiar URL para o OBS Studio" type="button">
+      <span data-icon="link" data-size="13"></span>
+      <span>Copiar Link</span>
+    </button>
+  </div>
+</header>
+
+<main>
+
+<!-- ============================================================ ESTÚDIO & FILA -->
+<section class="panel active" id="tab-fila">
+  <div class="studio-cockpit">
+    
+    <!-- Coluna Principal: Player + Fila -->
+    <div class="studio-main">
+      
+      <!-- Player Card -->
+      <div class="now-card" id="nowCard">
+        <div class="now-art">
+          <img id="nowThumb" alt="" draggable="false">
+          <span class="eq"><i></i><i></i><i></i></span>
+        </div>
+        <div class="now-meta">
+          <div class="kicker-row">
+            <span class="kicker" id="nowKicker">TOCANDO AGORA</span>
+          </div>
+          <div class="now-title" id="nowTitle">Nada tocando</div>
+          <div class="now-sub" id="nowSub">Peça com !play no chat ou adicione abaixo</div>
+          <div class="bar"><div class="fill" id="nowFill"></div></div>
+          <div class="times"><span id="nowCur">0:00</span><span id="nowDur">0:00</span></div>
+        </div>
+        <div class="now-controls">
+          <div class="ctl-group">
+            <button class="ctl primary-ctl" id="btnPause" title="Pausar ou continuar reprodução">
+              <span data-icon="pause" data-size="18"></span>
+            </button>
+            <button class="ctl" id="btnSkip" title="Pular para a próxima música">
+              <span data-icon="skip-forward" data-size="18"></span>
+            </button>
+            <button class="ctl danger" id="btnStop" title="Parar reprodução e limpar">
+              <span data-icon="square" data-size="16"></span>
+            </button>
+          </div>
+          <div class="vol" title="Volume da música">
+            <button class="vol-mute-btn" id="btnWebMute" type="button" title="Mutar áudio do navegador (não afeta o OBS)">
+              <span id="webMuteIcon" data-icon="volume-2" data-size="16"></span>
+            </button>
+            <input type="range" id="volRange" min="0" max="100" value="70">
+            <b id="volLabel">70</b>
+          </div>
+        </div>
+      </div>
+
+      <!-- Busca e Adição de Música na Tela Inicial -->
+      <div class="box quick-add-box">
+        <div class="quick-add-grid">
+          <div class="quick-input-group">
+            <span class="quick-icon" data-icon="search" data-size="14"></span>
+            <input type="search" id="searchInput" placeholder="Buscar música no YouTube (digite e aperte Enter)...">
+            <button class="btn primary small" id="btnSearch">Buscar</button>
+          </div>
+          <div class="quick-input-group">
+            <span class="quick-icon" data-icon="link" data-size="14"></span>
+            <input type="url" id="urlInput" placeholder="Ou cole link direto de vídeo / playlist...">
+            <button class="btn small" id="btnAddUrl">Adicionar</button>
+          </div>
+        </div>
+
+        <!-- Resultados da Busca Diretamente na Tela Inicial -->
+        <div class="search-results-box" id="searchResultsBox" hidden>
+          <div class="search-results-head">
+            <span id="searchStatusText">Resultados da pesquisa:</span>
+            <button class="btn ghost small" id="btnCloseSearch">Fechar busca</button>
+          </div>
+          <div class="results" id="results">
+            <p class="hint">Digite na barra de busca para pesquisar faixas no YouTube.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Queue Header & List -->
+      <div class="box queue-box">
+        <div class="queue-head">
+          <h2>
+            <span data-icon="list-music" data-size="16"></span>
+            Próximas Músicas na Fila
+            <span class="count" id="queueCount">0</span>
+          </h2>
+          <div class="queue-actions">
+            <button class="btn small ghost" id="btnShuffle" title="Embaralhar ordem da fila">
+              <span data-icon="shuffle" data-size="13"></span>
+              Sortear
+            </button>
+            <button class="btn small ghost" id="btnClear" title="Limpar todas as próximas músicas">
+              <span data-icon="trash-2" data-size="13"></span>
+              Limpar fila
+            </button>
+          </div>
+        </div>
+
+        <ul class="queue" id="queueList">
+          <li class="empty">Fila vazia — use o chat com !play ou o campo de busca acima.</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- Coluna Lateral Desktop: Histórico & Log de Eventos (Sem chat inútil) -->
+    <aside class="studio-sidebar">
+      
+      <!-- Histórico Recente de Músicas -->
+      <div class="box history-box">
+        <div class="box-head">
+          <h2>
+            <span data-icon="clock" data-size="15"></span>
+            Últimas Tocadas
+          </h2>
+        </div>
+        <ul class="queue" id="historyList">
+          <li class="empty">Nenhuma música tocada ainda nesta sessão.</li>
+        </ul>
+      </div>
+
+      <!-- Eventos do Bot -->
+      <div class="box events-box">
+        <div class="box-head">
+          <h2>
+            <span data-icon="activity" data-size="15"></span>
+            Log de Ações &amp; Comandos
+          </h2>
+          <span class="hint" id="syncInfo"></span>
+        </div>
+        <div class="events" id="eventList"></div>
+      </div>
+
+    </aside>
+
+  </div>
+</section>
+
+<!-- ============================================================ COMANDOS -->
+<section class="panel" id="tab-comandos">
+  <div class="desktop-grid-2">
+    
+    <!-- Comandos nativos -->
+    <div class="box">
+      <h2>
+        <span data-icon="terminal" data-size="16"></span>
+        Comandos do Chat
+      </h2>
+      <p class="hint">Ligue ou desligue comandos e escolha quem tem permissão para usar cada um no chat.</p>
+      <div class="table-wrap">
+        <table class="cmds" id="cmdTable">
+          <thead>
+            <tr><th>Comando</th><th>Descrição</th><th>Quem pode usar</th><th>Estado</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Comandos customizados -->
+    <div class="box">
+      <h2>
+        <span data-icon="sparkles" data-size="16"></span>
+        Comandos Personalizados
+      </h2>
+      <p class="hint">Variáveis suportadas: <code>{user}</code> <code>{canal}</code> <code>{np}</code> <code>{fila}</code> <code>{tocadas}</code></p>
+      
+      <div class="custom-cmd-form">
+        <div class="row">
+          <input type="text" id="ccName" placeholder="nome (ex: redes)" maxlength="20">
+          <input type="number" id="ccCd" placeholder="cd (s)" min="0" max="600" value="10" class="narrow">
+          <select id="ccPerm" class="narrow-select" title="Quem pode usar este comando">
+            <option value="all">Todos</option>
+            <option value="sub">Inscritos (Subs)</option>
+            <option value="vip">VIPs e Mods</option>
+            <option value="mod">Apenas Mods</option>
+          </select>
+        </div>
+        <div class="row">
+          <input type="text" id="ccText" placeholder="resposta (ex: Siga @canal no Instagram! {user})">
+          <button class="btn primary" id="btnAddCmd">
+            <span data-icon="plus" data-size="14"></span>
+            Criar comando
+          </button>
+        </div>
+      </div>
+
+      <ul class="custom-list" id="customList"></ul>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================ WIDGET OBS -->
+<section class="panel" id="tab-widget">
+  <div class="desktop-grid-2">
+    
+    <!-- Link e Passo a passo + Prévia ao vivo -->
+    <div class="box highlight">
+      <h2>
+        <span data-icon="tv" data-size="16"></span>
+        Fonte Navegador para OBS Studio
+      </h2>
+      <div class="url-row">
+        <input type="text" id="widgetUrl" readonly value="">
+        <button class="btn primary" id="btnCopyWidget2">
+          <span data-icon="link" data-size="14"></span>
+          Copiar Link
+        </button>
+        <button class="btn ghost" id="btnWidgetPreview">
+          <span data-icon="external-link" data-size="14"></span>
+          Abrir
+        </button>
+      </div>
+      <ol class="steps">
+        <li>No OBS Studio: <b>Fontes → + → Navegador</b>.</li>
+        <li>Cole o link do widget no campo <b>URL</b>.</li>
+        <li><b>Tamanho recomendado no OBS:</b>
+          <br>• <b>Formato Dock / Banner (Fácil de posicionar):</b> Largura <b>600</b> px, Altura <b>160</b> px.
+          <br>• <b>Overlay Tela Inteira:</b> Largura <b>1920</b> px, Altura <b>1080</b> px (fundo 100% transparente).</li>
+        <li>Marque <b>“Controlar áudio via OBS”</b> caso use a opção de tocar áudio no widget.</li>
+        <li>Marque <b>“Atualizar navegador ao ativar cena”</b> para recarregar automático se mudar de cena.</li>
+      </ol>
+
+      <!-- Live Preview Interativa do Widget no Painel -->
+      <div class="widget-preview-box">
+        <div class="widget-preview-header">
+          <span>
+            <span data-icon="eye" data-size="14"></span>
+            Prévia Ao Vivo do Widget (Simulador OBS)
+          </span>
+          <button class="btn ghost small" id="btnToggleDemoPreview" type="button">
+            Alternar Prévia: Música / Fila Vazia
+          </button>
+        </div>
+        <div class="widget-preview-stage" id="livePreviewContainer">
+          <div class="card preview-card" id="previewCard">
+            <div class="art" id="prevArt">
+              <img id="prevThumb" src="/img/ic_splash_logo.webp" alt="Thumb">
+            </div>
+            <div class="meta" id="prevMeta">
+              <div class="kicker"><span class="dot" id="prevDot"></span><span id="prevKicker">TOCANDO AGORA</span></div>
+              <div class="title-wrap"><div class="title" id="prevTitle">Synthwave Beats &amp; Lofi Chill</div></div>
+              <div class="sub" id="prevSub">Canal Oficial · pedido por @vip_streamer</div>
+              <div class="progress" id="prevProgress"><div class="fill" id="prevFill" style="width: 45%;"></div></div>
+              <div class="times" id="prevTimes"><span>1:24</span><span>3:10</span></div>
+            </div>
+            <div class="vol" id="prevVol">
+              <span id="prevVolVal">70</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Customização Completa: Estilos, Cores e Toggles -->
+    <div class="box">
+      <h2>
+        <span data-icon="settings" data-size="16"></span>
+        Personalização Visual do Widget
+      </h2>
+
+      <!-- 1. Formato / Estilo do Widget (Seletor Gráfico) -->
+      <div class="visual-section">
+        <div class="visual-section-label">
+          <span data-icon="layout" data-size="14"></span>
+          Formato &amp; Estrutura do Widget (Selecione o Modelo)
+        </div>
+        <div class="visual-cards-grid" id="layoutPicker">
+          <button type="button" class="visual-choice-card" data-layout="card">
+            <div class="mini-mockup mockup-card">
+              <div class="mm-art"></div>
+              <div class="mm-lines">
+                <div class="mm-line" style="width: 75%;"></div>
+                <div class="mm-line" style="width: 45%; opacity: 0.6;"></div>
+                <div class="mm-bar"></div>
+              </div>
+            </div>
+            <div class="visual-choice-name">Card Studio</div>
+            <div class="visual-choice-desc">Capa 64px + barra cheia</div>
+          </button>
+
+          <button type="button" class="visual-choice-card" data-layout="pill">
+            <div class="mini-mockup mockup-pill">
+              <div class="mm-art mm-circle"></div>
+              <div class="mm-lines">
+                <div class="mm-line" style="width: 65%;"></div>
+                <div class="mm-bar"></div>
+              </div>
+            </div>
+            <div class="visual-choice-name">Pílula Dock</div>
+            <div class="visual-choice-desc">Dock fino arredondado</div>
+          </button>
+
+          <button type="button" class="visual-choice-card" data-layout="glass">
+            <div class="mini-mockup mockup-glass">
+              <div class="mm-art"></div>
+              <div class="mm-lines">
+                <div class="mm-line" style="width: 80%;"></div>
+                <div class="mm-bar" style="background:#ff00ff;"></div>
+              </div>
+            </div>
+            <div class="visual-choice-name">Glass Vidro</div>
+            <div class="visual-choice-desc">Ultra translúcido &amp; blur</div>
+          </button>
+
+          <button type="button" class="visual-choice-card" data-layout="ticker">
+            <div class="mini-mockup mockup-ticker">
+              <div class="mm-art" style="width: 14px; height: 14px; flex: 0 0 14px;"></div>
+              <div class="mm-lines">
+                <div class="mm-line" style="width: 85%;"></div>
+              </div>
+            </div>
+            <div class="visual-choice-name">Barra Rodapé</div>
+            <div class="visual-choice-desc">Faixa horizontal de TV</div>
+          </button>
+
+          <button type="button" class="visual-choice-card" data-layout="minimal">
+            <div class="mini-mockup mockup-minimal">
+              <div class="mm-art" style="border-radius: 0;"></div>
+              <div class="mm-lines">
+                <div class="mm-line" style="width: 70%;"></div>
+                <div class="mm-bar" style="background:#ffffff;"></div>
+              </div>
+            </div>
+            <div class="visual-choice-name">B&amp;W Minimal</div>
+            <div class="visual-choice-desc">Preto e branco cirúrgico</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. Tema Base (Seletor Gráfico) -->
+      <div class="visual-section">
+        <div class="visual-section-label">
+          <span data-icon="palette" data-size="14"></span>
+          Tema de Fundo Base
+        </div>
+        <div class="visual-cards-grid" id="themePicker">
+          <button type="button" class="visual-choice-card" data-theme="minimal">
+            <div class="theme-swatch-box">
+              <span class="theme-circle" style="background:#0a0a0c; border: 1.5px solid #3f3f46;"></span>
+              <div>
+                <div class="visual-choice-name">Minimal Dark</div>
+                <div class="visual-choice-desc">Preto profundo</div>
+              </div>
+            </div>
+          </button>
+
+          <button type="button" class="visual-choice-card" data-theme="slate">
+            <div class="theme-swatch-box">
+              <span class="theme-circle" style="background:#18181b; border: 1.5px solid #52525b;"></span>
+              <div>
+                <div class="visual-choice-name">Dark Grafite</div>
+                <div class="visual-choice-desc">Cinza grafite fosco</div>
+              </div>
+            </div>
+          </button>
+
+          <button type="button" class="visual-choice-card" data-theme="contrast">
+            <div class="theme-swatch-box">
+              <span class="theme-circle" style="background:#000000; border: 2px solid #ffffff;"></span>
+              <div>
+                <div class="visual-choice-name">Alto Contraste</div>
+                <div class="visual-choice-desc">Borda branca pura</div>
+              </div>
+            </div>
+          </button>
+
+          <button type="button" class="visual-choice-card" data-theme="transparent">
+            <div class="theme-swatch-box">
+              <span class="theme-circle checker-bg"></span>
+              <div>
+                <div class="visual-choice-name">100% Transparente</div>
+                <div class="visual-choice-desc">Sem caixa de fundo</div>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. Áudio no OBS & Escala -->
+      <div class="visual-section">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div>
+            <div class="visual-section-label">
+              <span data-icon="volume-2" data-size="14"></span>
+              Áudio no OBS / Widget
+            </div>
+            <div class="audio-toggle-grid" id="audioPicker">
+              <button type="button" class="audio-choice-btn" data-audio="1">
+                <span data-icon="volume-2" data-size="14"></span>
+                <span>Com Áudio</span>
+              </button>
+              <button type="button" class="audio-choice-btn" data-audio="0">
+                <span data-icon="volume-x" data-size="14"></span>
+                <span>Silenciar OBS</span>
+              </button>
+            </div>
+          </div>
+          <div>
+            <div class="visual-section-label" style="display: flex; justify-content: space-between;">
+              <span>
+                <span data-icon="maximize" data-size="14"></span>
+                Tamanho / Escala
+              </span>
+              <b id="wScaleLabel" style="color: var(--white);">100%</b>
+            </div>
+            <input type="range" id="wScale" min="60" max="160" step="5" value="100" style="width: 100%; margin-top: 8px;">
+          </div>
+        </div>
+      </div>
+
+      <!-- SELETORES DE CORES & TRANSPARÊNCIA -->
+      <div style="margin-top: 16px;">
+        <span style="font-size: 12.5px; font-weight: 700; color: var(--white); display: flex; align-items: center; gap: 6px;">
+          <span data-icon="sparkles" data-size="14"></span>
+          Seletores de Cores &amp; Transparência Real
+        </span>
+        <div class="color-picker-row">
+          <div class="color-field">
+            <label>Cor de Destaque</label>
+            <div class="color-input-wrap">
+              <input type="color" id="wAccentColor" value="#ffffff">
+              <span class="color-val-text" id="valAccent">#ffffff</span>
+            </div>
+          </div>
+          <div class="color-field">
+            <label>Cor do Fundo</label>
+            <div class="color-input-wrap">
+              <input type="color" id="wBgColor" value="#0a0a0c">
+              <span class="color-val-text" id="valBg">#0a0a0c</span>
+            </div>
+          </div>
+          <div class="color-field">
+            <label>Cor do Texto</label>
+            <div class="color-input-wrap">
+              <input type="color" id="wTextColor" value="#ffffff">
+              <span class="color-val-text" id="valText">#ffffff</span>
+            </div>
+          </div>
+          <div class="color-field" style="grid-column: 1 / -1;">
+            <label style="display: flex; justify-content: space-between;">
+              <span>Transparência do Fundo (Opacidade do Card)</span>
+              <b id="valOpacityLabel" style="color: var(--white);">65% (Translúcido)</b>
+            </label>
+            <input type="range" id="wBgOpacity" min="0" max="100" step="5" value="65" style="width: 100%;">
+          </div>
+        </div>
+      </div>
+
+      <div class="checks" style="margin-top: 14px;">
+        <label class="check"><input type="checkbox" id="wArt"> mostrar capa do vídeo</label>
+        <label class="check"><input type="checkbox" id="wEq"> equalizador animado</label>
+        <label class="check"><input type="checkbox" id="wProgress"> barra de progresso e minutos</label>
+        <label class="check"><input type="checkbox" id="wRequester"> nome de quem pediu (!play)</label>
+        <label class="check"><input type="checkbox" id="wQueue"> mostrar próximas da fila</label>
+        <label class="check"><input type="checkbox" id="wHint"> dica de comando !play</label>
+        <label class="check"><input type="checkbox" id="wLogo"> marca d'água Alive Bot</label>
+        <label class="check"><input type="checkbox" id="wHideIdle"> ocultar widget quando fila estiver vazia</label>
+        <label class="check"><input type="checkbox" id="wMarquee"> rolar títulos longos (Marquee)</label>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================ TEMPORIZADORES -->
+<section class="panel" id="tab-timers">
+  <div class="desktop-grid-2">
+    
+    <!-- Lista de temporizadores ativos -->
+    <div class="box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <h2>
+          <span data-icon="clock" data-size="16"></span>
+          Mensagens Periódicas no Chat
+        </h2>
+        <span class="count" id="timersCount">0</span>
+      </div>
+      <p class="hint">O bot envia estas mensagens automaticamente no chat nos intervalos configurados, respeitando o movimento da live.</p>
+      
+      <div class="timers-list" id="timerList">
+        <!-- Renderizado dinamicamente -->
+      </div>
+    </div>
+
+    <!-- Criar / Editar Temporizador -->
+    <div class="box">
+      <h2 id="timerFormTitle">
+        <span data-icon="sparkles" data-size="16"></span>
+        Criar Novo Temporizador
+      </h2>
+      <p class="hint">Variáveis automáticas aceitas: <code>{np}</code> (música atual), <code>{canal}</code>, <code>{fila}</code>, <code>{tocadas}</code></p>
+      
+      <form class="timer-form" id="timerForm" onsubmit="return false;">
+        <input type="hidden" id="timerEditId" value="">
+        
+        <label>Nome / Identificador
+          <input type="text" id="timerName" placeholder="ex: Redes Sociais, Discord, Pix, Regras..." maxlength="35" required>
+        </label>
+
+        <div class="grid-2-timer">
+          <label>Intervalo (minutos)
+            <input type="number" id="timerInterval" min="1" max="360" value="15" required>
+          </label>
+          <label title="Número de mensagens necessárias no chat para disparar o aviso">Mínimo de linhas no chat
+            <input type="number" id="timerMinLines" min="0" max="100" value="2" required>
+          </label>
+        </div>
+
+        <label>Mensagem a ser enviada no chat
+          <textarea id="timerMessage" rows="3" placeholder="ex: Siga @canal no Instagram e Twitter! Links na tela." maxlength="450" required></textarea>
+        </label>
+
+        <div class="row" style="margin-top: 14px; justify-content: flex-end; gap: 8px;">
+          <button class="btn ghost small" id="btnCancelTimer" type="button" hidden>Cancelar</button>
+          <button class="btn primary" id="btnSaveTimer" type="button">
+            <span data-icon="plus" data-size="14"></span>
+            <span id="btnSaveTimerText">Criar Temporizador</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================ CONFIGURAÇÃO -->
+<section class="panel" id="tab-config">
+  <div style="max-width: 840px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;">
+    
+    <!-- Canal da Live na Twitch -->
+    <div class="box highlight">
+      <h2>
+        <span data-icon="radio" data-size="16"></span>
+        Canal da Live na Twitch
+      </h2>
+      <p class="hint">O bot vai monitorar o chat deste canal para receber os pedidos de música (!play, !skip, etc.). Digite o nome do seu canal:</p>
+      <div class="url-row" style="margin-top: 12px;">
+        <input type="text" id="cfgChannel" placeholder="seu_canal (ex: alison)" autocomplete="off" spellcheck="false">
+        <button class="btn primary" id="btnSaveChannel" type="button">
+          <span data-icon="check" data-size="14"></span>
+          Conectar no Canal
+        </button>
+      </div>
+    </div>
+
+    <!-- Políticas e Limites -->
+    <div class="box">
+      <h2>
+        <span data-icon="settings" data-size="16"></span>
+        Regras &amp; Moderação do Bot
+      </h2>
+      <div class="checks" style="margin-top: 12px; margin-bottom: 16px;">
+        <label class="check"><input type="checkbox" id="cfgEveryone"> Todos podem pedir música (!play)</label>
+        <label class="check"><input type="checkbox" id="cfgAnnounceNow"> Anunciar início de faixa no chat</label>
+        <label class="check"><input type="checkbox" id="cfgAnnounceQueue"> Anunciar adições na fila</label>
+        <label class="check"><input type="checkbox" id="cfgAutoSkip"> Pular faixas com erro automaticamente</label>
+      </div>
+
+      <div class="form-grid">
+        <label>Cooldown por usuário (segundos)
+          <input type="number" id="cfgPerUser" min="0" max="3600" placeholder="ex: 15">
+        </label>
+        <label>Cooldown global do chat (segundos)
+          <input type="number" id="cfgGlobal" min="0" max="60" placeholder="ex: 3">
+        </label>
+        <label>Tamanho máximo da fila
+          <input type="number" id="cfgMaxQueue" min="1" max="500" placeholder="ex: 50">
+        </label>
+        <label>Máximo de faixas por playlist
+          <input type="number" id="cfgMaxPlaylist" min="1" max="100" placeholder="ex: 20">
+        </label>
+        <label>Votos necessários para pular (!skip)
+          <input type="number" id="cfgSkipVotes" min="1" max="50" placeholder="ex: 3">
+        </label>
+        <label>Intervalo de sincronização (segundos)
+          <input type="number" id="cfgPoll" min="2" max="300" placeholder="ex: 5">
+        </label>
+      </div>
+
+      <div class="row" style="margin-top: 24px; justify-content: flex-end; gap: 12px;">
+        <button class="btn danger" id="btnReset" type="button">
+          <span data-icon="rotate-ccw" data-size="14"></span>
+          Resetar estado
+        </button>
+        <button class="btn primary" id="btnSaveCfg" type="button">
+          <span data-icon="save" data-size="14"></span>
+          Salvar configurações
+        </button>
+      </div>
+    </div>
+
+    <!-- Inteligência Artificial (Alive IA - !ia) -->
+    <div class="box">
+      <h2>
+        <span data-icon="bot" data-size="16"></span>
+        Inteligência Artificial (Alive IA — !ia)
+      </h2>
+      <p class="hint">IA que responde os espectadores no chat com <code>!ia &lt;pergunta&gt;</code>. Moderadores podem ligar ou desligar direto no chat com <code>!ia on</code> e <code>!ia off</code>.</p>
+      
+      <div class="checks" style="margin-top: 12px; margin-bottom: 16px;">
+        <label class="check">
+          <input type="checkbox" id="cfgAiEnabled">
+          Ativar IA no chat (!ia on)
+        </label>
+      </div>
+
+      <div class="form-grid">
+        <label>URL Base da API
+          <input type="text" id="cfgAiBaseUrl" placeholder="https://api.groq.com/openai/v1" autocomplete="off" spellcheck="false">
+        </label>
+        <label>Modelo
+          <input type="text" id="cfgAiModel" placeholder="qwen/qwen3.8-27b" autocomplete="off" spellcheck="false">
+        </label>
+        <label style="grid-column: 1 / -1;">Chave de API (Bearer Token)
+          <input type="password" id="cfgAiApiKey" placeholder="gsk_..." autocomplete="off" spellcheck="false">
+        </label>
+        <label style="grid-column: 1 / -1;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span>Personalidade / Prompt do Sistema da IA</span>
+            <span style="font-size: 11px; color: var(--text-dim);">Personalize como a IA conversa e reage no chat</span>
+          </div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;">
+            <button class="btn secondary sm" id="btnPresetDefault" type="button" style="font-size: 11px; padding: 4px 8px;">⚡ Padrão (Bajula Streamer / Fria com Chat)</button>
+            <button class="btn secondary sm" id="btnPresetSweet" type="button" style="font-size: 11px; padding: 4px 8px;">🌸 Carinhosa & Fofa</button>
+            <button class="btn secondary sm" id="btnPresetGamer" type="button" style="font-size: 11px; padding: 4px 8px;">🎮 Gamer & Zueira</button>
+            <button class="btn secondary sm" id="btnPresetSarcastic" type="button" style="font-size: 11px; padding: 4px 8px;">🔥 100% Sarcástica</button>
+          </div>
+          <textarea id="cfgAiSystem" rows="4" style="width: 100%; border-radius: 8px; padding: 10px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text); font-size: 13px; resize: vertical;" placeholder="Escreva a personalidade da IA aqui... Ex: Você é doce e super amigável com todos, usa gírias de streamer e adora animes."></textarea>
+        </label>
+      </div>
+
+      <div class="row" style="margin-top: 16px; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <div class="row" style="gap: 8px; flex-wrap: wrap;">
+          <button class="btn primary" id="btnSaveAi" type="button">
+            <span data-icon="save" data-size="14"></span>
+            Salvar Personalidade da IA
+          </button>
+          <button class="btn secondary" id="btnTestAi" type="button">
+            <span data-icon="sparkles" data-size="14"></span>
+            Testar Resposta
+          </button>
+        </div>
+        <div id="aiTestResult" style="font-size: 12px; color: var(--text-dim); max-width: 480px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;"></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================ DISCORD LIVE NOTIFIER -->
+<section class="panel" id="tab-discord">
+  
+  <!-- Banner App Discord -->
+  <div class="bot-app-card">
+    <div class="bot-meta">
+      <img class="bot-avatar-lg" src="/img/ic_splash_logo.webp" alt="Alive Bot">
+      <div class="bot-info">
+        <h2>
+          <span>Discord Bot Oficial</span>
+          <span style="font-size:11px;background:#3f3f46;padding:2px 6px;border-radius:4px;color:#e4e4e7;">APP OFICIAL</span>
+        </h2>
+        <p>Avisos automáticos de live no seu servidor do Discord com banner, status e menções configuráveis.</p>
+      </div>
+    </div>
+    <div>
+      <a class="btn-invite-discord" href="https://discord.com/oauth2/authorize?client_id=1563908440638759004&permissions=8&scope=bot%20applications.commands" target="_blank" rel="noopener">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+        <span>Adicionar Bot ao Discord</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="discord-split-grid">
+    
+    <!-- Coluna de Configuração -->
+    <div class="discord-config-panel">
+      
+      <!-- Twitch Live Status da conta logada -->
+      <div class="live-status-bar">
+        <div class="streamer-pill">
+          <img id="dcStreamerAvatar" src="/img/ic_splash_logo.webp" alt="">
+          <div>
+            <div style="font-size:11px;color:var(--muted)">Streamer Monitorado</div>
+            <strong id="dcStreamerName" style="color:#fff;font-size:13.5px">Não conectado</strong>
+          </div>
+        </div>
+        <div class="live-indicator offline" id="dcBadgeLiveStatus">
+          <span class="pulse-dot"></span>
+          <span id="dcTextLiveStatus">OFFLINE</span>
+        </div>
+      </div>
+
+      <!-- Alerta se não estiver logado com a Twitch -->
+      <div id="dcAuthNotice" class="card" style="padding:12px 14px;background:rgba(145,70,255,0.08);border:1px solid rgba(145,70,255,0.25);border-radius:var(--radius-sm);display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div>
+            <strong style="color:#fff;font-size:12.5px;">Conecte sua conta da Twitch</strong>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">O Alive monitora automaticamente o canal do streamer autenticado.</div>
+          </div>
+          <a class="btn twitch-btn small btn-twitch-auth" id="btnTwitchDiscord" title="Entrar com a Twitch" href="#" onclick="handleTwitchLogin(event);">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
+            <span>Entrar com a Twitch</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="panel-section-title">
+        <span>Geral</span>
+      </div>
+
+      <!-- Ativação Geral -->
+      <div class="toggle-row">
+        <div>
+          <strong style="color:#fff;font-size:13px;">Ativar Notificações de Live</strong>
+          <div class="field-desc">Disparar anúncio no Discord automaticamente ao iniciar a live</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="cfgDcEnabled" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <!-- Seletor de Canal do Discord (como outros bots) -->
+      <div class="field channel-selector-card">
+        <label for="cfgDcChannelSelect">
+          <span>Canal de Notificação do Discord</span>
+          <small style="color:var(--muted)">Onde o Alive enviará o aviso</small>
+        </label>
+        
+        <!-- Seletor de Servidor onde o bot está presente -->
+        <div id="rowDcGuildSelect" style="margin-bottom:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <label style="font-size:11.5px;color:var(--muted);display:block;">Servidor do Discord:</label>
+            <a href="javascript:void(0)" onclick="loadDiscordGuildsAndChannels();toast('Atualizando lista de servidores...');" style="font-size:11px;color:var(--primary);text-decoration:none;cursor:pointer;">↻ Atualizar</a>
+          </div>
+          <select id="cfgDcGuildSelect" class="btn secondary" style="width:100%;text-align:left;padding:8px 12px;cursor:pointer;">
+            <option value="">Selecione o Servidor...</option>
+          </select>
+        </div>
+
+        <div class="channel-select-row">
+          <div class="channel-prefix-box">
+            <span class="channel-hash-icon">#</span>
+            <input type="text" id="cfgDcChannelName" placeholder="lives ou anúncios" autocomplete="off" spellcheck="false">
+          </div>
+          <select id="cfgDcChannelSelect" class="btn secondary" style="width:auto;min-width:140px;cursor:pointer;">
+            <option value="">Canais do Servidor</option>
+            <option value="lives">#lives</option>
+            <option value="anúncios">#anúncios</option>
+            <option value="ao-vivo">#ao-vivo</option>
+            <option value="notificações">#notificações</option>
+            <option value="geral">#geral</option>
+            <option value="custom">Webhook / ID</option>
+          </select>
+        </div>
+        <div id="cfgDcAdvancedRow" style="display:none;margin-top:6px;">
+          <input type="text" id="cfgDcWebhook" placeholder="Cole o link do Webhook do Discord ou ID numérico do canal" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="panel-section-title">
+        <span>Mensagem &amp; Menção</span>
+      </div>
+
+      <!-- Menção -->
+      <div class="field">
+        <label>Menção no Servidor</label>
+        <div class="mentions-grid">
+          <label class="mention-card selected" id="dcMCardEveryone">
+            <input type="radio" name="dcMentionType" value="everyone" checked>
+            <span>@everyone</span>
+          </label>
+          <label class="mention-card" id="dcMCardHere">
+            <input type="radio" name="dcMentionType" value="here">
+            <span>@here</span>
+          </label>
+          <label class="mention-card" id="dcMCardRole">
+            <input type="radio" name="dcMentionType" value="role">
+            <span>@Cargo</span>
+          </label>
+          <label class="mention-card" id="dcMCardNone">
+            <input type="radio" name="dcMentionType" value="none">
+            <span>Nenhum</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Role ID (condicional) -->
+      <div class="field" id="dcRowRoleId" style="display:none;">
+        <label for="cfgDcRoleId">ID do Cargo no Discord</label>
+        <input type="text" id="cfgDcRoleId" placeholder="Ex: 987654321012345678">
+        <div class="field-desc">Clique com botão direito no cargo no Discord e escolha "Copiar ID".</div>
+      </div>
+
+      <!-- Mensagem -->
+      <div class="field">
+        <label for="cfgDcMessage">Texto da Notificação</label>
+        <textarea id="cfgDcMessage" rows="3">[LIVE] **{streamer}** está ao vivo na Twitch | **{game}**
+Transmissão: {url}</textarea>
+        <div class="tags-row">
+          <span style="font-size:11px;color:var(--muted);margin-right:2px;">Tags:</span>
+          <button type="button" class="tag-btn" data-tag="{streamer}">{streamer}</button>
+          <button type="button" class="tag-btn" data-tag="{title}">{title}</button>
+          <button type="button" class="tag-btn" data-tag="{game}">{game}</button>
+          <button type="button" class="tag-btn" data-tag="{url}">{url}</button>
+          <button type="button" class="tag-btn" data-tag="{viewers}">{viewers}</button>
+        </div>
+      </div>
+
+      <div class="panel-section-title">
+        <span>Personalização do Card Embed</span>
+      </div>
+
+      <!-- Cor do Embed -->
+      <div class="field">
+        <label>Cor da Barra Lateral do Embed</label>
+        <div class="color-picker-row">
+          <input type="color" id="cfgDcEmbedColor" value="#9146FF">
+          <span id="dcLabelColorHex" style="font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#fff;">#9146FF</span>
+          
+          <button type="button" class="color-swatch-btn active" data-color="#9146FF" style="background:#9146FF" title="Roxo Twitch"></button>
+          <button type="button" class="color-swatch-btn" data-color="#5865F2" style="background:#5865F2" title="Blurple Discord"></button>
+          <button type="button" class="color-swatch-btn" data-color="#10B981" style="background:#10B981" title="Verde"></button>
+          <button type="button" class="color-swatch-btn" data-color="#EF4444" style="background:#EF4444" title="Vermelho"></button>
+          <button type="button" class="color-swatch-btn" data-color="#F59E0B" style="background:#F59E0B" title="Amarelo"></button>
+          <button type="button" class="color-swatch-btn" data-color="#06B6D4" style="background:#06B6D4" title="Ciano"></button>
+          <button type="button" class="color-swatch-btn" data-color="#EC4899" style="background:#EC4899" title="Rosa"></button>
+        </div>
+      </div>
+
+      <!-- Título do Embed -->
+      <div class="field">
+        <label for="cfgDcEmbedTitle">Título do Card Embed</label>
+        <input type="text" id="cfgDcEmbedTitle" value="▸ {title}">
+      </div>
+
+      <!-- Descrição do Embed -->
+      <div class="field">
+        <label for="cfgDcEmbedDesc">Descrição do Card Embed</label>
+        <textarea id="cfgDcEmbedDesc" rows="2">Transmissão iniciada. Venha interagir no chat e pedir músicas.</textarea>
+      </div>
+
+      <!-- Miniatura Toggle -->
+      <div class="toggle-row">
+        <div>
+          <strong style="color:#fff;font-size:13px;">Incluir Miniatura da Live</strong>
+          <div class="field-desc">Exibe a imagem em tempo real da transmissão</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="cfgDcIncludeThumb" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <!-- Ações -->
+      <div class="action-buttons-row">
+        <button class="btn-save" id="btnSaveDiscordConfig" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>Salvar Configuração</span>
+        </button>
+        <button class="btn-test" id="btnTestDiscordWebhook" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          <span>Testar Notificação Agora</span>
+        </button>
+        <button class="btn ghost small" id="btnCheckDiscordLive" type="button" style="margin-left:auto;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          <span>Verificar Live</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Coluna de Prévia do Discord -->
+    <div>
+      <div class="discord-preview-panel">
+        <div class="discord-header-bar">
+          <div class="discord-channel-tag">
+            <span style="color:var(--discord-muted)">#</span>
+            <span id="dcPreviewChannelName">lives</span>
+          </div>
+          <div>Prévia em Tempo Real</div>
+        </div>
+
+        <div class="discord-msg-body">
+          <img class="dc-avatar" src="/img/ic_splash_logo.webp" alt="Alive Bot">
+          <div class="dc-content-col">
+            <div class="dc-author-line">
+              <span class="dc-bot-name">Alive Bot</span>
+              <span class="dc-bot-badge">APP</span>
+              <span class="dc-timestamp" id="dcPrevTimestamp">Hoje às 14:20</span>
+            </div>
+
+            <div class="dc-text" id="dcPrevContentText">
+              <span class="dc-mention" id="dcPrevMention">@everyone</span> [LIVE] <strong>Streamer</strong> está ao vivo na Twitch | Just Chatting
+            </div>
+
+            <!-- Embed Card -->
+            <div class="dc-embed" id="dcPrevEmbedBox" style="border-left-color: #9146FF;">
+              <div class="dc-embed-author">
+                <img id="dcPrevAuthorAvatar" src="/img/ic_splash_logo.webp" alt="">
+                <span id="dcPrevAuthorName">Streamer • Ao Vivo na Twitch</span>
+              </div>
+
+              <a class="dc-embed-title" id="dcPrevEmbedTitle" href="#" target="_blank" rel="noopener">
+                ▸ Transmissão Ao Vivo • !play no chat
+              </a>
+
+              <div class="dc-embed-desc" id="dcPrevEmbedDesc">
+                Transmissão iniciada. Venha interagir no chat e pedir suas músicas favoritas.
+              </div>
+
+              <div class="dc-embed-fields">
+                <div>
+                  <div class="dc-field-name">▸ Categoria</div>
+                  <div class="dc-field-val" id="dcPrevFieldGame">Just Chatting</div>
+                </div>
+                <div>
+                  <div class="dc-field-name">▸ Espectadores</div>
+                  <div class="dc-field-val" id="dcPrevFieldViewers">120</div>
+                </div>
+                <div>
+                  <div class="dc-field-name">▸ Status</div>
+                  <div class="dc-field-val" style="color:#00a8fc">Assistir agora</div>
+                </div>
+              </div>
+
+              <img class="dc-embed-thumb" id="dcPrevEmbedImage" src="https://static-cdn.jtvnw.net/previews-ttv/live_user_streamer-1280x720.jpg" alt="Live Preview" onerror="this.src='/img/ic_splash_logo.webp'">
+
+              <div class="dc-embed-footer">
+                <img src="/img/ic_splash_logo.webp" alt="">
+                <span>Alive Bot • Notificação de Live</span>
+              </div>
+            </div>
+
+            <!-- Botão da Live no Discord (Components Action Row) -->
+            <div class="dc-preview-components">
+              <a href="#" target="_blank" rel="noopener" id="dcPrevLiveBtn" class="dc-btn-component">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
+                <span>Assistir Live</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="opacity:0.75;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              </a>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</main>
+
+<!-- Player de áudio do painel (nativo + YouTube invisível) -->
+
+<div id="panelYtContainer" style="position:fixed;bottom:0;right:0;width:1px;height:1px;opacity:0.01;pointer-events:none;overflow:hidden;z-index:-999;"><div id="panelYt"></div></div>
+
+<!-- Rodapé Flutuante de Status do Bot -->
+<aside class="floating-status-bar" id="floatingStatusBar" aria-label="Status do Bot">
+  <div class="status" id="status" data-state="off" title="Conexão com o chat da Twitch (clique para reconectar)">
+    <span class="pill-dot"></span>
+    <span id="statusText">desconectado</span>
+  </div>
+
+  <div class="server-bot-badge" id="serverBotBadge" title="Status do serviço no Node.js" hidden>
+    <span data-icon="server" data-size="13"></span>
+    <span id="serverBotText">servidor: inativo</span>
+  </div>
+</aside>
+
+<div class="toast" id="toast" hidden></div>
+
+<script type="module" src="/js/panel.js?v=1.1.4"></script>
+</body>
+</html>

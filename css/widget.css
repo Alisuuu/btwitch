@@ -1,0 +1,543 @@
+/* Alive Bot — Widget do OBS (Minimalista Preto e Branco & Multi-estilos) */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--text-color, #ffffff);
+  -webkit-font-smoothing: antialiased;
+}
+
+:root {
+  --scale: 1;
+  --accent: #ffffff;
+  --accent-2: #a1a1aa;
+  --glow: rgba(255, 255, 255, 0.15);
+  --card-opacity: 0.65;
+  --card: rgba(10, 10, 12, var(--card-opacity));
+  --card-border: rgba(255, 255, 255, 0.15);
+  --text-color: #ffffff;
+  --sub-color: rgba(255, 255, 255, 0.65);
+}
+
+/* ------------------------------------------------------------------ temas */
+html[data-theme="minimal"] {
+  --accent: #ffffff;
+  --accent-2: #a1a1aa;
+  --card: rgba(10, 10, 12, var(--card-opacity, 0.65));
+  --card-border: rgba(255, 255, 255, 0.15);
+}
+
+html[data-theme="slate"] {
+  --accent: #f4f4f5;
+  --accent-2: #71717a;
+  --card: rgba(24, 24, 27, var(--card-opacity, 0.75));
+  --card-border: rgba(255, 255, 255, 0.12);
+}
+
+html[data-theme="contrast"] {
+  --accent: #ffffff;
+  --accent-2: #d4d4d8;
+  --card: rgba(0, 0, 0, var(--card-opacity, 1));
+  --card-border: #ffffff;
+}
+
+html[data-theme="transparent"] {
+  --card: transparent;
+  --card-border: transparent;
+  --card-opacity: 0;
+}
+
+/* ------------------------------------------------------------------ player */
+.stage {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  overflow: hidden;
+  background: transparent;
+}
+.stage iframe, .stage #yt, .stage > div {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.dim {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.3) 45%, rgba(0, 0, 0, 0.85) 100%);
+  opacity: 1;
+  transition: opacity 0.4s ease;
+}
+
+/* Modo sem vídeo (áudio oficial ativo no OBS, player oficial escondido atrás da UI) */
+body[data-video="off"] .stage {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 200px !important;
+  height: 200px !important;
+  opacity: 0.001 !important;
+  pointer-events: none !important;
+  background: transparent !important;
+  z-index: -1 !important;
+}
+body[data-video="off"] .dim {
+  display: none !important;
+}
+body[data-video="off"] {
+  background: transparent !important;
+}
+
+/* Modo mini vídeo (miniatura no canto oposto ao card) */
+body[data-video="mini"] .stage {
+  top: calc(20px * var(--scale));
+  right: auto;
+  bottom: auto;
+  left: calc(20px * var(--scale));
+  width: calc(280px * var(--scale));
+  height: calc(158px * var(--scale));
+  border-radius: calc(10px * var(--scale));
+  border: 1px solid var(--card-border);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+  background: #000000;
+  z-index: 5;
+}
+/* ------------------------------------------------------------------- layout */
+.ui {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(10px * var(--scale));
+  pointer-events: none;
+  box-sizing: border-box;
+  z-index: 10 !important;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: calc(8px * var(--scale));
+  width: 100%;
+  max-width: calc(560px * var(--scale));
+  box-sizing: border-box;
+  align-items: center;
+}
+.stack > * { text-align: left; }
+
+/* --------------------------------------------------------------------- card */
+.card {
+  display: flex;
+  align-items: center;
+  gap: calc(16px * var(--scale));
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: calc(16px * var(--scale));
+  padding: calc(14px * var(--scale)) calc(18px * var(--scale));
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  min-height: calc(116px * var(--scale));
+  box-sizing: border-box;
+  contain: layout style;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.card[hidden] { display: none !important; }
+.card.flash { animation: flash 0.6s ease; }
+
+@keyframes flash {
+  0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
+  50% { box-shadow: 0 0 0 6px transparent, 0 0 30px rgba(255, 255, 255, 0.3); }
+  100% { box-shadow: 0 14px 35px rgba(0, 0, 0, 0.5); }
+}
+
+.art {
+  position: relative;
+  flex: 0 0 calc(88px * var(--scale));
+  width: calc(88px * var(--scale));
+  min-width: calc(88px * var(--scale));
+  height: calc(88px * var(--scale));
+  min-height: calc(88px * var(--scale));
+  aspect-ratio: 1 / 1;
+  border-radius: calc(10px * var(--scale));
+  overflow: hidden;
+  background: #09090b;
+  border: 1px solid var(--card-border);
+  z-index: 2;
+  isolation: isolate;
+}
+.art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+body.hide-art .art { display: none !important; }
+
+.eq { display: none !important; }
+
+/* META: A capa da música é o limite absoluto (clip estrito) */
+.meta {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden !important;
+  position: relative;
+  contain: paint;
+  clip-path: inset(0 0 0 0);
+  z-index: 1;
+}
+
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: calc(6px * var(--scale));
+  font-size: calc(9.5px * var(--scale));
+  letter-spacing: 0.16em;
+  font-weight: 700;
+  color: var(--accent-2);
+  text-transform: uppercase;
+  margin-bottom: calc(2px * var(--scale));
+}
+.dot {
+  width: calc(6px * var(--scale));
+  height: calc(6px * var(--scale));
+  border-radius: 50%;
+  background: var(--accent, #ffffff);
+  box-shadow: 0 0 8px var(--accent, rgba(255, 255, 255, 0.8));
+  animation: pulse 1.4s ease-in-out infinite;
+}
+body.paused .dot { animation: none; background: #71717a; box-shadow: none; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.title-wrap {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden !important;
+  position: relative;
+  contain: paint;
+  clip-path: inset(0 0 0 0);
+}
+
+.title {
+  font-size: calc(16px * var(--scale));
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-color, #ffffff);
+  max-width: 100%;
+  display: block;
+}
+.title.scroll {
+  display: inline-block;
+  padding-left: 100%;
+  animation: marquee 12s linear infinite;
+  text-overflow: clip;
+  will-change: transform;
+}
+body.no-marquee .title.scroll {
+  display: block !important;
+  padding-left: 0 !important;
+  animation: none !important;
+  text-overflow: ellipsis !important;
+}
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+.sub {
+  font-size: calc(11.5px * var(--scale));
+  color: var(--sub-color, rgba(255, 255, 255, 0.65));
+  margin-top: calc(2px * var(--scale));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sub b { color: var(--text-color, #ffffff); }
+body.hide-requester .sub { display: none !important; }
+
+.progress {
+  margin-top: calc(6px * var(--scale));
+  height: calc(3px * var(--scale));
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 99px;
+  overflow: hidden;
+}
+body.hide-progress .progress { display: none !important; }
+.fill {
+  height: 100%;
+  width: 0%;
+  background: var(--accent, #ffffff);
+  border-radius: 99px;
+  position: relative;
+  transition: width 0.25s linear;
+}
+.knob { display: none; }
+
+.times {
+  display: flex;
+  justify-content: space-between;
+  font-size: calc(10px * var(--scale));
+  color: var(--sub-color, rgba(255, 255, 255, 0.45));
+  font-variant-numeric: tabular-nums;
+  margin-top: calc(3px * var(--scale));
+}
+body.hide-progress .times { display: none !important; }
+
+.vol {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  font-size: calc(10.5px * var(--scale));
+  font-weight: 600;
+  color: var(--text-color, #ffffff);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--card-border);
+  border-radius: 99px;
+  padding: calc(3px * var(--scale)) calc(8px * var(--scale));
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+body.muted-widget .vol {
+  color: #a1a1aa;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ------------------------------------------------------------- card idle (fila vazia) */
+.card.idle {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+}
+body.hide-idle .card.idle { display: none !important; }
+
+.idle-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #111114;
+}
+.idle-art img {
+  width: 65%;
+  height: 65%;
+  object-fit: contain;
+  opacity: 0.9;
+}
+.idle-dot {
+  background: #71717a !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+.idle-title {
+  color: #e4e4e7 !important;
+  font-size: calc(15px * var(--scale)) !important;
+}
+
+/* ------------------------------------------------------------------ fila */
+.next {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: calc(10px * var(--scale));
+  padding: calc(8px * var(--scale)) calc(12px * var(--scale));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  animation: rise 0.35s ease both;
+  width: 100%;
+  box-sizing: border-box;
+}
+.next[hidden] { display: none !important; }
+
+.next-head {
+  font-size: calc(9px * var(--scale));
+  letter-spacing: 0.16em;
+  font-weight: 700;
+  color: var(--accent-2);
+  margin-bottom: calc(4px * var(--scale));
+}
+.next-count { color: rgba(255, 255, 255, 0.4); }
+.next ol { list-style: none; }
+.next li {
+  display: flex;
+  gap: calc(8px * var(--scale));
+  align-items: baseline;
+  font-size: calc(11.5px * var(--scale));
+  color: rgba(255, 255, 255, 0.85);
+  padding: calc(2px * var(--scale)) 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.next li .n { color: var(--accent, #ffffff); font-weight: 700; min-width: calc(12px * var(--scale)); }
+.next li .who { color: rgba(255, 255, 255, 0.4); font-size: calc(10px * var(--scale)); }
+.next li .tt { overflow: hidden; text-overflow: ellipsis; }
+
+/* --------------------------------------------------------------- dicas/marca */
+.hint {
+  font-size: calc(10.5px * var(--scale));
+  color: rgba(255, 255, 255, 0.65);
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--card-border);
+  padding: calc(4px * var(--scale)) calc(10px * var(--scale));
+  border-radius: 99px;
+  align-self: flex-start;
+  backdrop-filter: blur(10px);
+}
+html[data-pos="br"] .hint, html[data-pos="tr"] .hint { align-self: flex-end; }
+html[data-pos="bc"] .hint, html[data-pos="tc"] .hint { align-self: center; }
+.hint b { color: #ffffff; }
+
+.brand {
+  font-size: calc(9px * var(--scale));
+  letter-spacing: 0.25em;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.35);
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(6px * var(--scale));
+}
+.brand-badge-img {
+  width: calc(13px * var(--scale));
+  height: calc(13px * var(--scale));
+  border-radius: calc(3px * var(--scale));
+  object-fit: cover;
+  vertical-align: middle;
+}
+html[data-pos="br"] .brand, html[data-pos="tr"] .brand { align-self: flex-end; }
+html[data-pos="bc"] .brand, html[data-pos="tc"] .brand { align-self: center; }
+
+body.hide-logo .brand { display: none !important; }
+body.hide-hint .hint { display: none !important; }
+body.hide-queue .next { display: none !important; }
+
+/* ----------------------------------------------------------------- toast */
+.toast {
+  position: absolute;
+  top: calc(20px * var(--scale));
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-left: calc(3px * var(--scale)) solid var(--accent, #ffffff);
+  border-radius: calc(8px * var(--scale));
+  padding: calc(7px * var(--scale)) calc(14px * var(--scale));
+  font-size: calc(12.5px * var(--scale));
+  font-weight: 600;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  max-width: 80%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  z-index: 40;
+}
+.toast[hidden] { display: none !important; }
+@keyframes toastIn {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* ================================================================= ESTILOS DE WIDGET (LAYOUTS) */
+
+/* 1. LAYOUT PILL (Pílula Compacta / Dock Fino) */
+html[data-layout="pill"] .card {
+  border-radius: 999px !important;
+  padding: calc(6px * var(--scale)) calc(14px * var(--scale)) calc(6px * var(--scale)) calc(6px * var(--scale)) !important;
+  gap: calc(10px * var(--scale));
+  max-width: calc(480px * var(--scale));
+}
+html[data-layout="pill"] .art {
+  width: calc(46px * var(--scale)) !important;
+  height: calc(46px * var(--scale)) !important;
+  border-radius: 50% !important;
+}
+html[data-layout="pill"] .title {
+  font-size: calc(14px * var(--scale));
+}
+html[data-layout="pill"] .sub {
+  font-size: calc(11px * var(--scale));
+}
+html[data-layout="pill"] .progress {
+  margin-top: calc(4px * var(--scale));
+  height: calc(2px * var(--scale));
+}
+
+/* 2. LAYOUT GLASS (Glassmorphism Translúcido) */
+html[data-layout="glass"] .card {
+  background: var(--card) !important;
+  border: 1px solid var(--card-border) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+html[data-layout="glass"] .next {
+  background: var(--card) !important;
+  border: 1px solid var(--card-border) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+}
+
+/* 3. LAYOUT TICKER (Barra Horizontal Rodapé Contínua) */
+html[data-layout="ticker"] .ui {
+  padding: 0 !important;
+}
+html[data-layout="ticker"] .stack {
+  max-width: 100% !important;
+  width: 100% !important;
+  gap: 0 !important;
+}
+html[data-layout="ticker"] .card {
+  border-radius: 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  padding: calc(8px * var(--scale)) calc(16px * var(--scale));
+  max-width: 100% !important;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.8);
+}
+html[data-layout="ticker"] .art {
+  width: calc(38px * var(--scale));
+  height: calc(38px * var(--scale));
+  border-radius: calc(4px * var(--scale));
+}
+html[data-layout="ticker"] .title {
+  font-size: calc(14px * var(--scale));
+}
+html[data-layout="ticker"] .hint,
+html[data-layout="ticker"] .brand {
+  display: none !important;
+}
+
+/* 4. LAYOUT MINIMAL (Monocromático Cirúrgico B&W) */
+html[data-layout="minimal"] .card {
+  border: 1.5px solid var(--accent, #ffffff) !important;
+  border-radius: calc(6px * var(--scale)) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+html[data-layout="minimal"] .art {
+  border-radius: 0 !important;
+  border: 1px solid var(--accent, #ffffff) !important;
+}
+html[data-layout="minimal"] .next {
+  border: 1.5px solid var(--accent, #ffffff) !important;
+  border-radius: calc(6px * var(--scale)) !important;
+  box-shadow: none !important;
+}
