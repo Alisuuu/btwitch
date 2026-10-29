@@ -105,13 +105,17 @@ export class Store {
 
   _adopt(st) {
     if (!st || typeof st !== 'object') return;
+    const prevNow = this.state.now || null;
+    const nextNow = st.now || null;
     const newer = st.rev > this.state.rev ||
       (st.rev === this.state.rev && (st.updatedAt || 0) > (this.state.updatedAt || 0)) ||
-      (!this.state.now && !!st.now) ||
-      (!!this.state.now && !st.now) ||
-      (st.now && this.state.now && st.now.id !== this.state.now.id) ||
+      (!prevNow && !!nextNow) ||
+      (!!prevNow && !nextNow) ||
+      (nextNow && prevNow && nextNow.id !== prevNow.id) ||
       ((st.queue || []).length !== (this.state.queue || []).length) ||
-      (Boolean(st.now?.paused) !== Boolean(this.state.now?.paused)) ||
+      (Boolean(nextNow?.paused) !== Boolean(prevNow?.paused)) ||
+      (Number(nextNow?.position || 0) !== Number(prevNow?.position || 0)) ||
+      (Number(nextNow?.startedAt || 0) !== Number(prevNow?.startedAt || 0)) ||
       (Number(st.volume) !== Number(this.state.volume));
     if (!newer) return;
     this.state = sanitize(st);
@@ -186,14 +190,12 @@ export class Store {
     } catch { /* offline */ }
   }
 
-  // Inicia sincronização: pull imediato (forçado) + polling + micro-sync local.
   start({ poll } = {}) {
     let lastPull = 0;
 
     this.pull({ force: true });
     clearInterval(this._poll);
     this._poll = setInterval(() => {
-      // Se a fila estiver vazia ou sem música tocando, poll rápido de 2s para entrar imediatamente
       const isIdle = !this.state.now || !this.state.queue.length;
       const wait = poll || (isIdle ? 2000 : Math.max(2, Number(this.state.config.pollInterval) || 3) * 1000);
       if (Date.now() - lastPull >= wait) {
@@ -209,14 +211,15 @@ export class Store {
         const t = localStorage.getItem(this.lsKey);
         if (t) {
           const st = sanitize(JSON.parse(t));
-          if (st.rev > this.state.rev || (!this.state.now && !!st.now) || (st.now && this.state.now && st.now.id !== this.state.now.id)) {
+          if (st.rev > this.state.rev || (!this.state.now && !!st.now) || (st.now && this.state.now && st.now.id !== this.state.now.id) ||
+              (Number(st.now?.position || 0) !== Number(this.state.now?.position || 0)) ||
+              (Boolean(st.now?.paused) !== Boolean(this.state.now?.paused))) {
             this._adopt(st);
           }
         }
       } catch { /* ignora */ }
     }, 1500);
 
-    // aba oculta deixa timers lentos: puxa o estado forçado ao voltar a ficar visível
     if (typeof document !== 'undefined') {
       document.removeEventListener('visibilitychange', this._onVis);
       this._onVis = () => { if (!document.hidden) this.pull({ force: true }); };
