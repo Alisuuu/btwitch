@@ -116,6 +116,11 @@
       <span class="tab-label-full">Temporizadores</span>
       <span class="tab-label-short">Timers</span>
     </button>
+    <button class="tab" data-tab="ia" id="tabIaBtn" title="Configurar Inteligência Artificial da Live">
+      <span data-icon="bot" data-size="15"></span>
+      <span class="tab-label-full">Inteligência Artificial</span>
+      <span class="tab-label-short">IA</span>
+    </button>
     <button class="tab" data-tab="config">
       <span data-icon="settings" data-size="15"></span>
       <span class="tab-label-full">Configuração</span>
@@ -484,6 +489,44 @@
             <div class="visual-choice-name">B&amp;W Minimal</div>
             <div class="visual-choice-desc">Preto e branco cirúrgico</div>
           </button>
+
+          <button type="button" class="visual-choice-card" data-layout="neon">
+            <div class="mini-mockup mockup-neon">
+              <div class="mm-art" style="box-shadow: 0 0 8px #00f3ff; border: 1.5px solid #00f3ff;"></div>
+              <div class="mm-lines">
+                <div class="mm-line" style="width: 75%; background: #00f3ff; box-shadow: 0 0 6px #00f3ff;"></div>
+                <div class="mm-line" style="width: 45%; opacity: 0.6;"></div>
+                <div class="mm-bar" style="background:#00f3ff; box-shadow: 0 0 8px #00f3ff;"></div>
+              </div>
+            </div>
+            <div class="visual-choice-name">Cyber Neon</div>
+            <div class="visual-choice-desc">Glow vibrante gamer</div>
+          </button>
+
+          <button type="button" class="visual-choice-card" data-layout="compact">
+            <div class="mini-mockup mockup-compact">
+              <div class="mm-art" style="width: 18px; height: 18px; flex: 0 0 18px; border-radius: 4px;"></div>
+              <div class="mm-lines">
+                <div class="mm-line" style="width: 60%; height: 4px;"></div>
+                <div class="mm-bar" style="height: 2px;"></div>
+              </div>
+            </div>
+            <div class="visual-choice-name">Mini Badge HUD</div>
+            <div class="visual-choice-desc">Ultra-compacto p/ gameplay</div>
+          </button>
+
+          <button type="button" class="visual-choice-card" data-layout="vinyl">
+            <div class="mini-mockup mockup-vinyl">
+              <div class="mm-art mm-circle" style="border: 2px dashed #f59e0b;"></div>
+              <div class="mm-lines">
+                <div class="mm-line" style="width: 70%;"></div>
+                <div class="mm-line" style="width: 40%; opacity: 0.6;"></div>
+                <div class="mm-bar" style="background:#f59e0b;"></div>
+              </div>
+            </div>
+            <div class="visual-choice-name">Disco Vinil Retrô</div>
+            <div class="visual-choice-desc">Disco Lo-Fi giratório</div>
+          </button>
         </div>
       </div>
 
@@ -749,60 +792,168 @@
       </div>
     </div>
 
-    <!-- Inteligência Artificial (Alive IA - !ia) -->
-    <div class="box">
-      <h2>
-        <span data-icon="bot" data-size="16"></span>
-        Inteligência Artificial (Alive IA — !ia)
-      </h2>
-      <p class="hint">IA que responde os espectadores no chat com <code>!ia &lt;pergunta&gt;</code>. Moderadores podem ligar ou desligar direto no chat com <code>!ia on</code> e <code>!ia off</code>.</p>
-      
-      <div class="checks" style="margin-top: 12px; margin-bottom: 16px;">
-        <label class="check">
-          <input type="checkbox" id="cfgAiEnabled">
-          Ativar IA no chat (!ia on)
-        </label>
-      </div>
+  </div>
+</section>
 
-      <div class="form-grid">
-        <label>URL Base da API
-          <input type="text" id="cfgAiBaseUrl" placeholder="https://api.groq.com/openai/v1" autocomplete="off" spellcheck="false">
-        </label>
-        <label>Modelo
-          <input type="text" id="cfgAiModel" placeholder="qwen/qwen3.8-27b" autocomplete="off" spellcheck="false">
-        </label>
-        <label style="grid-column: 1 / -1;">Chave de API (Bearer Token)
-          <input type="password" id="cfgAiApiKey" placeholder="gsk_..." autocomplete="off" spellcheck="false">
-        </label>
-        <label style="grid-column: 1 / -1;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <span>Personalidade / Prompt do Sistema da IA</span>
-            <span style="font-size: 11px; color: var(--text-dim);">Personalize como a IA conversa e reage no chat</span>
-          </div>
-          <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;">
-            <button class="btn secondary sm" id="btnPresetDefault" type="button" style="font-size: 11px; padding: 4px 8px;">⚡ Padrão (Bajula Streamer / Fria com Chat)</button>
-            <button class="btn secondary sm" id="btnPresetSweet" type="button" style="font-size: 11px; padding: 4px 8px;">🌸 Carinhosa & Fofa</button>
-            <button class="btn secondary sm" id="btnPresetGamer" type="button" style="font-size: 11px; padding: 4px 8px;">🎮 Gamer & Zueira</button>
-            <button class="btn secondary sm" id="btnPresetSarcastic" type="button" style="font-size: 11px; padding: 4px 8px;">🔥 100% Sarcástica</button>
-          </div>
-          <textarea id="cfgAiSystem" rows="4" style="width: 100%; border-radius: 8px; padding: 10px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text); font-size: 13px; resize: vertical;" placeholder="Escreva a personalidade da IA aqui... Ex: Você é doce e super amigável com todos, usa gírias de streamer e adora animes."></textarea>
-        </label>
+<!-- ============================================================ INTELIGÊNCIA ARTIFICIAL (ALIVE IA) -->
+<section class="panel" id="tab-ia">
+  
+  <!-- Banner / Hero da IA -->
+  <div class="bot-app-card" style="margin-bottom: 16px;">
+    <div class="bot-meta">
+      <div class="ai-avatar-badge" style="width: 56px; height: 56px; border-radius: 16px; background: radial-gradient(circle, rgba(0, 243, 255, 0.25) 0%, rgba(6, 10, 18, 0.9) 100%); border: 1.5px solid #00f3ff; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(0, 243, 255, 0.35);">
+        <span data-icon="bot" data-size="32" style="color: #00f3ff;"></span>
       </div>
-
-      <div class="row" style="margin-top: 16px; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
-        <div class="row" style="gap: 8px; flex-wrap: wrap;">
-          <button class="btn primary" id="btnSaveAi" type="button">
-            <span data-icon="save" data-size="14"></span>
-            Salvar Personalidade da IA
-          </button>
-          <button class="btn secondary" id="btnTestAi" type="button">
-            <span data-icon="sparkles" data-size="14"></span>
-            Testar Resposta
-          </button>
-        </div>
-        <div id="aiTestResult" style="font-size: 12px; color: var(--text-dim); max-width: 480px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;"></div>
+      <div class="bot-info">
+        <h2>
+          <span>Alive IA Studio</span>
+          <span class="badge" id="aiStatusBadge" style="font-size:11px; padding:2px 8px; border-radius:4px; font-weight:700; background:rgba(0,243,255,0.15); color:#00f3ff; border:1px solid rgba(0,243,255,0.3);">
+            ● ATIVA NO CHAT
+          </span>
+        </h2>
+        <p>A assistente inteligente residente do seu canal. Responde espectadores e streamer via comando <code>!ia &lt;pergunta&gt;</code>, gerencia músicas e interage com personalidade única.</p>
       </div>
     </div>
+    <div class="bot-actions" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <label class="check" style="cursor: pointer; background: rgba(255, 255, 255, 0.04); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line);">
+        <input type="checkbox" id="cfgAiEnabled" style="cursor: pointer;">
+        <span style="font-weight: 600;">Habilitar IA no Chat</span>
+      </label>
+      <button class="btn primary" id="btnSaveAiTop" type="button">
+        <span data-icon="save" data-size="14"></span>
+        Salvar IA
+      </button>
+    </div>
+  </div>
+
+  <div class="desktop-grid-2">
+    <!-- Coluna 1: Personalidade & Presets -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      
+      <div class="box">
+        <h2>
+          <span data-icon="sparkles" data-size="16"></span>
+          Personalidade da IA
+        </h2>
+        <p class="hint">Escolha um estilo pronto com 1 clique ou escreva instruções personalizadas de como a IA deve conversar e agir com o streamer e com o chat.</p>
+
+        <div style="margin-top: 14px; margin-bottom: 10px;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;">
+            Modelos Rápidos de Personalidade (Presets)
+          </div>
+          <div class="ai-presets-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px;">
+            <button class="btn secondary sm ai-preset-btn" id="btnPresetDefault" type="button" style="text-align: left; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-weight: 700; color: #38bdf8;">⚡ Padrão Oficial</span>
+              <span style="font-size: 10px; color: var(--muted);">Fiel ao streamer / Fria no chat</span>
+            </button>
+            <button class="btn secondary sm ai-preset-btn" id="btnPresetSweet" type="button" style="text-align: left; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-weight: 700; color: #f472b6;">🌸 Doce &amp; Fofa</span>
+              <span style="font-size: 10px; color: var(--muted);">Acolhedora, gentil e carinhosa</span>
+            </button>
+            <button class="btn secondary sm ai-preset-btn" id="btnPresetGamer" type="button" style="text-align: left; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-weight: 700; color: #4ade80;">🎮 Gamer &amp; Hype</span>
+              <span style="font-size: 10px; color: var(--muted);">Gírias de stream, zoeira saudável</span>
+            </button>
+            <button class="btn secondary sm ai-preset-btn" id="btnPresetSarcastic" type="button" style="text-align: left; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-weight: 700; color: #f87171;">🔥 100% Sarcástica</span>
+              <span style="font-size: 10px; color: var(--muted);">Humor ácido, respostas afiadas</span>
+            </button>
+            <button class="btn secondary sm ai-preset-btn" id="btnPresetInstructor" type="button" style="text-align: left; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-weight: 700; color: #fbbf24;">🧠 Guia da Live</span>
+              <span style="font-size: 10px; color: var(--muted);">Tira dúvidas e passa dicas</span>
+            </button>
+          </div>
+        </div>
+
+        <div style="margin-top: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label for="cfgAiSystem" style="font-size: 12px; font-weight: 700;">Instruções de Personalidade (Prompt Livre)</label>
+            <span id="aiPromptCharCount" style="font-size: 11px; color: var(--muted);">0 / 4000</span>
+          </div>
+          <textarea id="cfgAiSystem" rows="7" style="width: 100%; border-radius: 8px; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--line); color: var(--white); font-size: 13px; line-height: 1.45; resize: vertical; box-sizing: border-box; font-family: inherit;" placeholder="Ex: Você é doce e super amigável com todos, usa gírias de streamer, trata quem pede músicas com muito carinho e adora animes..."></textarea>
+          <div style="font-size: 11px; color: var(--muted); margin-top: 4px;">
+            Dica: Comandos como <code>!play</code>, <code>!skip</code>, <code>!pausar</code> e regras de controle já são integrados nativamente pelo bot. Defina aqui o tom, a atitude e como ela se comunica.
+          </div>
+        </div>
+
+        <div class="row" style="margin-top: 16px; gap: 10px; justify-content: space-between; flex-wrap: wrap;">
+          <button class="btn primary" id="btnSaveAi" type="button">
+            <span data-icon="save" data-size="14"></span>
+            Salvar Personalidade
+          </button>
+          <button class="btn ghost small" id="btnClearAiPrompt" type="button">
+            Restaurar Padrão
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Coluna 2: Testador Interativo & Parâmetros Avançados -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      
+      <!-- Simulador de Chat em Tempo Real -->
+      <div class="box">
+        <h2>
+          <span data-icon="terminal" data-size="16"></span>
+          Simulador &amp; Teste de Chat
+        </h2>
+        <p class="hint">Faça uma pergunta de teste para ver como a IA responderá no chat ao vivo com a personalidade atual.</p>
+
+        <div style="margin-top: 12px; display: flex; gap: 8px;">
+          <input type="text" id="aiTestPrompt" placeholder="Ex: Quem é você? Me recomende um som legal!" style="flex: 1;" value="Quem é você e o que faz na live?">
+          <button class="btn secondary" id="btnTestAi" type="button" style="white-space: nowrap;">
+            <span data-icon="sparkles" data-size="14"></span>
+            Testar
+          </button>
+        </div>
+
+        <!-- Balão de Simulação do Chat da Twitch -->
+        <div id="aiChatSimulator" style="margin-top: 14px; background: #0e0e10; border: 1px solid #26262c; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; min-height: 80px;">
+          <div style="font-size: 10.5px; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between;">
+            <span>Prévia no Chat da Twitch</span>
+            <span id="aiSimStatus">Pronto</span>
+          </div>
+          <div id="aiTestResultWrapper" style="display: flex; gap: 8px; align-items: flex-start;">
+            <span style="font-weight: 700; color: #a970ff; font-size: 13px; flex: 0 0 auto;">@alivebot1:</span>
+            <span id="aiTestResult" style="font-size: 13px; color: #efeff1; word-break: break-word;">Clique em "Testar" para ver a resposta da IA com a personalidade configurada.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Parâmetros de Conexão (Groq / OpenAI) -->
+      <div class="box">
+        <h2>
+          <span data-icon="cpu" data-size="16"></span>
+          Provedor &amp; Conexão de IA
+        </h2>
+        <p class="hint">Por padrão, o Alive Bot utiliza a infraestrutura de ultra-baixa latência da Groq. Você também pode conectar sua própria chave e escolher o modelo de linguagem.</p>
+
+        <div class="form-grid" style="margin-top: 12px;">
+          <label>URL Base da API
+            <input type="text" id="cfgAiBaseUrl" placeholder="https://api.groq.com/openai/v1" autocomplete="off" spellcheck="false">
+          </label>
+          <label>Modelo LLM
+            <input type="text" id="cfgAiModel" placeholder="qwen/qwen3.8-27b" autocomplete="off" spellcheck="false">
+          </label>
+          <label style="grid-column: 1 / -1;">Chave de API Própria (Opcional)
+            <input type="password" id="cfgAiApiKey" placeholder="Deixe em branco para usar a chave padrão do servidor" autocomplete="off" spellcheck="false">
+          </label>
+        </div>
+
+        <div style="margin-top: 12px; display: flex; justify-content: flex-end;">
+          <button class="btn secondary" id="btnSaveAiAdvanced" type="button">
+            <span data-icon="save" data-size="14"></span>
+            Salvar Parâmetros
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</section>
 
   </div>
 </section>
@@ -1130,6 +1281,6 @@ Transmissão: {url}</textarea>
 
 <div class="toast" id="toast" hidden></div>
 
-<script type="module" src="/js/panel.js?v=1.1.4"></script>
+<script type="module" src="/js/panel.js?v=1.2.1"></script>
 </body>
 </html>

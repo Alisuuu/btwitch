@@ -105,13 +105,15 @@ export class Store {
 
   _adopt(st) {
     if (!st || typeof st !== 'object') return;
+    const prevNow = this.state.now || null;
+    const nextNow = st.now || null;
     const newer = st.rev > this.state.rev ||
       (st.rev === this.state.rev && (st.updatedAt || 0) > (this.state.updatedAt || 0)) ||
-      (!this.state.now && !!st.now) ||
-      (!!this.state.now && !st.now) ||
-      (st.now && this.state.now && st.now.id !== this.state.now.id) ||
+      (!prevNow && !!nextNow) ||
+      (!!prevNow && !nextNow) ||
+      (nextNow && prevNow && (nextNow.id !== prevNow.id || (nextNow.startedAt && nextNow.startedAt !== prevNow.startedAt))) ||
       ((st.queue || []).length !== (this.state.queue || []).length) ||
-      (Boolean(st.now?.paused) !== Boolean(this.state.now?.paused)) ||
+      (Boolean(nextNow?.paused) !== Boolean(prevNow?.paused)) ||
       (Number(st.volume) !== Number(this.state.volume));
     if (!newer) return;
     this.state = sanitize(st);

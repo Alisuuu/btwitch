@@ -11,15 +11,14 @@ const store = new Store(channel);
 let player = null;
 let ytReady = false;
 let curId = null;
+let curStartedAt = 0;
 let wasPaused = false;
 let durationShown = 0;
 let lastPosWrite = 0;
 let lastQueueLen = store.state.queue.length;
 let startChecked = false;
-let nativeAudio = null;
-let nativeAudioId = null;
-let nativeAudioFallback = false;
-let nativeAudioLoading = false;
+let stallCount = 0;
+let lastStallPos = -1;
 
 const els = typeof document !== 'undefined' ? {
   card: $('#card'), thumb: $('#thumb'), title: $('#title'), sub: $('#sub'),
@@ -32,7 +31,7 @@ const els = typeof document !== 'undefined' ? {
 } : {};
 
 function esc(s) {
-  return String(s ?? '').replace(/[&<>\"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
 function hexToRgb(hex) {
@@ -53,71 +52,11 @@ export const PRESETS = {
   ghost: { layout: 'card', theme: 'transparent', accent: '#ffffff', bg: '#000000', text: '#ffffff', opacity: 0, scale: 100, marquee: 1 },
   pill: { layout: 'pill', theme: 'minimal', accent: '#a855f7', bg: '#18181b', text: '#ffffff', opacity: 85, scale: 100, marquee: 1 },
   sunset: { layout: 'glass', theme: 'slate', accent: '#f59e0b', bg: '#18181b', text: '#ffffff', opacity: 80, scale: 100, marquee: 1 },
-  ticker: { layout: 'ticker', theme: 'minimal', accent: '#ef4444', bg: '#09090b', text: '#ffffff', opacity: 95, scale: 100, marquee: 1 }
+  ticker: { layout: 'ticker', theme: 'minimal', accent: '#ef4444', bg: '#09090b', text: '#ffffff', opacity: 95, scale: 100, marquee: 1 },
+  neon: { layout: 'neon', theme: 'minimal', accent: '#00f3ff', bg: '#060a12', text: '#ffffff', opacity: 85, scale: 100, marquee: 1 },
+  compact: { layout: 'compact', theme: 'slate', accent: '#a855f7', bg: '#09090b', text: '#f4f4f5', opacity: 90, scale: 90, marquee: 1, showKicker: 0, showTimes: 0 },
+  vinyl: { layout: 'vinyl', theme: 'minimal', accent: '#f59e0b', bg: '#140f07', text: '#fef3c7', opacity: 90, scale: 100, marquee: 1 }
 };
-
-function getNativeAudio() {
-  if (!nativeAudio) nativeAudio = document.getElementById('nativeAudio');
-  return nativeAudio;
-}
-
-function computePlayAudio() {
-  const w = store.state.config.widget || {};
-  return params.has('audio')
-    ? params.get('audio') !== '0'
-    : (params.has('playAudio') ? params.get('playAudio') !== '0' : (w.playAudio !== undefined ? w.playAudio !== 0 : true));
-}
-
-async function fetchAudioUrl(videoId) {
-  const res = await fetch(`/api/audio?id=${encodeURIComponent(videoId)}`);
-  const data = await res.json().catch(() => null);
-  if (!res.ok || !data?.ok || !data.url) {
-    throw new Error(data?.error || `audio unavailable (${res.status})`);
-  }
-  return data.url;
-}
-
-async function loadNativeAudio(videoId, startSeconds = 0) {
-  const audio = getNativeAudio();
-  if (!audio || !videoId) return false;
-  if (nativeAudioLoading) return true;
-
-  try {
-    nativeAudioLoading = true;
-    const url = await fetchAudioUrl(videoId);
-    const shouldPlay = !store.state.now?.paused;
-    const playAudio = computePlayAudio();
-
-    audio.src = url;
-    audio.load();
-    audio.currentTime = Number.isFinite(startSeconds) ? Math.max(0, Number(startSeconds)) : 0;
-    audio.muted = !playAudio;
-    audio.volume = playAudio ? Math.max(0, Math.min(1, (Number(store.state.volume || 70) || 70) / 100)) : 0;
-    nativeAudioId = videoId;
-    nativeAudioFallback = true;
-
-    if (shouldPlay) {
-      await audio.play().catch(() => {});
-    } else {
-      audio.pause();
-    }
-    return true;
-  } catch (err) {
-    console.warn('[alive widget] fallback audio:', err.message || err);
-    return false;
-  } finally {
-    nativeAudioLoading = false;
-  }
-}
-
-function stopNativeAudio() {
-  const audio = getNativeAudio();
-  if (!audio) return;
-  try { audio.pause(); } catch {}
-  try { audio.src = ''; } catch {}
-  nativeAudioId = null;
-  nativeAudioFallback = false;
-}
 
 // ------------------------------------------------------------ configuração
 function applyConfig(s) {
@@ -201,6 +140,7 @@ function applyConfig(s) {
   document.body.classList.toggle('paused', paused);
   if (els.kicker) els.kicker.textContent = paused ? 'PAUSADO' : 'TOCANDO AGORA';
 
+  // Aplicar mute se configurado para não tocar som no widget
   if (ytReady && player) {
     try {
       if (!playAudio) {
@@ -212,6 +152,7 @@ function applyConfig(s) {
     } catch { /* ignora */ }
   }
 
+  // Atualizar indicador visual de áudio / volume
   if (els.volval) els.volval.textContent = playAudio ? String(Math.round(s.volume)) : 'MUDO';
   if (els.volIcon) {
     els.volIcon.innerHTML = playAudio
@@ -221,16 +162,14 @@ function applyConfig(s) {
 }
 
 function applyVolume(v) {
-  const playAudio = computePlayAudio();
+  const w = store.state.config.widget || {};
+  const playAudio = params.has('audio')
+    ? params.get('audio') !== '0'
+    : (params.has('playAudio') ? params.get('playAudio') !== '0' : (w.playAudio !== 0));
 
   if (!playAudio) {
     if (ytReady && player && typeof player.mute === 'function') {
       try { player.mute(); } catch { /* */ }
-    }
-    const audio = getNativeAudio();
-    if (audio) {
-      audio.muted = true;
-      audio.volume = 0;
     }
     if (els.volval) els.volval.textContent = 'MUDO';
     return;
@@ -243,16 +182,10 @@ function applyVolume(v) {
       player.setVolume(vol);
     } catch { /* ainda carregando */ }
   }
-
-  const audio = getNativeAudio();
-  if (audio && nativeAudioFallback) {
-    audio.muted = false;
-    audio.volume = Math.max(0, Math.min(1, vol / 100));
-  }
-
   if (els.volval) els.volval.textContent = String(vol);
 }
 
+// ------------------------------------------------------------------ render
 function render(s) {
   const now = s.now;
   els.idle.hidden = !!now;
@@ -265,6 +198,7 @@ function render(s) {
     els.sub.textContent = [now.channel, now.requestedBy ? 'pedido por ' + now.requestedBy : '']
       .filter(Boolean).join(' · ');
 
+    // título longo vira marquise suave delimitado estritamente
     const w = s.config.widget || {};
     const marquee = params.has('marquee') ? params.get('marquee') === '1' : (w.marquee !== 0);
     if (!marquee) {
@@ -291,6 +225,7 @@ function render(s) {
     )).join('');
   }
 
+  // aviso de nova música na fila
   if (s.queue.length > lastQueueLen && lastQueueLen >= 0) {
     const newest = s.queue[s.queue.length - 1];
     showToast(`Nova música na fila: ${newest.title}${newest.requestedBy ? ' — ' + newest.requestedBy : ''}`);
@@ -301,6 +236,7 @@ function render(s) {
   lastQueueLen = s.queue.length;
 }
 
+// -------------------------------------------------------- player do YouTube
 function loadYTApi() {
   return new Promise((resolve, reject) => {
     if (window.YT && window.YT.Player) return resolve(window.YT);
@@ -316,26 +252,27 @@ function loadYTApi() {
   });
 }
 
-async function loadCurrent(s) {
+function loadCurrent(s) {
   const now = s.now;
   if (!now || !now.id) {
     curId = null;
+    curStartedAt = 0;
     try { player?.stopVideo?.(); } catch { /* ignora */ }
-    stopNativeAudio();
     return;
   }
-  if (curId === now.id) return;
+  const nowStartedAt = now.startedAt || 0;
+  if (curId === now.id && curStartedAt === nowStartedAt) return;
 
   curId = now.id;
+  curStartedAt = nowStartedAt;
+  startChecked = false;
+  stallCount = 0;
+  lastStallPos = -1;
   wasPaused = !!now.paused;
   durationShown = now.duration || 0;
   const start = Math.max(0, Math.round(now.position || 0));
 
-  if (!ytReady || !player) {
-    const ok = await loadNativeAudio(now.id, start).catch(() => false);
-    if (ok) return;
-    return;
-  }
+  if (!ytReady || !player) return;
 
   const cleanId = String(now.id || '').trim();
   const safeStart = Number.isFinite(Number(start)) ? Math.max(0, Math.floor(Number(start))) : 0;
@@ -351,15 +288,16 @@ async function loadCurrent(s) {
     } else {
       player.loadVideoById({ videoId: cleanId, startSeconds: safeStart });
     }
-    const playAudio = computePlayAudio();
+    const w = s.config.widget || {};
+    const playAudio = params.has('audio')
+      ? params.get('audio') !== '0'
+      : (params.has('playAudio') ? params.get('playAudio') !== '0' : (w.playAudio !== 0));
     if (!playAudio) player.mute?.();
     else applyVolume(s.volume);
     if (now.paused) {
       try { player.pauseVideo?.(); } catch {}
-    }
-
-    if (nativeAudioFallback) {
-      try { player.pauseVideo?.(); } catch {}
+    } else {
+      try { player.playVideo?.(); } catch {}
     }
   } catch (e) {
     console.warn('[alive widget] loadVideoById:', e);
@@ -372,12 +310,15 @@ function onPlayerStateChange(ev) {
     const cur = player?.getCurrentTime?.() || 0;
     const dur = player?.getDuration?.() || 0;
 
+    // Se o vídeo encerrou prematuramente antes de chegar ao fim (ex: caiu no meio, erro de stream ou aborto):
+    // NUNCA avança a fila e NUNCA pula de música no meio!
     if (dur > 10 && cur < dur - 5) {
       console.warn(`[alive widget] Vídeo terminou prematuramente aos ${Math.round(cur)}s de ${Math.round(dur)}s. Buscando versão alternativa...`);
-      tryFindAlternative(store.state.now);
+      tryFindAlternative(store.state.now, () => skipBrokenVideo('término prematuro'));
       return;
     }
 
+    // A música realmente tocou até o final: avança para a próxima música da fila
     store.update((s) => { advanceQueue(s); });
     return;
   }
@@ -411,8 +352,11 @@ function onPlayerStateChange(ev) {
 
 let retryingAlt = false;
 
-async function tryFindAlternative(currentNow) {
-  if (retryingAlt || !currentNow) return;
+async function tryFindAlternative(currentNow, onFail) {
+  if (retryingAlt || !currentNow) {
+    if (typeof onFail === 'function') onFail();
+    return;
+  }
   retryingAlt = true;
   try {
     showToast('Buscando versão com reprodução liberada...');
@@ -428,6 +372,9 @@ async function tryFindAlternative(currentNow) {
       if (alt) {
         showToast(`Tocando versão alternativa: ${alt.title}`);
         curId = alt.id;
+        curStartedAt = Date.now();
+        startChecked = false;
+        stallCount = 0;
         try {
           player?.loadVideoById({ videoId: alt.id, startSeconds: 0 });
           applyVolume(store.state.volume);
@@ -441,7 +388,7 @@ async function tryFindAlternative(currentNow) {
             if (alt.thumb) st.now.thumb = alt.thumb;
             if (alt.duration) st.now.duration = alt.duration;
             st.now.position = 0;
-            st.now.startedAt = Date.now();
+            st.now.startedAt = curStartedAt;
             st.now.paused = false;
             pushLog(st, 'play', `Alternativa liberada: ${alt.title}`);
           }
@@ -450,11 +397,24 @@ async function tryFindAlternative(currentNow) {
         return;
       }
     }
+    if (typeof onFail === 'function') onFail();
   } catch (err) {
     console.warn('[alive] erro ao buscar alternativa:', err);
+    if (typeof onFail === 'function') onFail();
   } finally {
-    setTimeout(() => { retryingAlt = false; }, 5000);
+    setTimeout(() => { retryingAlt = false; }, 4000);
   }
+}
+
+function skipBrokenVideo(desc) {
+  const current = store.state.now;
+  if (!current) return;
+  showToast(`Aviso: ${desc}. Pulando para a próxima...`);
+  store.update((st) => {
+    pushLog(st, 'skip', `Vídeo com erro (${desc}) pulado: ${current.title || current.id}`);
+    advanceQueue(st);
+  });
+  store.flush();
 }
 
 function onError(ev) {
@@ -462,18 +422,6 @@ function onError(ev) {
   console.warn('[alive widget] erro do vídeo YouTube:', code);
   const s = store.state;
   if (!s.now) return;
-
-  if (code === 101 || code === 150 || code === 2 || code === 5) {
-    try {
-      const audio = getNativeAudio();
-      if (audio && !nativeAudioFallback) {
-        loadNativeAudio(s.now.id, s.now.position || 0).catch(() => {});
-        return;
-      }
-    } catch {}
-    tryFindAlternative(s.now);
-    return;
-  }
 
   const msgMap = {
     2: 'Parâmetro inválido',
@@ -483,8 +431,10 @@ function onError(ev) {
     150: 'Restrito para embed pelo YouTube',
   };
   const desc = msgMap[code] || `Erro ${code}`;
-  showToast(`Aviso: ${desc}`);
-  store.update((st) => pushLog(st, 'error', `Vídeo (${desc}): ${st.now?.title || ''}`));
+
+  // Se o YouTube bloquear o vídeo (101/150/100/2/5):
+  // Busca e toca a versão liberada. Se falhar em encontrar alternativa, avança a fila para não travar a live!
+  tryFindAlternative(s.now, () => skipBrokenVideo(desc));
 }
 
 function checkAutoplay() {
@@ -555,29 +505,25 @@ function tick() {
     els.fill.style.width = '0%';
     els.tcur.textContent = '0:00';
     els.tdur.textContent = '0:00';
+    stallCount = 0;
+    lastStallPos = -1;
     return;
   }
 
   let cur = 0;
-  let dur = durationShown || now.duration || 0;
+  let dur = Number.isFinite(Number(durationShown || now.duration)) ? Math.max(0, Number(durationShown || now.duration)) : 0;
   let hasPlayerTime = false;
 
   if (ytReady && player && curId && typeof player.getCurrentTime === 'function') {
     try {
-      cur = player.getCurrentTime() || 0;
-      const realDur = player.getDuration?.() || 0;
-      if (realDur > 0) dur = realDur;
-      hasPlayerTime = true;
+      const pCur = player.getCurrentTime();
+      if (Number.isFinite(pCur)) {
+        cur = Math.max(0, pCur);
+        const realDur = player.getDuration?.();
+        if (Number.isFinite(realDur) && realDur > 0) dur = realDur;
+        hasPlayerTime = true;
+      }
     } catch { /* ignora */ }
-  }
-
-  if (!hasPlayerTime && nativeAudioFallback && getNativeAudio()) {
-    const audio = getNativeAudio();
-    if (audio && Number.isFinite(audio.currentTime)) {
-      cur = audio.currentTime;
-      if (audio.duration > 0) dur = audio.duration;
-      hasPlayerTime = true;
-    }
   }
 
   if (!hasPlayerTime) {
@@ -586,6 +532,27 @@ function tick() {
     } else {
       cur = now.position || 0;
     }
+  }
+
+  cur = Number.isFinite(cur) ? Math.max(0, cur) : 0;
+  dur = Number.isFinite(dur) ? Math.max(0, dur) : 0;
+
+  // Watchdog contra congelamento no OBS: se o player estiver despausado mas travado no mesmo segundo por > 25s
+  if (!now.paused && ytReady && player) {
+    const roundedCur = Math.floor(cur);
+    if (roundedCur === lastStallPos) {
+      stallCount++;
+      if (stallCount >= 50) { // 50 ticks * 500ms = 25 segundos travado
+        stallCount = 0;
+        console.warn('[alive widget] Watchdog: vídeo travado no player. Buscando alternativa ou avançando...');
+        tryFindAlternative(now, () => skipBrokenVideo('travamento de reprodução'));
+      }
+    } else {
+      stallCount = 0;
+      lastStallPos = roundedCur;
+    }
+  } else {
+    stallCount = 0;
   }
 
   const pct = dur > 0 ? Math.min(100, Math.max(0, (cur / dur) * 100)) : 0;
@@ -601,35 +568,27 @@ function showToast(text) {
   els.toast._t = setTimeout(() => { els.toast.hidden = true; }, 4000);
 }
 
+// ----------------------------------------------------------------- listeners
 store.subscribe((s) => {
   applyConfig(s);
 
-  if (s.now && s.now.id !== curId) {
+  if (s.now && (s.now.id !== curId || (s.now.startedAt && s.now.startedAt !== curStartedAt))) {
     loadCurrent(s);
   } else if (!s.now && curId) {
     curId = null;
+    curStartedAt = 0;
     try { player?.stopVideo?.(); } catch { /* ignora */ }
-    stopNativeAudio();
   } else if (s.now) {
     const paused = !!s.now.paused;
     if (paused && !wasPaused) {
       writePosition(true);
       try { player?.pauseVideo?.(); } catch { /* ignora */ }
-      const audio = getNativeAudio();
-      if (audio) {
-        try { audio.pause(); } catch {}
-      }
     } else if (!paused && wasPaused) {
       try {
         const p = s.now.position || 0;
         if (player && Math.abs((player.getCurrentTime?.() || 0) - p) > 3) player.seekTo(p, true);
         player?.playVideo?.();
       } catch { /* ignora */ }
-      const audio = getNativeAudio();
-      if (audio && nativeAudioFallback) {
-        audio.currentTime = Math.max(0, Number(s.now.position || 0));
-        audio.play().catch(() => {});
-      }
     }
     wasPaused = paused;
   } else {
@@ -641,13 +600,8 @@ store.subscribe((s) => {
   render(s);
 });
 
+// ------------------------------------------------------------------- start
 if (typeof window !== 'undefined') {
-  const audio = getNativeAudio();
-  if (audio) {
-    audio.preload = 'auto';
-    audio.volume = 0.7;
-    audio.muted = false;
-  }
   applyConfig(store.state);
   render(store.state);
   store.start();

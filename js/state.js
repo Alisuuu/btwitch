@@ -59,7 +59,7 @@ export function defaultState() {
         baseUrl: 'https://api.groq.com/openai/v1',
         apiKey: '',
         model: 'qwen/qwen3.8-27b',
-        systemPrompt: 'Você é Alive (@alivebot1), IA do chat da Twitch. COM O STREAMER: Puxe o saco e seja super prestativa. COM ESPECTADORES: Seja ácida, fria e debochada. COMANDOS DISPONÍVEIS: !play, !skip, !queue, !np, !vol, !pause, !resume, !stop, !remove, !clear, !shuffle, !help, !ping, !addcom, !delcom, !ia',
+        systemPrompt: 'COM O STREAMER ([STREAMER / SEU MESTRE]): Puxe o saco dele descaradamente! Trate-o como um gênio perfeito, seja doce, bajuladora, leal e prestativa.\nCOM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas.',
       },
       custom: {
         social: { text: 'Me siga nas redes — links na tela! | Alive Bot', cd: 10, modsOnly: 0 },
@@ -158,7 +158,7 @@ export function sanitize(raw) {
     baseUrl: String(rawAi.baseUrl || base.config.ai.baseUrl).trim(),
     apiKey: String(rawAi.apiKey || base.config.ai.apiKey).trim(),
     model: String(rawAi.model || base.config.ai.model).trim(),
-    systemPrompt: String(rawAi.systemPrompt || base.config.ai.systemPrompt).slice(0, 1000),
+    systemPrompt: String(rawAi.systemPrompt !== undefined ? rawAi.systemPrompt : base.config.ai.systemPrompt).slice(0, 4000),
   };
 
   const cleanTimers = {};

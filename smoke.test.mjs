@@ -17,6 +17,9 @@ const store = {
 const catalog = [
   { id: 'aaaa1111111', title: 'Música Teste A', channel: 'Canal A', thumb: '', duration: 200 },
   { id: 'bbbb2222222', title: 'Música Teste B', channel: 'Canal B', thumb: '', duration: 180 },
+  { id: 'cccc3333333', title: 'Música Teste C', channel: 'Canal C', thumb: '', duration: 180 },
+  { id: 'dddd4444444', title: 'Música Teste D', channel: 'Canal D', thumb: '', duration: 180 },
+  { id: 'eeee5555555', title: 'Música Teste E', channel: 'Canal E', thumb: '', duration: 180 },
 ];
 
 const runner = createRunner({
@@ -25,8 +28,21 @@ const runner = createRunner({
   resolveUrl: async (u) => (u.includes('list=')
     ? { type: 'playlist', items: catalog }
     : { type: 'video', item: catalog[0], items: [catalog[0]] }),
-  searchQ: async (q) => (String(q).toLowerCase().includes('b') ? [catalog[1]] : catalog),
+  searchQ: async (q) => {
+    const s = String(q).toLowerCase();
+    if (s.includes('b') || s.includes('dois')) return [catalog[1]];
+    if (s.includes('três') || s.includes('tres')) return [catalog[2]];
+    if (s.includes('quatro')) return [catalog[3]];
+    if (s.includes('cinco')) return [catalog[4]];
+    return catalog;
+  },
   fetchAi: async (q) => {
+    if (q.includes('pula essa música')) return { ok: true, text: 'Com prazer, mestre! !skip' };
+    if (q.includes('remove a música 1')) return { ok: true, text: 'Removendo da fila agora mesmo! !remover 1' };
+    if (q.includes('pausa o som')) return { ok: true, text: 'Pausado imediatamente! !pausar' };
+    if (q.includes('coloca volume 33')) return { ok: true, text: 'Volume ajustado! !vol 33' };
+    if (q.includes('adiciona duas músicas')) return { ok: true, text: 'Colocando ambas, meu mestre genial! !play Música Teste A !play Música Teste B' };
+    if (q.includes('add 5 músicas')) return { ok: true, text: 'Às suas ordens mestre! !play 1. Canção Um !play 2. Canção Dois !play 3. Canção Três !play 4. Canção Quatro !play 5. Canção Cinco' };
     return {
       ok: true,
       text: 'Tsc, precisava me incomodar pra perguntar isso? A resposta é óbvia, seu ignorante.'
@@ -196,5 +212,118 @@ assert(store.state.config.ai?.enabled === false, 'IA foi desativada no store');
 console.log('\n23) !ia pergunta com IA desligada');
 await runner(msg('!ia você ainda está aí?', { userId: 'user_ia3', displayName: 'UserIA3' }));
 assert(sent.at(-1).includes('A IA está desligada no momento'), 'avisa que está desligada e instrui como ligar');
+
+console.log('\n24) IA ligada novamente e executando comandos a pedido do streamer');
+store.update((s) => {
+  s.config.ai.enabled = true;
+  s.now = { id: 'm1', title: 'Música 1', duration: 100, position: 10, paused: false, requestedBy: 'Alguém' };
+  s.queue = [
+    { id: 'm2', title: 'Música 2', duration: 120, position: 0, paused: false, requestedBy: 'Alguém' },
+    { id: 'm3', title: 'Música 3', duration: 140, position: 0, paused: false, requestedBy: 'Alguém' },
+  ];
+});
+
+// Streamer pede para passar a música
+await runner(msg('!ia pula essa música pra mim', { userId: 'streamer_id', displayName: 'StreamerTop', broadcaster: true }));
+await new Promise((r) => setTimeout(r, 200));
+assert(store.state.now.id === 'm2', 'IA pulou a música com sucesso a pedido do streamer');
+
+// Streamer pede para remover a primeira da fila
+await runner(msg('!ia remove a música 1 da fila', { userId: 'streamer_id', displayName: 'StreamerTop', broadcaster: true }));
+await new Promise((r) => setTimeout(r, 200));
+assert(store.state.queue.length === 0, 'IA removeu a música da fila a pedido do streamer');
+
+// Streamer pede para pausar
+await runner(msg('!ia pausa o som agora', { userId: 'streamer_id', displayName: 'StreamerTop', broadcaster: true }));
+await new Promise((r) => setTimeout(r, 200));
+assert(store.state.now.paused === true, 'IA pausou o som a pedido do streamer');
+
+// Streamer pede para mudar o volume
+await runner(msg('!ia coloca volume 33', { userId: 'streamer_id', displayName: 'StreamerTop', broadcaster: true }));
+await new Promise((r) => setTimeout(r, 200));
+assert(store.state.volume === 33, 'IA alterou o volume para 33 a pedido do streamer');
+
+console.log('\n25) Espectador comum tenta comandar a IA para alterar a reprodução (bloqueado por segurança)');
+store.update((s) => {
+  s.now = { id: 'm_safe', title: 'Música Protegida', duration: 100, position: 10, paused: false };
+});
+await runner(msg('!ia pula essa música agora', { userId: 'random_user', displayName: 'RandomGuy', broadcaster: false, mod: false }));
+await new Promise((r) => setTimeout(r, 200));
+assert(store.state.now.id === 'm_safe', 'IA ignorou ordem de pular vinda de espectador comum');
+
+console.log('\n26) Teste de robustez dos comandos corrigidos (!passar, !remover por nome, !vol com %, streamer sem tag mod)');
+store.update((s) => {
+  s.now = { id: 'm_curr', title: 'Tocando Agora', duration: 100, position: 10, paused: false };
+  s.queue = [
+    { id: 'm_next1', title: 'Linkin Park - Numb', duration: 120, position: 0, paused: false, requestedBy: 'Fã' },
+    { id: 'm_next2', title: 'Queen - Radio Ga Ga', duration: 150, position: 0, paused: false, requestedBy: 'Outro' }
+  ];
+});
+
+// Streamer usando !passar (sem tag mod explícita, apenas broadcaster: true)
+await runner(msg('!passar', { userId: 'streamer_id', displayName: 'StreamerTop', broadcaster: true, mod: false }));
+assert(store.state.now.id === 'm_next1', '!passar pulou na hora para o streamer sem cair em votação');
+
+// Remover por nome da música
+await runner(msg('!remover radio ga ga', { userId: 'streamer_id', displayName: 'StreamerTop', broadcaster: true, mod: false }));
+assert(store.state.queue.length === 0, '!remover por nome apagou a música correta da fila');
+
+// Volume com caractere %
+await runner(msg('!vol 65%', { userId: 'streamer_id', displayName: 'StreamerTop', broadcaster: true, mod: false }));
+assert(store.state.volume === 65, '!vol 65% ajustou o volume com sucesso');
+
+// Streamer usando !play sem argumentos para despausar música pausada
+store.update((s) => { s.now.paused = true; });
+await runner(msg('!play', { userId: 'streamer_id', displayName: 'StreamerTop', broadcaster: true, mod: false }));
+assert(store.state.now.paused === false, '!play sem argumentos despausou a música para o streamer');
+
+console.log('\n27) IA adicionando múltiplas músicas consecutivas com múltiplos !play juntos');
+store.update((s) => {
+  s.now = null;
+  s.queue = [];
+});
+await runner(msg('!ia adiciona duas músicas pra mim', { userId: 'streamer_id', displayName: 'StreamerTop', broadcaster: true, mod: false }));
+await new Promise((r) => setTimeout(r, 600));
+assert(store.state.now !== null && store.state.now.title.includes('Música Teste A'), 'Primeira música do multi-play entrou como atual');
+assert(store.state.queue.length === 1 && store.state.queue[0].title.includes('Música Teste B'), 'Segunda música do multi-play entrou na fila');
+
+console.log('\n28) IA aumentando e controlando volume inteligentemente');
+store.update((s) => { s.volume = 50; });
+
+// IA aumentando o som com comando relativo (!vol +15)
+await runner(msg('!ia aumenta o volume do som pra mim', { userId: 'streamer_id', displayName: 'StreamerTop', broadcaster: true, mod: false }));
+await new Promise((r) => setTimeout(r, 200));
+assert(store.state.volume === 65, 'IA aumentou o volume em +15% com sucesso (50 -> 65)');
+
+// IA definindo volume direto pelo pedido do streamer ("coloca volume 90")
+await runner(msg('!ia coloca o volume em 90', { userId: 'streamer_id', displayName: 'StreamerTop', broadcaster: true, mod: false }));
+await new Promise((r) => setTimeout(r, 200));
+assert(store.state.volume === 90, 'IA ajustou o volume para 90% a pedido do streamer');
+
+// Comando direto com texto especial (!vol max e !vol mudo)
+await runner(msg('!vol max', { userId: 'streamer_id', displayName: 'StreamerTop', broadcaster: true, mod: false }));
+assert(store.state.volume === 100, '!vol max colocou o volume em 100%');
+await runner(msg('!vol mudo', { userId: 'streamer_id', displayName: 'StreamerTop', broadcaster: true, mod: false }));
+assert(store.state.volume === 0, '!vol mudo silenciou o som');
+
+console.log('\n29) IA processando add de 5 músicas alternativas pelo streamer com numeração limpa');
+store.update((s) => {
+  s.now = null;
+  s.queue = [];
+});
+await runner(msg('!ia add 5 músicas alternativas', {
+  userId: 'streamer_id',
+  login: 'streamertop',
+  displayName: 'StreamerTop',
+  channel: 'streamertop',
+  broadcaster: true,
+  mod: false,
+  self: true,
+  isEcho: false,
+}));
+await new Promise((r) => setTimeout(r, 1600));
+assert(store.state.now !== null, 'Primeira música tocou');
+assert(!store.state.now.title.startsWith('1.'), 'Prefixo numérico "1." foi removido do título');
+assert(store.state.queue.length === 4, 'As outras 4 músicas entraram na fila (total de 5 músicas adicionadas)');
 
 console.log('\n✅ Smoke test concluído.\n');

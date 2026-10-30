@@ -541,3 +541,73 @@ html[data-layout="minimal"] .next {
   border-radius: calc(6px * var(--scale)) !important;
   box-shadow: none !important;
 }
+
+/* 5. LAYOUT NEON (Cyber Gamer Glow Vibrante) */
+html[data-layout="neon"] .card {
+  border: 1.5px solid var(--accent, #00f3ff) !important;
+  border-radius: calc(12px * var(--scale)) !important;
+  box-shadow: 0 0 25px rgba(0, 243, 255, 0.35), 0 14px 35px rgba(0, 0, 0, 0.7) !important;
+}
+html[data-layout="neon"] .art {
+  border: 1.5px solid var(--accent, #00f3ff) !important;
+  box-shadow: 0 0 12px var(--accent, rgba(0, 243, 255, 0.5)) !important;
+}
+html[data-layout="neon"] .progress .fill {
+  box-shadow: 0 0 10px var(--accent, #00f3ff);
+}
+html[data-layout="neon"] .kicker .dot {
+  box-shadow: 0 0 12px var(--accent, #00f3ff);
+}
+
+/* 6. LAYOUT COMPACT (Mini Badge HUD para Gameplay) */
+html[data-layout="compact"] .card {
+  padding: calc(6px * var(--scale)) calc(12px * var(--scale)) !important;
+  gap: calc(8px * var(--scale)) !important;
+  max-width: calc(340px * var(--scale)) !important;
+  border-radius: calc(8px * var(--scale)) !important;
+}
+html[data-layout="compact"] .art {
+  width: calc(38px * var(--scale)) !important;
+  height: calc(38px * var(--scale)) !important;
+  flex: 0 0 calc(38px * var(--scale)) !important;
+  border-radius: calc(6px * var(--scale)) !important;
+}
+html[data-layout="compact"] .title {
+  font-size: calc(13px * var(--scale)) !important;
+}
+html[data-layout="compact"] .sub {
+  font-size: calc(10.5px * var(--scale)) !important;
+  margin-top: 1px !important;
+}
+html[data-layout="compact"] .progress {
+  margin-top: calc(3px * var(--scale)) !important;
+  height: calc(2px * var(--scale)) !important;
+}
+html[data-layout="compact"] .kicker,
+html[data-layout="compact"] .times {
+  display: none !important;
+}
+html[data-layout="compact"] .vol {
+  padding: 2px 6px !important;
+  font-size: calc(9.5px * var(--scale)) !important;
+}
+
+/* 7. LAYOUT VINYL (Disco de Vinil Lo-Fi Retrô) */
+html[data-layout="vinyl"] .card {
+  border-radius: calc(18px * var(--scale)) !important;
+  border: 1.5px solid rgba(245, 158, 11, 0.35) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(245, 158, 11, 0.2) !important;
+}
+html[data-layout="vinyl"] .art {
+  border-radius: 50% !important;
+  border: 2px solid var(--accent, #f59e0b) !important;
+  box-shadow: 0 0 0 4px #09090b, 0 0 0 6px rgba(245, 158, 11, 0.4), 0 8px 24px rgba(0, 0, 0, 0.7) !important;
+  animation: spin-vinyl 12s linear infinite;
+}
+html[data-layout="vinyl"] .art img {
+  border-radius: 50% !important;
+}
+@keyframes spin-vinyl {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

@@ -36,10 +36,13 @@ export default async function handler(req, res) {
     const current = await loadState(channel);
     console.log(`[alive api/state] sync recebido para canal: #${channel || 'padrão'}, rev: ${incoming.rev}`);
 
-    // Preserva a intenção do usuário: se o estado recebido tem música ou fila, nunca descarta como stale.
-    const isUserAction = (incoming.now && !current.now) ||
-      (incoming.now && current.now && incoming.now.id !== current.now.id) ||
-      (incoming.queue.length !== current.queue.length);
+    // Preserva a intenção do usuário: se o estado recebido teve alteração em música, avanço, fila ou configurações (ex: IA/bot), nunca descarta como stale.
+    const isConfigChanged = JSON.stringify(incoming.config || {}) !== JSON.stringify(current.config || {});
+    const isUserAction = isConfigChanged ||
+      (!!incoming.now !== !!current.now) ||
+      (incoming.now && current.now && (incoming.now.id !== current.now.id || (incoming.now.startedAt && incoming.now.startedAt !== current.now.startedAt))) ||
+      (incoming.queue.length !== current.queue.length) ||
+      (Boolean(incoming.now?.paused) !== Boolean(current.now?.paused));
 
     const tooOld = !isUserAction && (incoming.rev < (current.rev || 0) - 2 && (incoming.updatedAt || 0) < (current.updatedAt || 0) - 30000);
     if (tooOld) {

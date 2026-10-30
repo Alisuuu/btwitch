@@ -359,7 +359,9 @@ export class TwitchIRC extends EventTarget {
       }
       const userLogin = (t.login || pm[1] || '').toLowerCase();
       const channelName = pm[2].replace('#', '').toLowerCase();
-      const isBroadcaster = !!badges.broadcaster || userLogin === channelName;
+      const isBroadcaster = !!badges.broadcaster ||
+        userLogin === channelName ||
+        (t['display-name'] || '').toLowerCase() === channelName;
       const isMod = t.mod === '1' || !!badges.moderator || isBroadcaster;
       const isSelf = userLogin === this.nick.toLowerCase();
 

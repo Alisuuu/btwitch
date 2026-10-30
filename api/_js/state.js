@@ -59,7 +59,7 @@ export function defaultState() {
         baseUrl: 'https://api.groq.com/openai/v1',
         apiKey: '',
         model: 'qwen/qwen3.8-27b',
-        systemPrompt: 'Você é Alive (@alivebot1), IA do chat da Twitch. COM O STREAMER: Puxe o saco e seja super prestativa. COM ESPECTADORES: Seja ácida, fria e debochada. COMANDOS DISPONÍVEIS: Use !play <música> para tocar sugestões de música na live. Use !tts <fala> SOMENTE se você quiser falar em voz alta no áudio da live (se não, responda em texto sem !tts). Responda sempre em no máximo 1 ou 2 frases curtas (até 250 caracteres).',
+        systemPrompt: 'COM O STREAMER ([STREAMER / SEU MESTRE]): Puxe o saco dele descaradamente! Trate-o como um gênio perfeito, seja doce, bajuladora, leal e prestativa.\nCOM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas.',
       },
       custom: {
         social: { text: 'Me siga nas redes — links na tela! | Alive Bot', cd: 10, modsOnly: 0 },
@@ -104,6 +104,7 @@ export function defaultState() {
       },
       discord: {
         enabled: true,
+        guildId: '',
         webhookUrl: '',
         channelName: 'lives',
         mention: 'everyone',
@@ -157,7 +158,7 @@ export function sanitize(raw) {
     baseUrl: String(rawAi.baseUrl || base.config.ai.baseUrl).trim(),
     apiKey: String(rawAi.apiKey || base.config.ai.apiKey).trim(),
     model: String(rawAi.model || base.config.ai.model).trim(),
-    systemPrompt: String(rawAi.systemPrompt || base.config.ai.systemPrompt).slice(0, 1000),
+    systemPrompt: String(rawAi.systemPrompt !== undefined ? rawAi.systemPrompt : base.config.ai.systemPrompt).slice(0, 4000),
   };
 
   const cleanTimers = {};
@@ -182,11 +183,12 @@ export function sanitize(raw) {
   const rawDc = rc.discord || base.config.discord || {};
   out.config.discord = {
     enabled: rawDc.enabled !== false,
+    guildId: String(rawDc.guildId || '').trim(),
     webhookUrl: String(rawDc.webhookUrl || '').trim(),
     channelName: String(rawDc.channelName || 'lives').trim(),
     mention: String(rawDc.mention || 'everyone').trim(),
     roleId: String(rawDc.roleId || '').trim(),
-    message: String(rawDc.message || '[LIVE] **{streamer}** está ao vivo na Twitch | **{game}**\nTransmissão: {url}').trim(),
+    message: String(rawDc.message || '[LIVE] **{streamer}** está ao vivo na Twitch | **{game}**').trim(),
     embedColor: String(rawDc.embedColor || '#9146FF').trim(),
     embedTitle: String(rawDc.embedTitle || '▸ {title}').trim(),
     embedDesc: String(rawDc.embedDesc || 'Transmissão iniciada. Venha interagir no chat e pedir músicas.').trim(),
