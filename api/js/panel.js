@@ -335,12 +335,12 @@ function esc(s) {
 }
 
 function widgetUrl() {
-  const origin = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-    ? location.origin
-    : 'https://btwitch.vercel.app';
+  const origin = (typeof window !== 'undefined' && window.location && window.location.origin)
+    ? window.location.origin.replace(/\/$/, '')
+    : (typeof location !== 'undefined' && location.origin ? location.origin.replace(/\/$/, '') : '');
   const w = store?.state?.config?.widget || {};
   const q = [];
-  const ch = currentChannel || store?.state?.config?.channel;
+  const ch = currentChannel || store?.state?.config?.channel || (typeof localStorage !== 'undefined' ? (localStorage.getItem('alive.channel') || localStorage.getItem('alive.tokenLogin') || '') : '');
   if (ch) q.push('channel=' + encodeURIComponent(ch));
   if (w.playAudio === 0) q.push('audio=0');
   if (w.layout) q.push('layout=' + encodeURIComponent(w.layout));
@@ -596,7 +596,8 @@ async function checkAuthCallback() {
   if (error) {
     console.warn('[alive] Twitch OAuth erro:', error, query.get('error_description') || hash.get('error_description'));
     if (error === 'redirect_mismatch') {
-      toast('Redirect URI não bate com a Twitch. Cadastre https://btwitch.vercel.app/oauth.html no console.', 6000);
+      const curOrigin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin.replace(/\/$/, '') : 'https://btwitch.vercel.app';
+      toast(`Redirect URI não bate com a Twitch. Cadastre ${curOrigin}/oauth.html no console.`, 6000);
     } else {
       toast(`Erro Twitch: ${error}`, 4000);
     }
