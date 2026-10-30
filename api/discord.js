@@ -60,6 +60,7 @@ export default async function handler(req, res) {
     const state = await loadState(channel);
     const discordCfg = state.config?.discord || {
       enabled: true,
+      guildId: '',
       webhookUrl: '',
       channelName: 'lives',
       mention: 'everyone',
