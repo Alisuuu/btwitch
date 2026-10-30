@@ -1,5 +1,7 @@
 function widgetUrl() {
-  const origin = location.origin || 'http://localhost';
+  const origin = (typeof window !== 'undefined' && window.location && window.location.origin)
+    ? window.location.origin.replace(/\/$/, '')
+    : 'http://localhost';
   const w = store?.state?.config?.widget || {};
   const q = [];
   const ch = currentChannel || store?.state?.config?.channel;
