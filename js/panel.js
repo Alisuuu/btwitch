@@ -483,6 +483,17 @@ async function checkServerBot() {
   }
 }
 
+// Quando o bot do servidor (Node) está conectado no canal, ele é quem executa os
+// comandos do chat. Sem isso, painel e backend rodavam dois runners ao mesmo tempo:
+// !play duplicado, respostas em dobro e cooldown contornado.
+function serverBotHandlesCommands() {
+  const s = serverBotState;
+  if (!s || !s.connected || s.readOnly) return false;
+  const chans = Array.isArray(s.channels) ? s.channels : [];
+  if (!chans.length) return true; // backend ativo mas sem lista de canais: assume ele
+  return !currentChannel || chans.includes(currentChannel);
+}
+
 async function toggleServerBot() {
   const btn = $('#btnServerBotToggle');
   btn.disabled = true;
@@ -743,9 +754,11 @@ async function resolveBotNick(token, clientId, useCache = true) {
   return '';
 }
 
+// Credencial do bot: NUNCA hardcoded no navegador. O painel usa o token do próprio
+// streamer (localStorage, OAuth) ou cai em modo leitura (justinfan); o bot do servidor
+// responde com o token configurado em TWITCH_BOT_TOKEN (env) ou repassado via /api/bot.
 const OFFICIAL_BOT_NICK = 'alivebot1';
-const OFFICIAL_BOT_TOKEN = 'te78do9otbn9t5ia4lxzr3div72dvg';
-const OFFICIAL_CLIENT_ID = '04ajnvlju5loqchkmzfl7v622veib6';
+const OFFICIAL_CLIENT_ID = '04ajnvlju5loqchkmzfl7v622veib6'; // client id público do app OAuth (não é segredo)
 
 async function loginWithToken(rawToken) {
   const token = (rawToken || '').replace(/^oauth:/i, '').trim();
@@ -828,8 +841,8 @@ async function connect() {
   if (connectingLock) return;
   connectingLock = true;
   try {
-    // Usa as credenciais oficiais da conta @alivebot1 por padrão para responder em qualquer canal
-    const token = (localStorage.getItem(LS_TOKEN) || store.state.config.botToken || OFFICIAL_BOT_TOKEN).trim();
+    // Token do próprio usuário; sem token, o TwitchIRC entra em modo leitura (justinfan).
+    const token = (localStorage.getItem(LS_TOKEN) || store.state.config.botToken || '').trim();
     const clientId = (localStorage.getItem(LS_CLIENT) || OFFICIAL_CLIENT_ID).trim();
 
     let channel = (
@@ -847,7 +860,7 @@ async function connect() {
     }
 
     let nick = OFFICIAL_BOT_NICK;
-    if (token && token !== OFFICIAL_BOT_TOKEN) {
+    if (token) {
       const realOwner = await resolveBotNick(token, clientId, true);
       if (realOwner) nick = realOwner;
     }
@@ -917,7 +930,8 @@ async function connect() {
       if (!msg.isEcho) {
         chatMessagesCount++;
       }
-      if (!msg.isEcho && runner) {
+      if (!msg.isEcho && runner && !serverBotHandlesCommands()) {
+        // Bot do servidor ativo no canal? Ele responde; aqui só exibimos o chat.
         runnerBusy = true;
         Promise.resolve()
           .then(() => runner(msg))
@@ -1980,7 +1994,7 @@ function syncConfigForm(s) {
     if ($('#cfgSecret')) $('#cfgSecret').value = localStorage.getItem(LS_SECRET) || '';
   } catch { /* storage indisponível */ }
 
-  if ($('#cfgEveryone')) $('#cfgEveryone').checked = !!c.allowEveryonePlay;
+  if ($('#cfgEveryone')) $('#cfgEveryone').checked = (c.cmdPermissions?.play || (c.allowEveryonePlay ? 'all' : 'mod')) === 'all';
   if ($('#cfgAnnounceNow')) $('#cfgAnnounceNow').checked = !!c.announceNow;
   if ($('#cfgAnnounceQueue')) $('#cfgAnnounceQueue').checked = !!c.announceQueue;
   if ($('#cfgAutoSkip')) $('#cfgAutoSkip').checked = !!c.autoSkipError;
@@ -2029,7 +2043,13 @@ function saveConfig() {
   store.update((s) => {
     if (newChan) s.config.channel = newChan;
     if ($('#cfgNick')) s.config.botNick = $('#cfgNick').value.trim().toLowerCase();
-    if ($('#cfgEveryone')) s.config.allowEveryonePlay = $('#cfgEveryone').checked;
+    if ($('#cfgEveryone')) {
+      s.config.allowEveryonePlay = $('#cfgEveryone').checked;
+      // cmdPermissions.play é o que o runner realmente lê — mantém os dois em sincronia
+      // (senão o toggle não fazia efeito algum).
+      if (!s.config.cmdPermissions) s.config.cmdPermissions = {};
+      s.config.cmdPermissions.play = $('#cfgEveryone').checked ? 'all' : 'mod';
+    }
     if ($('#cfgAnnounceNow')) s.config.announceNow = $('#cfgAnnounceNow').checked;
     if ($('#cfgAnnounceQueue')) s.config.announceQueue = $('#cfgAnnounceQueue').checked;
     if ($('#cfgAutoSkip')) s.config.autoSkipError = $('#cfgAutoSkip').checked;
@@ -2234,7 +2254,7 @@ store.subscribe((s) => {
     prevNowId = id;
     return;
   }
-  if (runnerBusy) { prevNowId = id; return; }
+  if (runnerBusy || serverBotHandlesCommands()) { prevNowId = id; return; } // bot do servidor anuncia os comandos
   if (id && id !== prevNowId && s.config.announceNow) {
     send(`Tocando agora: ${short(s.now.title, 70)} — pedido por ${s.now.requestedBy}`);
   }

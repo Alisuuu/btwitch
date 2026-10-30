@@ -6,13 +6,13 @@
   "description": "Alive Bot — bot de Twitch com fila de músicas do YouTube e widget para OBS",
   "scripts": {
     "dev": "node server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node smoke.test.mjs && node sync.test.mjs"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
-    "@distube/ytdl-core": "^5.0.1",
     "ws": "^8.22.0"
   }
 }

@@ -16,7 +16,13 @@ export default async function handler(req, res) {
     // Link de vídeo (mesmo que tenha playlist junto) vira 1 música.
     if (videoId) {
       const item = await videoMeta(videoId);
-      return res.status(200).json({ type: 'video', item, items: [item] });
+      if (item) return res.status(200).json({ type: 'video', item, items: [item] });
+      // Vídeo indisponível (apagado/privado): tenta playlist junto antes de desistir.
+      if (listId) {
+        const items = await playlistVideos(listId, max);
+        if (items.length) return res.status(200).json({ type: 'playlist', items });
+      }
+      return res.status(200).json({ type: 'video', items: [], error: 'Vídeo indisponível ou privado' });
     }
 
     // Playlist -> várias músicas.

@@ -133,6 +133,7 @@ function cleanItem(it) {
     requestedAt: Number(it.requestedAt) || Date.now(),
     startedAt: Number(it.startedAt) || 0,
     position: Math.max(0, Number(it.position) || 0),
+    positionAt: Math.max(0, Number(it.positionAt) || Number(it.startedAt) || 0),
     paused: !!it.paused,
   };
 }
@@ -250,7 +251,7 @@ export function advanceQueue(s) {
   s.skip = null;
   const next = s.queue.shift() || null;
   s.now = next
-    ? { ...next, startedAt: Date.now(), position: 0, paused: false }
+    ? { ...next, startedAt: Date.now(), position: 0, positionAt: Date.now(), paused: false }
     : null;
   return s.now;
 }

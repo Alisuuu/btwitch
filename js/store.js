@@ -105,16 +105,24 @@ export class Store {
 
   _adopt(st) {
     if (!st || typeof st !== 'object') return;
+    // Nunca regredir para um estado mais velho que o atual: rev menor é sempre descartado.
+    // Com rev igual, aceita apenas deltas reais de reprodução (posição, pausa, música, fila, volume).
+    const sameRev = st.rev === this.state.rev;
     const newer = st.rev > this.state.rev ||
-      (st.rev === this.state.rev && (st.updatedAt || 0) > (this.state.updatedAt || 0)) ||
-      (!this.state.now && !!st.now) ||
-      (!!this.state.now && !st.now) ||
-      (st.now && this.state.now && st.now.id !== this.state.now.id) ||
-      ((st.queue || []).length !== (this.state.queue || []).length) ||
-      (Boolean(st.now?.paused) !== Boolean(this.state.now?.paused)) ||
-      (Number(st.volume) !== Number(this.state.volume));
+      (sameRev && (
+        (st.updatedAt || 0) > (this.state.updatedAt || 0) ||
+        (st.now?.id ?? null) !== (this.state.now?.id ?? null) ||
+        Math.abs((st.now?.position || 0) - (this.state.now?.position || 0)) > 2 ||
+        Boolean(st.now?.paused) !== Boolean(this.state.now?.paused) ||
+        (st.queue || []).length !== (this.state.queue || []).length ||
+        Number(st.volume) !== Number(this.state.volume)
+      ));
     if (!newer) return;
+    // A chave da IA não trafega nem é guardada pelo servidor (stripSecrets em /api/state):
+    // preserva a local do navegador ao adotar estado vindo de lá.
+    const localAiKey = this.state.config?.ai?.apiKey || '';
     this.state = sanitize(st);
+    if (localAiKey && !this.state.config.ai.apiKey) this.state.config.ai.apiKey = localAiKey;
     this._saveLocal();
     this.emit();
   }
@@ -208,10 +216,8 @@ export class Store {
       try {
         const t = localStorage.getItem(this.lsKey);
         if (t) {
-          const st = sanitize(JSON.parse(t));
-          if (st.rev > this.state.rev || (!this.state.now && !!st.now) || (st.now && this.state.now && st.now.id !== this.state.now.id)) {
-            this._adopt(st);
-          }
+          // _adopt já decide se vale a pena adotar (descarta revs mais antigos).
+          this._adopt(sanitize(JSON.parse(t)));
         }
       } catch { /* ignora */ }
     }, 1500);
