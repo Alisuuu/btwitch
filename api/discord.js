@@ -10,6 +10,12 @@ export const DISCORD_BOT_INFO = {
   inviteUrl: 'https://discord.com/oauth2/authorize?client_id=1563908440638759004&permissions=8&scope=bot%20applications.commands',
 };
 
+function resolveDiscordTarget(discordCfg = {}) {
+  const raw = String(discordCfg?.webhookUrl || discordCfg?.channelId || discordCfg?.target || '').trim();
+  if (raw) return raw;
+  return '';
+}
+
 function notifyRenderDaemon(channel) {
   if (!channel) return;
   try {
@@ -61,6 +67,7 @@ export default async function handler(req, res) {
     const discordCfg = state.config?.discord || {
       enabled: true,
       guildId: '',
+      channelId: '',
       webhookUrl: '',
       channelName: 'lives',
       mention: 'everyone',
@@ -105,6 +112,7 @@ export default async function handler(req, res) {
         ...currentDiscord,
         enabled: incoming.enabled !== undefined ? Boolean(incoming.enabled) : (currentDiscord.enabled !== false),
         guildId: String(incoming.guildId !== undefined ? incoming.guildId : (currentDiscord.guildId || '')).trim(),
+        channelId: String(incoming.channelId !== undefined ? incoming.channelId : (currentDiscord.channelId || '')).trim(),
         channelName: String(incoming.channelName || currentDiscord.channelName || 'lives').trim(),
         webhookUrl: String(incoming.webhookUrl !== undefined ? incoming.webhookUrl : (currentDiscord.webhookUrl || '')).trim(),
         mention: String(incoming.mention || currentDiscord.mention || 'everyone').trim(),
@@ -115,6 +123,10 @@ export default async function handler(req, res) {
         embedDesc: String(incoming.embedDesc || currentDiscord.embedDesc || 'Transmissão iniciada. Venha interagir no chat e pedir músicas.').trim(),
         includeThumbnail: incoming.includeThumbnail !== false,
       };
+
+      if (!updatedDiscord.webhookUrl && updatedDiscord.channelId && /^\d{17,21}$/.test(updatedDiscord.channelId)) {
+        updatedDiscord.webhookUrl = updatedDiscord.channelId;
+      }
 
       if (!state.config) state.config = {};
       state.config.discord = updatedDiscord;
@@ -127,10 +139,10 @@ export default async function handler(req, res) {
 
     if (action === 'test') {
       const incoming = body.config || state.config?.discord || {};
-      const webhookUrl = String(incoming.webhookUrl || '').trim();
+      const target = resolveDiscordTarget(incoming);
 
-      if (!webhookUrl) {
-        return res.status(400).json({ error: 'Insira a URL do Webhook do Discord para testar.' });
+      if (!target) {
+        return res.status(400).json({ error: 'Insira a URL do Webhook do Discord ou o ID do canal antes de testar.' });
       }
 
       const stream = await getTwitchStream(channel);
@@ -148,7 +160,7 @@ export default async function handler(req, res) {
       const payload = buildDiscordPayload({ ...incoming, channel }, mockStream, user || {});
 
       try {
-        await sendDiscordWebhook(webhookUrl, payload);
+        await sendDiscordWebhook(target, payload);
         return res.status(200).json({ ok: true, message: 'Notificação de teste enviada com sucesso ao Discord!' });
       } catch (err) {
         return res.status(400).json({ ok: false, error: err.message });
@@ -157,8 +169,9 @@ export default async function handler(req, res) {
 
     if (action === 'check') {
       const discordCfg = state.config?.discord;
-      if (!discordCfg || !discordCfg.enabled || !discordCfg.webhookUrl) {
-        return res.status(200).json({ live: false, notified: false, reason: 'Notificações desativadas ou sem webhook' });
+      const target = resolveDiscordTarget(discordCfg || {});
+      if (!discordCfg || !discordCfg.enabled || !target) {
+        return res.status(200).json({ live: false, notified: false, reason: 'Notificações desativadas ou sem destino do Discord' });
       }
 
       const stream = await getTwitchStream(channel);
@@ -178,7 +191,7 @@ export default async function handler(req, res) {
 
       const payload = buildDiscordPayload({ ...discordCfg, channel }, stream, user || {});
       try {
-        await sendDiscordWebhook(discordCfg.webhookUrl, payload);
+        await sendDiscordWebhook(target, payload);
         discordCfg.lastStreamId = stream.id;
         discordCfg.lastNotifiedAt = Date.now();
         await saveState(state, channel);
