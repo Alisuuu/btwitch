@@ -601,7 +601,7 @@ async function checkAuthCallback() {
   if (error) {
     console.warn('[alive] Twitch OAuth erro:', error, query.get('error_description') || hash.get('error_description'));
     if (error === 'redirect_mismatch') {
-      const curOrigin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin.replace(/\/$/, '') : 'https://btwitch.vercel.app';
+      const curOrigin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin.replace(/\/$/, '') : 'https://alive-bot-j126.onrender.com';
       toast(`Redirect URI não bate com a Twitch. Cadastre ${curOrigin}/oauth.html no console.`, 6000);
     } else {
       toast(`Erro Twitch: ${error}`, 4000);

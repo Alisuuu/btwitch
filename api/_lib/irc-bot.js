@@ -89,6 +89,7 @@ export class TwitchBotService extends EventEmitter {
     };
   }
 
+  // Compatibilidade com APIs
   get channel() {
     return this.channels.values().next().value || '';
   }
@@ -110,6 +111,7 @@ export class TwitchBotService extends EventEmitter {
   }
 
   async discoverChannels() {
+    // 1. Descobre todos os canais cadastrados na pasta data/channels/ ou tmpdir
     try {
       const dirs = [path.join(process.cwd(), 'data', 'channels')];
       const tmpDir = path.join(process.env.TMPDIR || '/tmp', 'alive-data', 'channels');
@@ -128,6 +130,7 @@ export class TwitchBotService extends EventEmitter {
       }
     } catch {}
 
+    // 2. Descobre canais sincronizados na nuvem via KVDB (para multi-tenant sem depender de arquivo local)
     try {
       const r = await fetch('https://kvdb.io/WFmviqxrR53HQjSYwnTmAQ/?prefix=state_', {
         signal: AbortSignal.timeout(8000),
@@ -156,8 +159,10 @@ export class TwitchBotService extends EventEmitter {
     this.token = String(config.token || process.env.TWITCH_BOT_TOKEN || BOT_DEFAULTS.token).replace(/^oauth:/i, '').trim();
     this.readOnly = !this.token;
 
+    // 1. Descobre todos os canais conhecidos
     await this.discoverChannels();
 
+    // 2. Canais em variáveis de ambiente
     const envChs = (process.env.TWITCH_CHANNELS || process.env.TWITCH_CHANNEL || '').split(',').map((c) => c.replace(/^#/, '').trim().toLowerCase()).filter(Boolean);
     for (const c of envChs) {
       if (c) this.channels.add(c);
@@ -167,6 +172,7 @@ export class TwitchBotService extends EventEmitter {
       this.channels.add(String(config.channel).replace(/^#/, '').trim().toLowerCase());
     }
 
+    // Inicia o bot
     this.start();
     return this.getStatus();
   }
@@ -199,14 +205,13 @@ export class TwitchBotService extends EventEmitter {
   _startDiscordNotifier() {
     this._stopDiscordNotifier();
     this._discordTimer = setInterval(async () => {
-      if (!this.running || !this.connected) return;
+      if (!this.running) return;
       await this.discoverChannels();
       for (const ch of this.channels) {
         try {
           const s = await loadState(ch);
           const d = s.config?.discord;
-          const target = d?.webhookUrl || d?.channelId || '';
-          if (d && d.enabled && target) {
+          if (d && d.enabled && d.webhookUrl) {
             const stream = await getTwitchStream(ch);
             if (!stream) {
               if (d.lastStreamId) {
@@ -218,7 +223,7 @@ export class TwitchBotService extends EventEmitter {
             if (d.lastStreamId !== stream.id) {
               const user = await getTwitchUser(ch);
               const payload = buildDiscordPayload({ ...d, channel: ch }, stream, user || {});
-              await sendDiscordWebhook(target, payload);
+              await sendDiscordWebhook(d.webhookUrl, payload);
               d.lastStreamId = stream.id;
               d.lastNotifiedAt = Date.now();
               await saveState(s, ch);
@@ -415,6 +420,7 @@ export class TwitchBotService extends EventEmitter {
       this.connected = true;
       this._startHeartbeat();
 
+      // Entra em todos os canais registrados
       for (const ch of this.channels) {
         try { this.socket?.write(`JOIN #${ch}\r\n`); } catch {}
       }
@@ -560,4 +566,5 @@ export class TwitchBotService extends EventEmitter {
   }
 }
 
+// Instância global única para o servidor Node
 export const botService = (globalThis.__aliveBotService = globalThis.__aliveBotService || new TwitchBotService());

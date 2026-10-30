@@ -2,6 +2,8 @@
 const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID || 'gp762nuuoqcoxypju8c569th9wz7q5';
 const TWITCH_TOKEN = (process.env.TWITCH_BOT_TOKEN || 'te78do9otbn9t5ia4lxzr3div72dvg').replace(/^oauth:/i, '').trim();
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
+const APP_BASE_URL = (process.env.APP_URL || process.env.RENDER_EXTERNAL_URL || 'https://alive-bot-j126.onrender.com').replace(/\/+$/, '');
+const DEFAULT_BOT_ICON = `${APP_BASE_URL}/img/ic_splash_logo.webp`;
 
 let cachedClientId = null;
 async function getHelixHeaders() {
@@ -122,7 +124,7 @@ export function buildDiscordPayload(cfg, streamInfo = {}, userInfo = {}) {
 
   const thumbTemplate = streamInfo.thumbnail_url || `https://static-cdn.jtvnw.net/previews-ttv/live_user_${login}-{width}x{height}.jpg`;
   const previewImg = thumbTemplate.replace('{width}', '1280').replace('{height}', '720') + `?t=${Date.now()}`;
-  const avatarUrl = userInfo.profile_image_url || 'https://btwitch.vercel.app/img/ic_splash_logo.webp';
+  const avatarUrl = userInfo.profile_image_url || DEFAULT_BOT_ICON;
 
   const embed = {
     title: (cfg.embedTitle || '▸ {title}')
@@ -147,7 +149,7 @@ export function buildDiscordPayload(cfg, streamInfo = {}, userInfo = {}) {
     ],
     footer: {
       text: 'Alive Bot • Notificação de Live',
-      icon_url: 'https://btwitch.vercel.app/img/ic_splash_logo.webp',
+      icon_url: DEFAULT_BOT_ICON,
     },
     timestamp: nowTs,
   };
@@ -177,7 +179,7 @@ export function buildDiscordPayload(cfg, streamInfo = {}, userInfo = {}) {
   return {
     content,
     username: 'Alive Bot',
-    avatar_url: 'https://btwitch.vercel.app/img/ic_splash_logo.webp',
+    avatar_url: DEFAULT_BOT_ICON,
     embeds: [embed],
     components,
   };
