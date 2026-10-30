@@ -186,18 +186,6 @@ export function fillVars(text, msgOrUser, s) {
     .replaceAll('{tocadas}', String(s.stats.played || 0));
 }
 
-// Posição "ao vivo": position é a última captura do player e positionAt o instante
-// dessa captura — estimamos o restante para o !atual não responder 0:00.
-function livePosition(now) {
-  const p = Number(now.position) || 0;
-  const at = Number(now.positionAt) || 0;
-  if (!now.paused && at && at <= Date.now()) {
-    const est = p + (Date.now() - at) / 1000;
-    return now.duration ? Math.min(est, Number(now.duration)) : est;
-  }
-  return p;
-}
-
 export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchAi }) {
   const lastAny = new Map();   // userId -> ts (cooldown global)
   const lastKey = new Map();   // userId:cmd -> ts (cooldown por comando/usuário)
@@ -250,12 +238,8 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     if (isUrl(q)) {
       const r = await resolveUrl(q);
       if (r.type === 'video' && r.item) return { single: r.item, playlist: null };
-      if (r.type === 'playlist') {
-        const list = (r.items || []).filter(Boolean);
-        if (list.length) return { single: null, playlist: list };
-      }
-      const first = (r.items || []).find(Boolean);
-      if (first) return { single: first, playlist: null };
+      if (r.type === 'playlist') return { single: null, playlist: r.items };
+      if (r.items && r.items.length) return { single: r.items[0], playlist: null };
       return null;
     }
     const items = await cachedSearch(q);
@@ -297,12 +281,13 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     if (res.playlist && !res.single) {
       const items = res.playlist.slice(0, cfg.maxPlaylist);
       let added = 0;
+      let first = null;
       store.update((st) => {
         for (const it of items) {
           if (st.queue.length >= st.config.maxQueue) break;
           if (st.now?.id === it.id || st.queue.some((x) => x.id === it.id)) continue;
           const entry = { ...it, requestedBy: msg.displayName, requestedAt: Date.now(), position: 0, paused: false };
-          if (!st.now) { st.now = { ...entry, startedAt: Date.now() }; }
+          if (!st.now) { st.now = { ...entry, startedAt: Date.now() }; first = first || entry; }
           else st.queue.push(entry);
           st.stats.requested++;
           added++;
@@ -384,7 +369,7 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
   async function cmdNp(args, msg) {
     const s = store.state;
     if (!s.now) return send('Nada tocando. Use !play para pedir uma música!');
-    const pos = fmtTime(livePosition(s.now));
+    const pos = fmtTime(s.now.position || 0);
     const dur = s.now.duration ? ' / ' + fmtTime(s.now.duration) : '';
     const status = s.now.paused ? ' (pausado)' : '';
     return send(`Tocando: ${short(s.now.title, 70)} — ${pos}${dur} — pedido por ${s.now.requestedBy}${status}`);
@@ -426,9 +411,8 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
   }
 
   async function cmdRemove(args, msg) {
-    const s = store.state;
-    if (!s.queue.length) return send('Fila vazia, nada para remover. Use !fila para conferir.');
     const n = Math.round(Number(args[0]));
+    const s = store.state;
     if (!Number.isFinite(n) || n < 1 || n > s.queue.length) {
       return send(`Use !remover <posição> (1-${s.queue.length}). Fila: !fila`);
     }

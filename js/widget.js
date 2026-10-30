@@ -255,16 +255,12 @@ function loadCurrent(s) {
   }
   if (curId === now.id) return;
 
-  // Player ainda não pronto: NÃO marca como carregado — o onReady chama loadCurrent de novo
-  // e carrega a música (antes, curId era setado aqui e a primeira música nunca tocava).
-  if (!ytReady || !player) return;
-
   curId = now.id;
   wasPaused = !!now.paused;
   durationShown = now.duration || 0;
-  startChecked = false;   // nova música = nova chance de autoplay
-  autoplayTries = 0;
   const start = Math.max(0, Math.round(now.position || 0));
+
+  if (!ytReady || !player) return;
 
   const cleanId = String(now.id || '').trim();
   const safeStart = Number.isFinite(Number(start)) ? Math.max(0, Math.floor(Number(start))) : 0;
@@ -413,23 +409,13 @@ function onError(ev) {
   store.update((st) => pushLog(st, 'error', `Vídeo (${desc}): ${st.now?.title || ''}`));
 }
 
-let autoplayTimer = null;
-let autoplayTries = 0;
-
-// Tenta dar play com backoff (1s/3s/8s). Navegador pode bloquear a primeira tentativa;
-// antes só tentávamos uma vez e o widget ficava "TOCANDO AGORA" sem som para sempre.
 function checkAutoplay() {
-  if (startChecked || autoplayTimer || !ytReady || !player || !store.state.now) return;
+  if (startChecked || !ytReady || !player || !store.state.now) return;
   if (store.state.now.paused) return;
-  const delays = [1000, 3000, 8000];
-  if (autoplayTries >= delays.length) return;
-  const wait = delays[autoplayTries++];
-  autoplayTimer = setTimeout(() => {
-    autoplayTimer = null;
+  setTimeout(() => {
     if (startChecked || !store.state.now || store.state.now.paused) return;
     try { player.playVideo?.(); } catch { /* ignora */ }
-    checkAutoplay(); // agenda a próxima tentativa se ainda assim não começou
-  }, wait);
+  }, 1000);
 }
 
 const YT_STATE = { ENDED: 0, PLAYING: 1, PAUSED: 2, BUFFERING: 3, CUED: 5, UNSTARTED: -1 };
@@ -480,14 +466,9 @@ function writePosition(force = false) {
   if (!force && (now - lastPosWrite < 20000 || Math.abs((s.now.position || 0) - cur) < 4)) return;
 
   lastPosWrite = now;
-  // remote: sincroniza com o servidor (o merge em /api/state garante que escritas
-  // periódicas de posição não apaguem pedidos novos) — assim o !atual do chat mostra a hora real.
   store.update((st) => {
-    if (st.now && st.now.id === curId) {
-      st.now.position = cur;
-      st.now.positionAt = Date.now();
-    }
-  }, { remote: true });
+    if (st.now && st.now.id === curId) st.now.position = cur;
+  }, { remote: force });
 }
 
 function tick() {

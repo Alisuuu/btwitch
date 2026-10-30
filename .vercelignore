@@ -5,7 +5,5 @@ README.md
 text.txt
 server.js
 smoke.test.mjs
-sync.test.mjs
-e2e.check.mjs
 .git/
 .gitignore

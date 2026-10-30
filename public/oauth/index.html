@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Alive Bot — Autorização</title>
+<link rel="icon" type="image/webp" href="/img/ic_splash_logo.webp">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:#09090b; color:#fafafa;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding:20px;
+  }
+  .card {
+    max-width:480px; width:100%; padding:36px; border-radius:14px;
+    background:#121215; border:1px solid #27272a;
+    box-shadow:0 20px 50px rgba(0,0,0,.6); text-align:center;
+  }
+  .logo {
+    width:52px; height:52px; margin:0 auto 16px;
+    border-radius:10px; border:1px solid #3f3f46;
+    background:#18181b; display:flex; align-items:center; justify-content:center;
+    color:#fff;
+  }
+  h1 { font-size:18px; font-weight:700; color:#fff; margin-bottom:8px; }
+  p { color:#a1a1aa; font-size:13px; line-height:1.6; }
+  a.btn {
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    margin-top:20px; padding:10px 20px; border-radius:6px;
+    background:#fff; color:#000; font-weight:700; font-size:13px;
+    text-decoration:none; transition:background .15s ease;
+  }
+  a.btn:hover { background:#e4e4e7; }
+  code { background:#1e1e24; border:1px solid #27272a; color:#e4e4e7; padding:2px 6px; border-radius:4px; font-size:12px; font-family:ui-monospace,Menlo,monospace; }
+  .mono { font-size:11.5px; word-break:break-all; color:#71717a; margin-top:14px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <img src="/img/ic_splash_logo.webp" alt="Alive Bot" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+    </div>
+    <h1 id="title">Processando autorização...</h1>
+    <p id="msg">Aguarde um instante.</p>
+    <a class="btn" href="/">Voltar ao painel</a>
+    <div class="mono" id="detail"></div>
+  </div>
+
+  <script type="module">
+    const LS_TOKEN = 'alive.token';
+    const LS_LOGIN = 'alive.tokenLogin';
+    const LS_USER = 'alive.user';
+    const LS_CHANNEL = 'alive.channel';
+    const title = document.getElementById('title');
+    const msg = document.getElementById('msg');
+    const detail = document.getElementById('detail');
+
+    const hash = new URLSearchParams(location.hash.replace(/^#/, ''));
+    const query = new URLSearchParams(location.search);
+    const token = (hash.get('access_token') || query.get('access_token') || '').replace(/^oauth:/i, '').trim();
+    const scope = hash.get('scope') || query.get('scope') || '';
+    const error = hash.get('error') || query.get('error');
+    const errorDesc = hash.get('error_description') || query.get('error_description') || '';
+
+    async function processAuth() {
+      if (!token) {
+        if (error) {
+          title.textContent = 'Autorização cancelada ou recusada';
+          msg.innerHTML = `Retorno da Twitch: <code>${error}</code><br><br>
+            <b>Importante:</b> Na aba do seu App em <b>dev.twitch.tv/console</b>, certifique-se de cadastrar exatamente:<br>
+            <code>${location.origin}/oauth.html</code>`;
+          detail.textContent = errorDesc;
+        } else {
+          title.textContent = 'Nenhum token detectado';
+          msg.innerHTML = `Verifique se o link foi chamado corretamente.<br>
+            Redirect URL esperada: <code>${location.origin}/oauth.html</code>`;
+        }
+        return;
+      }
+
+      title.textContent = 'Identificando sua conta Twitch...';
+      msg.textContent = 'Consultando perfil na Twitch...';
+
+      try {
+        localStorage.setItem(LS_TOKEN, token);
+        localStorage.removeItem('alive.authErr');
+        localStorage.removeItem(LS_LOGIN);
+        localStorage.removeItem(LS_USER);
+        localStorage.removeItem(LS_CHANNEL);
+
+        // 1. Valida direto com a Twitch (https://id.twitch.tv/oauth2/validate) — instantâneo no navegador
+        let u = null;
+        try {
+          const vRes = await fetch('https://id.twitch.tv/oauth2/validate', {
+            headers: { Authorization: `OAuth ${token}` }
+          });
+          if (vRes.ok) {
+            const val = await vRes.json();
+            if (val && val.login) {
+              const login = String(val.login).toLowerCase();
+              u = { login, display_name: val.login, id: val.user_id };
+            }
+          }
+        } catch (e) {
+          console.warn('validate direto:', e);
+        }
+
+        // 2. Fallback via backend /api/twitch
+        if (!u || !u.login) {
+          try {
+            const res = await fetch('/api/twitch', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token, clientId: '04ajnvlju5loqchkmzfl7v622veib6' })
+            });
+            if (res.ok) u = await res.json();
+          } catch (e) {
+            console.warn('api/twitch:', e);
+          }
+        }
+
+        if (u && u.login) {
+          const login = String(u.login).toLowerCase();
+          localStorage.setItem(LS_LOGIN, login);
+          localStorage.setItem(LS_CHANNEL, login);
+          localStorage.setItem(LS_USER, JSON.stringify(u));
+
+          // Avisa o backend do bot para autenticar imediatamente
+          fetch('/api/bot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'start', channel: login, nick: login, token })
+          }).catch(() => {});
+
+          title.textContent = `Bem-vindo, @${u.display_name || login}!`;
+          msg.innerHTML = `Sua conta Twitch foi conectada com sucesso.<br>
+            Seu canal de bot exclusivo é: <code>#${login}</code><br><br>
+            Entrando no estúdio...`;
+          setTimeout(() => {
+            location.replace('/?channel=' + encodeURIComponent(login));
+          }, 800);
+          return;
+        }
+
+        // Se chegou aqui, o token foi entregue mas a Twitch não validou
+        title.textContent = 'Não foi possível identificar seu canal';
+        msg.innerHTML = `A Twitch retornou o token, mas a validação falhou.<br>
+          Clique no botão abaixo para tentar logar novamente.`;
+        return;
+      } catch (err) {
+        console.warn('Erro identificando usuário:', err);
+        title.textContent = 'Erro ao processar login';
+        msg.innerHTML = `Ocorreu um erro: <code>${err.message}</code><br>Tente novamente.`;
+        return;
+      }
+    }
+
+    processAuth();
+  </script>
+</body>
+</html>

@@ -30,17 +30,8 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Canal não informado.' });
       }
 
-      const nick = String(body.nick || '').trim().toLowerCase();
-      const token = String(body.token || '').replace(/^oauth:/i, '').trim();
-
-      console.log(`[alive api/bot] @${nick || botService.nick} entrando no canal: #${channel}`);
-
-      // Bot parado e recebendo credenciais (conta do próprio streamer): inicializa com elas.
-      if (!botService.running && token) {
-        await botService.init({ nick, token, channel });
-      } else {
-        botService.joinChannel(channel);
-      }
+      console.log(`[alive api/bot] @alivebot1 entrando no canal: #${channel}`);
+      botService.joinChannel(channel);
 
       if (process.env.VERCEL) {
         fetch('https://alive-bot-j126.onrender.com/api/bot', {
