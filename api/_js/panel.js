@@ -56,6 +56,7 @@ let lastServerChatTime = 0;
 let panelPlayer = null;
 let ytApiReady = false;
 let curPlayingId = null;
+let curPlayingStartedAt = 0;
 let userInteracted = false;
 let webAudioMuted = localStorage.getItem('alive.webMuted') === '1';
 let retryingPanelAlt = false;
@@ -231,6 +232,7 @@ async function syncPanelPlayer(s) {
   if (!now || !now.id) {
     if (curPlayingId) {
       curPlayingId = null;
+      curPlayingStartedAt = 0;
       try { panelPlayer?.stopVideo?.(); } catch { /* */ }
     }
     return;
@@ -238,9 +240,11 @@ async function syncPanelPlayer(s) {
 
   const vol = Number(s.volume ?? 70);
   const start = Math.max(0, Math.round(now.position || 0));
+  const nowStartedAt = now.startedAt || 0;
 
-  if (curPlayingId !== now.id) {
+  if (curPlayingId !== now.id || curPlayingStartedAt !== nowStartedAt) {
     curPlayingId = now.id;
+    curPlayingStartedAt = nowStartedAt;
     if (!ytApiReady || !panelPlayer) return;
 
     try {

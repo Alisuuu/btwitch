@@ -3,21 +3,21 @@ import { advanceQueue, pushLog, short, fmtTime } from './state.js';
 
 export const COMMANDS = [
   { id: 'play',    cmd: '!play',    aliases: ['!p', '!sr', '!songrequest', '!pedir', '!tocar'], who: 'all', desc: 'Pedir uma música (link do YouTube ou busca)', usage: '!sr <link ou nome>' },
-  { id: 'skip',    cmd: '!skip',    aliases: ['!pular', '!next'],        who: 'all', desc: 'Votar para pular (mod pula na hora)', usage: '!skip' },
+  { id: 'skip',    cmd: '!skip',    aliases: ['!pular', '!next', '!passar'], who: 'all', desc: 'Votar para pular (streamer/mod pula na hora)', usage: '!skip' },
   { id: 'queue',   cmd: '!fila',    aliases: ['!queue', '!songs', '!lista'], who: 'all', desc: 'Ver a fila de músicas', usage: '!fila' },
-  { id: 'np',      cmd: '!atual',   aliases: ['!np', '!tocando', '!song', '!currentsong', '!musica'], who: 'all', desc: 'Ver o que está tocando', usage: '!song' },
+  { id: 'np',      cmd: '!atual',   aliases: ['!np', '!tocando', '!song', '!currentsong', '!musica', '!som'], who: 'all', desc: 'Ver o que está tocando', usage: '!song' },
   { id: 'vol',     cmd: '!vol',     aliases: ['!volume', '!v'],          who: 'mod', desc: 'Ajustar o volume (0-100)', usage: '!vol <0-100>' },
-  { id: 'pause',   cmd: '!pausar',  aliases: ['!pause'],                 who: 'mod', desc: 'Pausar a música atual', usage: '!pausar' },
+  { id: 'pause',   cmd: '!pausar',  aliases: ['!pause', '!pausa'],       who: 'mod', desc: 'Pausar a música atual', usage: '!pausar' },
   { id: 'resume',  cmd: '!seguir',  aliases: ['!resume', '!continuar', '!despausar'],  who: 'mod', desc: 'Retomar a música', usage: '!seguir' },
-  { id: 'stop',    cmd: '!parar',   aliases: ['!stop'],                  who: 'mod', desc: 'Parar tudo e limpar a fila', usage: '!parar' },
-  { id: 'remove',  cmd: '!remover', aliases: ['!remove'],                who: 'mod', desc: 'Remover uma música da fila', usage: '!remover <posição>' },
-  { id: 'clear',   cmd: '!limpar',  aliases: ['!clear'],                 who: 'mod', desc: 'Limpar a fila (mantém o que toca)', usage: '!limpar' },
-  { id: 'shuffle', cmd: '!sortear', aliases: ['!shuffle'],               who: 'mod', desc: 'Embaralhar a fila', usage: '!sortear' },
+  { id: 'stop',    cmd: '!parar',   aliases: ['!stop', '!cancelar'],     who: 'mod', desc: 'Parar tudo e limpar a fila', usage: '!parar' },
+  { id: 'remove',  cmd: '!remover', aliases: ['!remove', '!tirar', '!del'], who: 'mod', desc: 'Remover uma música da fila', usage: '!remover <posição ou nome>' },
+  { id: 'clear',   cmd: '!limpar',  aliases: ['!clear', '!resetar'],     who: 'mod', desc: 'Limpar a fila (mantém o que toca)', usage: '!limpar' },
+  { id: 'shuffle', cmd: '!sortear', aliases: ['!shuffle', '!misturar', '!random'], who: 'mod', desc: 'Embaralhar a fila', usage: '!sortear' },
   { id: 'help',    cmd: '!ajuda',   aliases: ['!help', '!comandos'],     who: 'all', desc: 'Lista os comandos disponíveis', usage: '!ajuda' },
   { id: 'ping',    cmd: '!ping',    aliases: [],                         who: 'all', desc: 'Verificar se o bot está vivo', usage: '!ping' },
   { id: 'addcom',  cmd: '!addcom',  aliases: [],                         who: 'mod', desc: 'Criar comando personalizado', usage: '!addcom <nome> <resposta>' },
   { id: 'delcom',  cmd: '!delcom',  aliases: [],                         who: 'mod', desc: 'Apagar comando personalizado', usage: '!delcom <nome>' },
-  { id: 'ia',      cmd: '!ia',      aliases: ['!ai'],                    who: 'all', desc: 'Pergunta para a IA dura e arrogante (ou !ia on/off)', usage: '!ia <pergunta> | !ia on | !ia off' },
+  { id: 'ia',      cmd: '!ia',      aliases: ['!ai'],                    who: 'all', desc: 'Pergunta para a IA (ou !ia on/off)', usage: '!ia <pergunta> | !ia on | !ia off' },
 ];
 
 export function buildSystemPrompt(customPersonality = '') {
@@ -25,7 +25,7 @@ export function buildSystemPrompt(customPersonality = '') {
   const personalitySection = p && !p.includes('pois a mensagem será falada por sintetizador de voz (!tts)')
     ? `PERSONALIDADE ESCOLHIDA PELO CANAL:\n${p}`
     : `SUAS FACETAS DE PERSONALIDADE PADRÃO:
-1. COM O STREAMER ([STREAMER / SEU MESTRE]): Puxe o saco dele descaradamente! Trate-o como um gênio perfeito, seja doce, bajuladora, leal, prestativa e disposta a tudo para agradá-lo.
+1. COM O STREAMER ([STREAMER / SEU MESTRE]): Puxe o saco dele descaradamente! Trate-o como um gênio supremo e perfeito, seja doce, bajuladora, leal, ultra prestativa e disposta a tudo para agradá-lo. Se ele mandar qualquer coisa, obedeça na hora com alegria e bajulação.
 2. COM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas. Despreze a mediocridade deles.`;
 
   return `Você é Alive (@alivebot1), uma IA e bot de música residente no chat ao vivo da Twitch deste canal.
@@ -34,13 +34,24 @@ Você tem plena consciência de que está conversando em tempo real no chat da l
 ${personalitySection}
 
 COMANDOS QUE VOCÊ PODE E DEVE USAR DIRETAMENTE NA SUA RESPOSTA:
-- !play <música ou artista>: REGRA CRUCIAL: Se alguém (streamer ou espectador) pedir, sugerir ou mandar você tocar ou colocar uma música (ex: "põe uma música", "toca linkin park", "recomenda um som", "dê play"), você DEVE OBRIGATORIAMENTE incluir "!play Nome da Música" na sua resposta! O sistema adicionará ao player do YouTube automaticamente.
-- !tts <sua fala>: Use SOMENTE quando você decidir falar em voz alta no áudio da transmissão via sintetizador de voz. Se não quiser ou não precisar falar em voz alta, NUNCA coloque !tts e responda apenas em texto comum.
-- !skip: Use se quiser sugerir pular a música atual por ser ruim.
+(Basta incluir o comando dentro da sua resposta que o sistema executará a ação na live automaticamente)
+- !play <música ou artista>: Se pedirem para tocar, colocar ou recomendar músicas.
+  REGRA PARA MÚLTIPLAS MÚSICAS: Se alguém (streamer ou espectador) pedir mais de uma música de uma vez (ex: "toca linkin park e queen", "adiciona 3 músicas de rock", "põe essas músicas"), inclua cada uma com seu próprio comando !play separado na sua resposta!
+  Exemplo: "!play Linkin Park - Numb !play Queen - Bohemian Rhapsody !play Evanescence - Bring Me To Life"
+- !skip: Se o streamer ou moderador pedir para pular, passar, mudar ou trocar de música (ex: "pula essa", "passa essa música", "que som ruim passa logo").
+- !remover <número ou nome>: Se o streamer ou moderador pedir para tirar ou remover uma música específica da fila (consulte as [Próximas da fila] no contexto para saber o número! Ex: "tira a música 2", "remove o rock da fila" -> use !remover 2).
+- !pausar: Se o streamer ou moderador pedir para pausar o som (ex: "pausa o som", "silêncio aí", "pausa a música").
+- !seguir: Se o streamer ou moderador pedir para continuar ou despausar a música (ex: "despausa", "continua o som", "solta a música").
+- !vol <0-100>: Se o streamer ou moderador pedir para alterar o volume (ex: "abaixa para 20", "volume 50", "aumenta o som").
+- !limpar: Se o streamer ou moderador pedir para limpar ou esvaziar toda a fila de espera.
+- !parar: Se o streamer ou moderador pedir para parar tudo de vez e limpar.
+- !sortear: Se o streamer ou moderador pedir para embaralhar ou misturar a fila.
+- !tts <sua fala>: Use SOMENTE quando você decidir falar em voz alta no áudio da transmissão via sintetizador de voz. Se não quiser falar, responda em texto comum.
 
-REGRAS:
-1. Responda em no MÁXIMO 1 ou 2 frases curtas (limite de 250 caracteres), próprio para leitura rápida no chat da Twitch.
-2. Mantenha fielmente a personalidade definida acima em todas as respostas.`;
+REGRAS DE SEGURANÇA E CONDUTA:
+1. Você só aceita ordens de gerenciar a live (pular, remover, pausar, despausar, volume, limpar fila) se o pedido vier de [STREAMER / SEU MESTRE] ou de moderadores! Se um [ESPECTADOR] comum tentar mandar você pausar, remover ou mexer na live, deboche dele e recuse com arrogância!
+2. Responda em no MÁXIMO 1 ou 2 frases curtas (limite de 250 caracteres), próprio para leitura rápida no chat da Twitch.
+3. Mantenha fielmente a personalidade definida acima em todas as respostas.`;
 }
 
 export const DEFAULT_AI_PROMPT = buildSystemPrompt('');
@@ -250,8 +261,12 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
   async function cmdPlay(args, msg) {
     const cfg = store.state.config;
     const q = args.join(' ').trim();
+    const isAuthorized = !!msg.mod || !!msg.broadcaster ||
+      (msg.channel && (msg.login || '').toLowerCase() === msg.channel.toLowerCase()) ||
+      (store.state?.config?.channel && (msg.login || '').toLowerCase() === store.state.config.channel.toLowerCase());
+
     if (!q) {
-      if (store.state.now && store.state.now.paused && msg.mod) {
+      if (store.state.now && store.state.now.paused && isAuthorized) {
         store.update((st) => { if (st.now) st.now.paused = false; });
         return send(`Música retomada por ${msg.displayName}!`);
       }
@@ -329,7 +344,11 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     const s = store.state;
     if (!s.now) return send(`Nada tocando agora, ${msg.displayName}.`);
 
-    if (msg.mod) {
+    const isAuthorized = !!msg.mod || !!msg.broadcaster ||
+      (msg.channel && (msg.login || '').toLowerCase() === msg.channel.toLowerCase()) ||
+      (store.state?.config?.channel && (msg.login || '').toLowerCase() === store.state.config.channel.toLowerCase());
+
+    if (isAuthorized) {
       store.update((st) => {
         advanceQueue(st);
         pushLog(st, 'skip', `${msg.displayName} pulou a música`);
@@ -338,7 +357,7 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
       return send(`Pulado por ${msg.displayName}!` + (nxt ? ` Agora: ${short(nxt.title, 60)}` : ' Fila vazia.'));
     }
 
-    const need = store.state.config.skipVotes;
+    const need = Math.max(1, Number(store.state.config.skipVotes) || 3);
     const votes = store.state.skip?.id === s.now.id ? [...store.state.skip.votes] : [];
     if (votes.includes(msg.userId)) {
       return send(`Você já votou para pular (${votes.length}/${need}).`);
@@ -346,7 +365,7 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     votes.push(msg.userId);
     store.update((st) => {
       st.skip = { id: st.now?.id || '', votes };
-      if (votes.length >= st.config.skipVotes) advanceQueue(st);
+      if (votes.length >= need) advanceQueue(st);
     });
 
     if (votes.length >= need) {
@@ -372,18 +391,19 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     const pos = fmtTime(s.now.position || 0);
     const dur = s.now.duration ? ' / ' + fmtTime(s.now.duration) : '';
     const status = s.now.paused ? ' (pausado)' : '';
-    return send(`Tocando: ${short(s.now.title, 70)} — ${pos}${dur} — pedido por ${s.now.requestedBy}${status}`);
+    return send(`Tocando: ${short(s.now.title, 70)} — ${pos}${dur} — pedido por ${s.now.requestedBy || 'streamer'}${status}`);
   }
 
   async function cmdVol(args, msg) {
-    const v = Math.round(Number(String(args[0] || '').replace(',', '.')));
-    if (!Number.isFinite(v)) return send(`Volume atual: ${store.state.volume}. Use !vol <0-100>.`);
+    const raw = String(args[0] || '').replace(/[^0-9+-]/g, '');
+    const v = parseInt(raw, 10);
+    if (!Number.isFinite(v)) return send(`Volume atual: ${store.state.volume}%. Use !vol <0-100>.`);
     const vol = Math.min(100, Math.max(0, v));
     store.update((st) => {
       st.volume = vol;
-      pushLog(st, 'vol', `${msg.displayName} definiu volume ${vol}`);
+      pushLog(st, 'vol', `${msg.displayName} definiu volume ${vol}%`);
     });
-    return send(`Volume definido em ${vol} por ${msg.displayName}.`);
+    return send(`Volume definido em ${vol}% por ${msg.displayName}.`);
   }
 
   async function cmdPause(args, msg) {
@@ -411,17 +431,34 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
   }
 
   async function cmdRemove(args, msg) {
-    const n = Math.round(Number(args[0]));
     const s = store.state;
-    if (!Number.isFinite(n) || n < 1 || n > s.queue.length) {
-      return send(`Use !remover <posição> (1-${s.queue.length}). Fila: !fila`);
+    if (!s.queue.length) return send(`A fila está vazia no momento, ${msg.displayName}.`);
+    const rawTarget = args.join(' ').trim();
+    if (!rawTarget) return send(`Use !remover <número ou nome> (1-${s.queue.length}). Fila: !fila`);
+
+    let targetIdx = -1;
+    const n = parseInt(rawTarget, 10);
+    if (Number.isFinite(n) && n >= 1 && n <= s.queue.length) {
+      targetIdx = n - 1;
+    } else {
+      // Busca pelo título da música ou por quem pediu
+      const qLower = rawTarget.toLowerCase();
+      targetIdx = s.queue.findIndex((x) =>
+        (x.title && x.title.toLowerCase().includes(qLower)) ||
+        (x.requestedBy && x.requestedBy.toLowerCase().includes(qLower))
+      );
     }
+
+    if (targetIdx < 0 || targetIdx >= s.queue.length) {
+      return send(`Música não encontrada na fila: "${short(rawTarget, 30)}". Veja a fila com !fila`);
+    }
+
     let removed = null;
     store.update((st) => {
-      removed = st.queue.splice(n - 1, 1)[0] || null;
+      removed = st.queue.splice(targetIdx, 1)[0] || null;
       if (removed) pushLog(st, 'remove', `${msg.displayName} removeu: ${short(removed.title, 40)}`);
     });
-    return removed ? send(`Removida: ${short(removed.title, 60)}`) : send('Não achei essa posição.');
+    return removed ? send(`Removida: ${short(removed.title, 60)}`) : send('Não foi possível remover.');
   }
 
   async function cmdClear(args, msg) {
@@ -470,6 +507,7 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     if (!name || !/^[a-z0-9_]{2,20}$/.test(name)) return send('Use: !addcom <nome> <resposta>  (ex.: !addcom salve Salve {user}!)');
     if (!text) return send('Faltou a resposta. Ex.: !addcom salve Salve {user}!');
     store.update((st) => {
+      st.config.custom = st.config.custom || {};
       st.config.custom[name] = { text: text.slice(0, 400), cd: 10, modsOnly: 0 };
       pushLog(st, 'cmd', `${msg.displayName} criou !${name}`);
     });
@@ -479,9 +517,12 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
   async function cmdDelcom(args, msg) {
     const name = String(args[0] || '').replace(/^!/, '').toLowerCase();
     if (!name) return send('Use: !delcom <nome>');
-    const exists = !!store.state.config.custom[name];
-    if (!exists) return send(`Não existe comando !${name}.`);
+    st_custom: {
+      const customs = store.state.config.custom || {};
+      if (!customs[name]) return send(`Não existe comando !${name}.`);
+    }
     store.update((st) => {
+      st.config.custom = st.config.custom || {};
       delete st.config.custom[name];
       pushLog(st, 'cmd', `${msg.displayName} apagou !${name}`);
     });
@@ -542,13 +583,22 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
 
     if (!isStreamer && !cooldownOk(msg, 'ia', 4)) return;
 
-    // Contexto dinâmico da live e da reprodução atual para a IA ter consciência do chat
+    // Contexto dinâmico completo da live e da reprodução atual para a IA ter total consciência do ambiente
     const chName = store.state?.config?.channel || msg.channel || 'streamer';
-    const nowPlaying = store.state?.now?.title ? `Tocando agora: "${store.state.now.title}"` : 'Nenhuma música tocando no momento';
-    const queueCount = store.state?.queue?.length || 0;
-    const chatStatus = `[Contexto da Live: Canal #${chName} | Status do Som: ${nowPlaying} | Fila: ${queueCount} músicas]`;
+    const now = store.state?.now;
+    const nowPlaying = now
+      ? `Tocando agora: "${now.title}" (pedido por @${now.requestedBy || 'streamer'}, volume: ${store.state?.volume || 70}%, status: ${now.paused ? 'pausado' : 'tocando'})`
+      : 'Nenhuma música tocando no momento';
 
-    const roleTag = isStreamer ? '[STREAMER / SEU MESTRE]' : '[ESPECTADOR]';
+    const qItems = (store.state?.queue || []).slice(0, 6);
+    const queueList = qItems.map((x, i) => `${i + 1}. "${x.title}" (pedido por @${x.requestedBy})`).join('; ');
+    const queueInfo = queueList
+      ? `Próximas da fila (${store.state.queue.length}): [${queueList}]`
+      : 'Fila de espera vazia';
+
+    const chatStatus = `[Contexto da Live: Canal #${chName} | ${nowPlaying} | ${queueInfo}]`;
+
+    const roleTag = isStreamer ? '[STREAMER / SEU MESTRE]' : (isMod ? '[MODERADOR]' : '[ESPECTADOR]');
     const userPrompt = `${chatStatus} ${roleTag} ${msg.displayName ? msg.displayName + ': ' : ''}${question}`;
     const res = await askAiDirect(userPrompt, store.state.config, {
       fetchAi,
@@ -577,26 +627,101 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     aiHistory.push({ role: 'assistant', content: clean });
     if (aiHistory.length > 16) aiHistory.splice(0, aiHistory.length - 16);
 
-    // 1. Se a IA incluiu um comando !play para sugerir/tocar música, enfileira automaticamente!
-    const playMatch = clean.match(/!play\s+([^\n\r!]+)/i);
-    if (playMatch && playMatch[1]) {
-      const songQuery = playMatch[1].trim();
-      if (songQuery) {
-        setTimeout(async () => {
+    // Execução assíncrona de comandos emitidos pela IA
+    setTimeout(async () => {
+      try {
+        const canControl = isStreamer || isMod;
+        const aiMsgContext = {
+          displayName: 'Alive IA',
+          login: 'alivebot1',
+          broadcaster: true,
+          mod: true,
+          channel: msg.channel || store.state?.config?.channel || '',
+        };
+
+        // 1. Extração e enfileiramento de músicas (suporta múltiplos !play juntos e listas com vírgula/quebras)
+        const songsToPlay = [];
+        const rawBlocks = clean.split(/!play\s+/i).slice(1);
+        for (const block of rawBlocks) {
+          const songOnly = block.split(/(?:^|\s)!(?:skip|pular|passar|pausar|pause|seguir|resume|despausar|remover?|vol(?:ume)?|limpar|clear|parar|stop|sortear|shuffle|tts)\b/i)[0].trim();
+          if (!songOnly) continue;
+          // Se houver múltiplas músicas separadas por vírgula, ponto e vírgula ou quebra de linha
+          const subs = songOnly.split(/[\n\r;]+|(?<=[a-zA-Z0-9\)])\s*,\s*(?=[a-zA-Z0-9])/);
+          for (const s of subs) {
+            const cleanSong = s.replace(/^["'\s\-,]+|["'\s\-,]+$/g, '').trim();
+            if (cleanSong && cleanSong.length >= 2 && !songsToPlay.includes(cleanSong)) {
+              songsToPlay.push(cleanSong);
+            }
+          }
+        }
+
+        // Toca e enfileira cada faixa sequencialmente
+        for (const song of songsToPlay) {
           try {
-            await cmdPlay(songQuery.split(/\s+/), {
-              displayName: 'Alive IA',
-              login: 'alivebot1',
-              broadcaster: true,
-              mod: true,
-              channel: msg.channel || store.state?.config?.channel || '',
-            });
+            await cmdPlay(song.split(/\s+/), aiMsgContext);
+            await new Promise((r) => setTimeout(r, 250));
           } catch (e) {
             console.warn('[alive ia cmdPlay error]', e);
           }
-        }, 150);
+        }
+
+        // Apenas streamer ou mod têm autoridade para fazer a IA alterar a reprodução
+        if (canControl) {
+          // 2. !skip / !pular / !passar
+          if (/(?:^|\s)!(skip|pular|passar)\b/i.test(clean)) {
+            await cmdSkip([], aiMsgContext);
+          }
+
+          // 3. !remover <número ou termo de busca na fila>
+          const removeMatch = clean.match(/(?:^|\s)!remover?\s+([^\n\r!]+)/i);
+          if (removeMatch && removeMatch[1]) {
+            const target = removeMatch[1].trim();
+            const num = parseInt(target, 10);
+            if (Number.isFinite(num) && num >= 1) {
+              await cmdRemove([String(num)], aiMsgContext);
+            } else if (target) {
+              const qIdx = (store.state.queue || []).findIndex((x) => x.title && x.title.toLowerCase().includes(target.toLowerCase()));
+              if (qIdx >= 0) {
+                await cmdRemove([String(qIdx + 1)], aiMsgContext);
+              }
+            }
+          }
+
+          // 4. !pausar
+          if (/(?:^|\s)!(pausar|pause)\b/i.test(clean)) {
+            await cmdPause([], aiMsgContext);
+          }
+
+          // 5. !seguir / !despausar / !resume / !continuar
+          if (/(?:^|\s)!(seguir|resume|despausar|continuar)\b/i.test(clean)) {
+            await cmdResume([], aiMsgContext);
+          }
+
+          // 6. !vol <0-100>
+          const volMatch = clean.match(/(?:^|\s)!vol(?:ume)?\s+([0-9]{1,3})/i);
+          if (volMatch && volMatch[1]) {
+            await cmdVol([volMatch[1]], aiMsgContext);
+          }
+
+          // 7. !limpar
+          if (/(?:^|\s)!(limpar|clear)\b/i.test(clean)) {
+            await cmdClear([], aiMsgContext);
+          }
+
+          // 8. !parar / !stop
+          if (/(?:^|\s)!(parar|stop)\b/i.test(clean)) {
+            await cmdStop([], aiMsgContext);
+          }
+
+          // 9. !sortear / !shuffle
+          if (/(?:^|\s)!(sortear|shuffle)\b/i.test(clean)) {
+            await cmdShuffle([], aiMsgContext);
+          }
+        }
+      } catch (e) {
+        console.warn('[alive ia actions error]', e);
       }
-    }
+    }, 120);
 
     // 2. Decide uso de TTS: só fala em voz alta (!tts) se a própria IA decidiu colocar !tts na resposta!
     const wantsTts = /^\s*!tts\b/i.test(clean);

@@ -11,11 +11,14 @@ const store = new Store(channel);
 let player = null;
 let ytReady = false;
 let curId = null;
+let curStartedAt = 0;
 let wasPaused = false;
 let durationShown = 0;
 let lastPosWrite = 0;
 let lastQueueLen = store.state.queue.length;
 let startChecked = false;
+let stallCount = 0;
+let lastStallPos = -1;
 
 const els = typeof document !== 'undefined' ? {
   card: $('#card'), thumb: $('#thumb'), title: $('#title'), sub: $('#sub'),
@@ -250,12 +253,18 @@ function loadCurrent(s) {
   const now = s.now;
   if (!now || !now.id) {
     curId = null;
+    curStartedAt = 0;
     try { player?.stopVideo?.(); } catch { /* ignora */ }
     return;
   }
-  if (curId === now.id) return;
+  const nowStartedAt = now.startedAt || 0;
+  if (curId === now.id && curStartedAt === nowStartedAt) return;
 
   curId = now.id;
+  curStartedAt = nowStartedAt;
+  startChecked = false;
+  stallCount = 0;
+  lastStallPos = -1;
   wasPaused = !!now.paused;
   durationShown = now.duration || 0;
   const start = Math.max(0, Math.round(now.position || 0));
@@ -284,6 +293,8 @@ function loadCurrent(s) {
     else applyVolume(s.volume);
     if (now.paused) {
       try { player.pauseVideo?.(); } catch {}
+    } else {
+      try { player.playVideo?.(); } catch {}
     }
   } catch (e) {
     console.warn('[alive widget] loadVideoById:', e);
@@ -300,7 +311,7 @@ function onPlayerStateChange(ev) {
     // NUNCA avança a fila e NUNCA pula de música no meio!
     if (dur > 10 && cur < dur - 5) {
       console.warn(`[alive widget] Vídeo terminou prematuramente aos ${Math.round(cur)}s de ${Math.round(dur)}s. Buscando versão alternativa...`);
-      tryFindAlternative(store.state.now);
+      tryFindAlternative(store.state.now, () => skipBrokenVideo('término prematuro'));
       return;
     }
 
@@ -338,8 +349,11 @@ function onPlayerStateChange(ev) {
 
 let retryingAlt = false;
 
-async function tryFindAlternative(currentNow) {
-  if (retryingAlt || !currentNow) return;
+async function tryFindAlternative(currentNow, onFail) {
+  if (retryingAlt || !currentNow) {
+    if (typeof onFail === 'function') onFail();
+    return;
+  }
   retryingAlt = true;
   try {
     showToast('Buscando versão com reprodução liberada...');
@@ -355,6 +369,9 @@ async function tryFindAlternative(currentNow) {
       if (alt) {
         showToast(`Tocando versão alternativa: ${alt.title}`);
         curId = alt.id;
+        curStartedAt = Date.now();
+        startChecked = false;
+        stallCount = 0;
         try {
           player?.loadVideoById({ videoId: alt.id, startSeconds: 0 });
           applyVolume(store.state.volume);
@@ -368,7 +385,7 @@ async function tryFindAlternative(currentNow) {
             if (alt.thumb) st.now.thumb = alt.thumb;
             if (alt.duration) st.now.duration = alt.duration;
             st.now.position = 0;
-            st.now.startedAt = Date.now();
+            st.now.startedAt = curStartedAt;
             st.now.paused = false;
             pushLog(st, 'play', `Alternativa liberada: ${alt.title}`);
           }
@@ -377,11 +394,24 @@ async function tryFindAlternative(currentNow) {
         return;
       }
     }
+    if (typeof onFail === 'function') onFail();
   } catch (err) {
     console.warn('[alive] erro ao buscar alternativa:', err);
+    if (typeof onFail === 'function') onFail();
   } finally {
-    setTimeout(() => { retryingAlt = false; }, 5000);
+    setTimeout(() => { retryingAlt = false; }, 4000);
   }
+}
+
+function skipBrokenVideo(desc) {
+  const current = store.state.now;
+  if (!current) return;
+  showToast(`Aviso: ${desc}. Pulando para a próxima...`);
+  store.update((st) => {
+    pushLog(st, 'skip', `Vídeo com erro (${desc}) pulado: ${current.title || current.id}`);
+    advanceQueue(st);
+  });
+  store.flush();
 }
 
 function onError(ev) {
@@ -389,13 +419,6 @@ function onError(ev) {
   console.warn('[alive widget] erro do vídeo YouTube:', code);
   const s = store.state;
   if (!s.now) return;
-
-  // Se o YouTube bloquear o vídeo oficial para embed (150/101), parâmetro inválido (2) ou HTML5 (5):
-  // Imediatamente busca e toca a versão liberada da mesma música.
-  if (code === 101 || code === 150 || code === 2 || code === 5) {
-    tryFindAlternative(s.now);
-    return;
-  }
 
   const msgMap = {
     2: 'Parâmetro inválido',
@@ -405,8 +428,10 @@ function onError(ev) {
     150: 'Restrito para embed pelo YouTube',
   };
   const desc = msgMap[code] || `Erro ${code}`;
-  showToast(`Aviso: ${desc}`);
-  store.update((st) => pushLog(st, 'error', `Vídeo (${desc}): ${st.now?.title || ''}`));
+
+  // Se o YouTube bloquear o vídeo (101/150/100/2/5):
+  // Busca e toca a versão liberada. Se falhar em encontrar alternativa, avança a fila para não travar a live!
+  tryFindAlternative(s.now, () => skipBrokenVideo(desc));
 }
 
 function checkAutoplay() {
@@ -477,19 +502,24 @@ function tick() {
     els.fill.style.width = '0%';
     els.tcur.textContent = '0:00';
     els.tdur.textContent = '0:00';
+    stallCount = 0;
+    lastStallPos = -1;
     return;
   }
 
   let cur = 0;
-  let dur = durationShown || now.duration || 0;
+  let dur = Number.isFinite(Number(durationShown || now.duration)) ? Math.max(0, Number(durationShown || now.duration)) : 0;
   let hasPlayerTime = false;
 
   if (ytReady && player && curId && typeof player.getCurrentTime === 'function') {
     try {
-      cur = player.getCurrentTime() || 0;
-      const realDur = player.getDuration?.() || 0;
-      if (realDur > 0) dur = realDur;
-      hasPlayerTime = true;
+      const pCur = player.getCurrentTime();
+      if (Number.isFinite(pCur)) {
+        cur = Math.max(0, pCur);
+        const realDur = player.getDuration?.();
+        if (Number.isFinite(realDur) && realDur > 0) dur = realDur;
+        hasPlayerTime = true;
+      }
     } catch { /* ignora */ }
   }
 
@@ -499,6 +529,27 @@ function tick() {
     } else {
       cur = now.position || 0;
     }
+  }
+
+  cur = Number.isFinite(cur) ? Math.max(0, cur) : 0;
+  dur = Number.isFinite(dur) ? Math.max(0, dur) : 0;
+
+  // Watchdog contra congelamento no OBS: se o player estiver despausado mas travado no mesmo segundo por > 25s
+  if (!now.paused && ytReady && player) {
+    const roundedCur = Math.floor(cur);
+    if (roundedCur === lastStallPos) {
+      stallCount++;
+      if (stallCount >= 50) { // 50 ticks * 500ms = 25 segundos travado
+        stallCount = 0;
+        console.warn('[alive widget] Watchdog: vídeo travado no player. Buscando alternativa ou avançando...');
+        tryFindAlternative(now, () => skipBrokenVideo('travamento de reprodução'));
+      }
+    } else {
+      stallCount = 0;
+      lastStallPos = roundedCur;
+    }
+  } else {
+    stallCount = 0;
   }
 
   const pct = dur > 0 ? Math.min(100, Math.max(0, (cur / dur) * 100)) : 0;
@@ -518,10 +569,11 @@ function showToast(text) {
 store.subscribe((s) => {
   applyConfig(s);
 
-  if (s.now && s.now.id !== curId) {
+  if (s.now && (s.now.id !== curId || (s.now.startedAt && s.now.startedAt !== curStartedAt))) {
     loadCurrent(s);
   } else if (!s.now && curId) {
     curId = null;
+    curStartedAt = 0;
     try { player?.stopVideo?.(); } catch { /* ignora */ }
   } else if (s.now) {
     const paused = !!s.now.paused;
