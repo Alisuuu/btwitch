@@ -541,3 +541,75 @@ html[data-layout="minimal"] .next {
   border-radius: calc(6px * var(--scale)) !important;
   box-shadow: none !important;
 }
+
+/* 5. LAYOUT NEON (Cyberpunk Gamer / Glow Vibrante) */
+html[data-layout="neon"] .card {
+  border: 1.5px solid var(--accent, #00f3ff) !important;
+  border-radius: calc(12px * var(--scale)) !important;
+  box-shadow: 0 0 calc(20px * var(--scale)) rgba(0, 243, 255, 0.45), 
+              inset 0 0 calc(12px * var(--scale)) rgba(0, 243, 255, 0.12),
+              0 14px 35px rgba(0, 0, 0, 0.85) !important;
+}
+html[data-layout="neon"] .art {
+  border-radius: calc(8px * var(--scale)) !important;
+  border: 1.5px solid var(--accent, #00f3ff) !important;
+  box-shadow: 0 0 calc(10px * var(--scale)) rgba(0, 243, 255, 0.4) !important;
+}
+html[data-layout="neon"] .progress .fill {
+  box-shadow: 0 0 calc(8px * var(--scale)) var(--accent, #00f3ff) !important;
+}
+html[data-layout="neon"] .next {
+  border: 1px solid var(--accent, #00f3ff) !important;
+  border-radius: calc(10px * var(--scale)) !important;
+  box-shadow: 0 0 calc(12px * var(--scale)) rgba(0, 243, 255, 0.3) !important;
+}
+
+/* 6. LAYOUT COMPACT (Mini Badge / HUD Ultra Enxuto) */
+html[data-layout="compact"] .card {
+  padding: calc(4px * var(--scale)) calc(12px * var(--scale)) calc(4px * var(--scale)) calc(6px * var(--scale)) !important;
+  gap: calc(8px * var(--scale)) !important;
+  border-radius: calc(8px * var(--scale)) !important;
+  max-width: calc(420px * var(--scale)) !important;
+  min-height: calc(48px * var(--scale)) !important;
+}
+html[data-layout="compact"] .art {
+  width: calc(36px * var(--scale)) !important;
+  height: calc(36px * var(--scale)) !important;
+  border-radius: calc(6px * var(--scale)) !important;
+}
+html[data-layout="compact"] .title {
+  font-size: calc(13px * var(--scale)) !important;
+}
+html[data-layout="compact"] .sub {
+  font-size: calc(10px * var(--scale)) !important;
+}
+html[data-layout="compact"] .progress {
+  margin-top: calc(3px * var(--scale)) !important;
+  height: calc(1.5px * var(--scale)) !important;
+}
+html[data-layout="compact"] .kicker {
+  display: none !important;
+}
+
+/* 7. LAYOUT VINYL (Disco de Vinil Giratório Retrô / Lo-Fi) */
+html[data-layout="vinyl"] .card {
+  border-radius: calc(18px * var(--scale)) !important;
+  padding: calc(10px * var(--scale)) calc(16px * var(--scale)) !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(245, 158, 11, 0.15) !important;
+}
+html[data-layout="vinyl"] .art {
+  width: calc(68px * var(--scale)) !important;
+  height: calc(68px * var(--scale)) !important;
+  border-radius: 50% !important;
+  border: 2px solid #292524 !important;
+  box-shadow: 0 0 0 4px #1c1917, 0 0 14px rgba(0, 0, 0, 0.9) !important;
+  animation: vinylSpin 14s linear infinite;
+}
+body.paused html[data-layout="vinyl"] .art {
+  animation-play-state: paused !important;
+}
+@keyframes vinylSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

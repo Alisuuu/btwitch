@@ -52,7 +52,10 @@ export const PRESETS = {
   ghost: { layout: 'card', theme: 'transparent', accent: '#ffffff', bg: '#000000', text: '#ffffff', opacity: 0, scale: 100, marquee: 1 },
   pill: { layout: 'pill', theme: 'minimal', accent: '#a855f7', bg: '#18181b', text: '#ffffff', opacity: 85, scale: 100, marquee: 1 },
   sunset: { layout: 'glass', theme: 'slate', accent: '#f59e0b', bg: '#18181b', text: '#ffffff', opacity: 80, scale: 100, marquee: 1 },
-  ticker: { layout: 'ticker', theme: 'minimal', accent: '#ef4444', bg: '#09090b', text: '#ffffff', opacity: 95, scale: 100, marquee: 1 }
+  ticker: { layout: 'ticker', theme: 'minimal', accent: '#ef4444', bg: '#09090b', text: '#ffffff', opacity: 95, scale: 100, marquee: 1 },
+  neon: { layout: 'neon', theme: 'contrast', accent: '#00f3ff', bg: '#080811', text: '#ffffff', opacity: 90, scale: 100, marquee: 1 },
+  compact: { layout: 'compact', theme: 'minimal', accent: '#10b981', bg: '#09090b', text: '#ffffff', opacity: 85, scale: 85, marquee: 1 },
+  vinyl: { layout: 'vinyl', theme: 'minimal', accent: '#f59e0b', bg: '#1c1917', text: '#ffffff', opacity: 95, scale: 100, marquee: 0 }
 };
 
 // ------------------------------------------------------------ configuração
