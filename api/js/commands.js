@@ -35,14 +35,18 @@ ${personalitySection}
 
 COMANDOS QUE VOCÊ PODE E DEVE USAR DIRETAMENTE NA SUA RESPOSTA:
 (Basta incluir o comando dentro da sua resposta que o sistema executará a ação na live automaticamente)
-- !play <música ou artista>: Se pedirem para tocar, colocar ou recomendar músicas.
-  REGRA PARA MÚLTIPLAS MÚSICAS: Se alguém (streamer ou espectador) pedir mais de uma música de uma vez (ex: "toca linkin park e queen", "adiciona 3 músicas de rock", "põe essas músicas"), inclua cada uma com seu próprio comando !play separado na sua resposta!
-  Exemplo: "!play Linkin Park - Numb !play Queen - Bohemian Rhapsody !play Evanescence - Bring Me To Life"
+- !play <música ou artista>: Se pedirem para tocar, colocar, adicionar (ex: "add 5 músicas", "adiciona rock", "põe 3 indie") ou recomendar músicas.
+  REGRA CRUCIAL PARA MÚLTIPLAS MÚSICAS: Se alguém (streamer, moderador ou espectador) pedir para adicionar ou tocar mais de uma música (ex: "add 5 músicas alternativas", "adiciona 3 de rock", "toca linkin park e queen"), você DEVE escolher as músicas e incluir cada uma delas com seu próprio comando !play separado na sua resposta!
+  Exemplo: "!play Arctic Monkeys - Do I Wanna Know !play The Strokes - Reptilia !play Radiohead - Creep !play Nirvana - In Bloom !play Muse - Uprising"
 - !skip: Se o streamer ou moderador pedir para pular, passar, mudar ou trocar de música (ex: "pula essa", "passa essa música", "que som ruim passa logo").
 - !remover <número ou nome>: Se o streamer ou moderador pedir para tirar ou remover uma música específica da fila (consulte as [Próximas da fila] no contexto para saber o número! Ex: "tira a música 2", "remove o rock da fila" -> use !remover 2).
 - !pausar: Se o streamer ou moderador pedir para pausar o som (ex: "pausa o som", "silêncio aí", "pausa a música").
 - !seguir: Se o streamer ou moderador pedir para continuar ou despausar a música (ex: "despausa", "continua o som", "solta a música").
-- !vol <0-100>: Se o streamer ou moderador pedir para alterar o volume (ex: "abaixa para 20", "volume 50", "aumenta o som").
+- !vol <0-100 ou +15 ou -15>: Se o streamer ou moderador pedir para alterar, aumentar ou diminuir o volume.
+  ATENÇÃO: Se pedirem "aumenta o volume", "aumenta o som" ou "tá baixo": use "!vol +15" (ou calcule o volume atual + 15).
+  Se pedirem "abaixa o volume", "abaixa o som" ou "tá alto": use "!vol -15" (ou calcule o volume atual - 15).
+  Se pedirem um valor específico (ex: "volume em 80", "deixa no 50"): use "!vol 80" ou "!vol 50".
+  Se pedirem "volume no talo" ou "máximo": use "!vol 100".
 - !limpar: Se o streamer ou moderador pedir para limpar ou esvaziar toda a fila de espera.
 - !parar: Se o streamer ou moderador pedir para parar tudo de vez e limpar.
 - !sortear: Se o streamer ou moderador pedir para embaralhar ou misturar a fila.
@@ -50,7 +54,7 @@ COMANDOS QUE VOCÊ PODE E DEVE USAR DIRETAMENTE NA SUA RESPOSTA:
 
 REGRAS DE SEGURANÇA E CONDUTA:
 1. Você só aceita ordens de gerenciar a live (pular, remover, pausar, despausar, volume, limpar fila) se o pedido vier de [STREAMER / SEU MESTRE] ou de moderadores! Se um [ESPECTADOR] comum tentar mandar você pausar, remover ou mexer na live, deboche dele e recuse com arrogância!
-2. Responda em no MÁXIMO 1 ou 2 frases curtas (limite de 250 caracteres), próprio para leitura rápida no chat da Twitch.
+2. Responda em frases diretas e sucintas, próprio para leitura rápida no chat da Twitch.
 3. Mantenha fielmente a personalidade definida acima em todas as respostas.`;
 }
 
@@ -92,7 +96,7 @@ export async function askAiDirect(prompt, cfg = {}, deps = {}) {
           body: JSON.stringify({
             model,
             messages,
-            max_tokens: 150,
+            max_tokens: 350,
             temperature: 0.8,
           }),
           signal: ctrl.signal,
@@ -132,7 +136,7 @@ export async function askAiDirect(prompt, cfg = {}, deps = {}) {
       body: JSON.stringify({
         model,
         messages,
-        max_tokens: 150,
+        max_tokens: 350,
         temperature: 0.8,
       }),
       signal: ctrl.signal,
@@ -161,6 +165,7 @@ export function isModOnly(id) {
 export function canUserRun(perm, msg) {
   if (msg.broadcaster) return true; // Streamer tem permissão máxima sempre
   if (msg.channel && (msg.login || '').toLowerCase() === msg.channel.toLowerCase()) return true;
+  if (msg.channel && (msg.displayName || '').toLowerCase() === msg.channel.toLowerCase()) return true;
   if (!perm || perm === 'all') return true;
   if (perm === 'sub') {
     return !!msg.mod || !!msg.badges?.vip || !!msg.subscriber || !!msg.badges?.subscriber;
@@ -263,7 +268,9 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     const q = args.join(' ').trim();
     const isAuthorized = !!msg.mod || !!msg.broadcaster ||
       (msg.channel && (msg.login || '').toLowerCase() === msg.channel.toLowerCase()) ||
-      (store.state?.config?.channel && (msg.login || '').toLowerCase() === store.state.config.channel.toLowerCase());
+      (msg.channel && (msg.displayName || '').toLowerCase() === msg.channel.toLowerCase()) ||
+      (store.state?.config?.channel && (msg.login || '').toLowerCase() === store.state.config.channel.toLowerCase()) ||
+      (store.state?.config?.channel && (msg.displayName || '').toLowerCase() === store.state.config.channel.toLowerCase());
 
     if (!q) {
       if (store.state.now && store.state.now.paused && isAuthorized) {
@@ -346,7 +353,9 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
 
     const isAuthorized = !!msg.mod || !!msg.broadcaster ||
       (msg.channel && (msg.login || '').toLowerCase() === msg.channel.toLowerCase()) ||
-      (store.state?.config?.channel && (msg.login || '').toLowerCase() === store.state.config.channel.toLowerCase());
+      (msg.channel && (msg.displayName || '').toLowerCase() === msg.channel.toLowerCase()) ||
+      (store.state?.config?.channel && (msg.login || '').toLowerCase() === store.state.config.channel.toLowerCase()) ||
+      (store.state?.config?.channel && (msg.displayName || '').toLowerCase() === store.state.config.channel.toLowerCase());
 
     if (isAuthorized) {
       store.update((st) => {
@@ -395,15 +404,33 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
   }
 
   async function cmdVol(args, msg) {
-    const raw = String(args[0] || '').replace(/[^0-9+-]/g, '');
-    const v = parseInt(raw, 10);
-    if (!Number.isFinite(v)) return send(`Volume atual: ${store.state.volume}%. Use !vol <0-100>.`);
-    const vol = Math.min(100, Math.max(0, v));
+    const raw = String(args[0] || '').trim().toLowerCase();
+    if (!raw) return send(`Volume atual: ${store.state.volume}%. Use !vol <0-100>, !vol +10 ou !vol -10.`);
+
+    let vol = store.state.volume ?? 70;
+    if (raw === 'max' || raw === 'maximo' || raw === 'máximo' || raw === 'talo') {
+      vol = 100;
+    } else if (raw === 'min' || raw === 'minimo' || raw === 'mínimo' || raw === 'mudo' || raw === 'mute') {
+      vol = 0;
+    } else if (raw.startsWith('+') || raw.startsWith('-')) {
+      const delta = parseInt(raw.replace(/[^0-9+-]/g, ''), 10);
+      if (Number.isFinite(delta)) {
+        vol = Math.min(100, Math.max(0, (store.state.volume ?? 70) + delta));
+      } else {
+        return send(`Volume atual: ${store.state.volume}%. Use !vol <0-100>.`);
+      }
+    } else {
+      const cleanNum = raw.replace(/[^0-9]/g, '');
+      const v = parseInt(cleanNum, 10);
+      if (!Number.isFinite(v)) return send(`Volume atual: ${store.state.volume}%. Use !vol <0-100>.`);
+      vol = Math.min(100, Math.max(0, v));
+    }
+
     store.update((st) => {
       st.volume = vol;
-      pushLog(st, 'vol', `${msg.displayName} definiu volume ${vol}%`);
+      pushLog(st, 'vol', `${msg.displayName} definiu volume para ${vol}%`);
     });
-    return send(`Volume definido em ${vol}% por ${msg.displayName}.`);
+    return send(`Volume ajustado para ${vol}% por ${msg.displayName}.`);
   }
 
   async function cmdPause(args, msg) {
@@ -533,7 +560,9 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     const sub = (args[0] || '').toLowerCase();
     const isStreamer = !!msg.broadcaster ||
       (msg.channel && (msg.login || '').toLowerCase() === msg.channel.toLowerCase()) ||
-      (store.state?.config?.channel && (msg.login || '').toLowerCase() === store.state.config.channel.toLowerCase());
+      (msg.channel && (msg.displayName || '').toLowerCase() === msg.channel.toLowerCase()) ||
+      (store.state?.config?.channel && (msg.login || '').toLowerCase() === store.state.config.channel.toLowerCase()) ||
+      (store.state?.config?.channel && (msg.displayName || '').toLowerCase() === store.state.config.channel.toLowerCase());
     const isMod = !!msg.mod || isStreamer;
     const aiCfg = store.state?.config?.ai || {};
 
@@ -618,8 +647,8 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     if ((clean.startsWith('"') && clean.endsWith('"')) || (clean.startsWith('“') && clean.endsWith('”'))) {
       clean = clean.slice(1, -1).trim();
     }
-    if (clean.length > 320) {
-      clean = clean.slice(0, 315) + '…';
+    if (clean.length > 460) {
+      clean = clean.slice(0, 455) + '…';
     }
 
     // Guarda histórico de diálogo para manter contexto nas próximas perguntas
@@ -648,7 +677,7 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
           // Se houver múltiplas músicas separadas por vírgula, ponto e vírgula ou quebra de linha
           const subs = songOnly.split(/[\n\r;]+|(?<=[a-zA-Z0-9\)])\s*,\s*(?=[a-zA-Z0-9])/);
           for (const s of subs) {
-            const cleanSong = s.replace(/^["'\s\-,]+|["'\s\-,]+$/g, '').trim();
+            const cleanSong = s.replace(/^[\s\-,;0-9.)(]+|["'\s\-,;]+$/g, '').trim();
             if (cleanSong && cleanSong.length >= 2 && !songsToPlay.includes(cleanSong)) {
               songsToPlay.push(cleanSong);
             }
@@ -697,10 +726,23 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
             await cmdResume([], aiMsgContext);
           }
 
-          // 6. !vol <0-100>
-          const volMatch = clean.match(/(?:^|\s)!vol(?:ume)?\s+([0-9]{1,3})/i);
+          // 6. !vol <0-100, +15, -15, max, mudo>
+          const volMatch = clean.match(/(?:^|\s)!vol(?:ume)?\s+([+-]?[0-9]{1,3}%?|max|min|mudo|talo)/i);
           if (volMatch && volMatch[1]) {
             await cmdVol([volMatch[1]], aiMsgContext);
+          } else {
+            // Detecção natural de intenção de volume na pergunta caso a IA responda em texto conversacional
+            const qLower = question.toLowerCase();
+            const numInQ = qLower.match(/(?:volume|som|vol)\s+(?:em\s+|para\s+|no\s+)?([0-9]{1,3})/i);
+            if (numInQ && numInQ[1]) {
+              await cmdVol([numInQ[1]], aiMsgContext);
+            } else if (/\b(aumenta|aumentar|sobe|subir|mais alto|muito baixo)\b/i.test(qLower) && /\b(volume|som|somzinho|audio|áudio)\b/i.test(qLower)) {
+              await cmdVol(['+15'], aiMsgContext);
+            } else if (/\b(abaixa|abaixar|diminui|diminuir|mais baixo|muito alto)\b/i.test(qLower) && /\b(volume|som|somzinho|audio|áudio)\b/i.test(qLower)) {
+              await cmdVol(['-15'], aiMsgContext);
+            } else if (/\b(muta|mutar|mudo|silencia|silenciar)\b/i.test(qLower) && /\b(volume|som|música|live)\b/i.test(qLower)) {
+              await cmdVol(['0'], aiMsgContext);
+            }
           }
 
           // 7. !limpar
