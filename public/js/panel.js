@@ -2447,7 +2447,7 @@ async function loadDiscordGuildsAndChannels(targetGuildId) {
           selGuild.value = '';
           const selCh = $('#cfgDcChannelSelect');
           if (selCh) {
-            selCh.innerHTML = '<option value="">Primeiro selecione seu Servidor acima...</option>' +
+            selCh.innerHTML = '<option value="">Selecione canal</option>' +
               '<option value="custom">Outro (Inserir Link de Webhook)</option>';
           }
         }
@@ -2465,7 +2465,7 @@ async function loadChannelsForGuild(guildId, autoSelectFirst = false) {
     if (d.ok && Array.isArray(d.channels) && d.channels.length > 0) {
       const selCh = $('#cfgDcChannelSelect');
       if (selCh) {
-        selCh.innerHTML = '<option value="">Selecione o canal do Discord...</option>' +
+        selCh.innerHTML = '<option value="">Selecione canal</option>' +
           d.channels.map((c) => `<option value="${c.id}" data-name="${c.name}">#${c.name}</option>`).join('') +
           '<option value="custom">Outro (Inserir Link de Webhook)</option>';
         
