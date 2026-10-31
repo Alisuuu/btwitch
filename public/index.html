@@ -201,6 +201,18 @@
   </div>
 
   <div class="top-actions">
+    <button class="btn ghost small" id="btnWidget" title="Abrir widget em nova janela" type="button">
+      <span data-icon="external-link" data-size="13"></span>
+      <span>Widget</span>
+    </button>
+    <button class="btn primary small" id="btnCopyWidget" title="Copiar URL para o OBS Studio" type="button">
+      <span data-icon="link" data-size="13"></span>
+      <span>Copiar Link</span>
+    </button>
+    <a class="btn twitch-btn small btn-twitch-auth" id="btnTwitchTop" title="Entrar com a Twitch" href="#" onclick="handleTwitchLogin(event);">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
+      <span>Entrar com a Twitch</span>
+    </a>
     <div class="user-profile-menu" id="userProfileMenu" hidden>
       <button class="user-pill-btn" id="userPillBtn" type="button" aria-haspopup="true" aria-expanded="false" title="Menu da conta">
         <img class="user-avatar" id="userAvatar" src="/img/ic_splash_logo.webp" alt="">
@@ -218,18 +230,6 @@
         </button>
       </div>
     </div>
-    <a class="btn twitch-btn small btn-twitch-auth" id="btnTwitchTop" title="Entrar com a Twitch" href="#" onclick="handleTwitchLogin(event);">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
-      <span>Entrar com a Twitch</span>
-    </a>
-    <button class="btn ghost small" id="btnWidget" title="Abrir widget em nova janela" type="button">
-      <span data-icon="external-link" data-size="13"></span>
-      <span>Widget</span>
-    </button>
-    <button class="btn primary small" id="btnCopyWidget" title="Copiar URL para o OBS Studio" type="button">
-      <span data-icon="link" data-size="13"></span>
-      <span>Copiar Link</span>
-    </button>
   </div>
 </header>
 
