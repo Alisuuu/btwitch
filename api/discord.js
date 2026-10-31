@@ -472,6 +472,11 @@ export default async function handler(req, res) {
         }
       }
 
+      if (streamData) {
+        if (liveTitle) streamData.title = liveTitle;
+        if (liveGame) streamData.game_name = liveGame;
+      }
+
       const payload = buildDiscordPayload({ ...targetCfg, channel: liveChannel, platform: livePlatform }, streamData, userData || {});
       try {
         const hookRes = await sendDiscordWebhook(target, payload);
