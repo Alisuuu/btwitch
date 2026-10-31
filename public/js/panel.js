@@ -2076,10 +2076,10 @@ async function copyWidget() {
   toast(ok ? 'Link do widget copiado!' : 'Erro ao copiar: ' + widgetUrl(), 3500);
 }
 
-$('#btnCopyWidget').addEventListener('click', copyWidget);
-$('#btnCopyWidget2').addEventListener('click', copyWidget);
-$('#btnWidget').addEventListener('click', () => window.open(widgetUrl(), '_blank', 'noopener'));
-$('#btnWidgetPreview').addEventListener('click', () => window.open(widgetUrl(), '_blank', 'noopener'));
+$('#btnCopyWidget')?.addEventListener('click', copyWidget);
+$('#btnCopyWidget2')?.addEventListener('click', copyWidget);
+$('#btnWidget')?.addEventListener('click', () => window.open(widgetUrl(), '_blank', 'noopener'));
+$('#btnWidgetPreview')?.addEventListener('click', () => window.open(widgetUrl(), '_blank', 'noopener'));
 
 // ---------------------------------------------------------------- config
 function syncConfigForm(s) {
