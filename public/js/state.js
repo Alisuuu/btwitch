@@ -121,6 +121,8 @@ export function defaultState() {
         embedTitle: '▸ {title}',
         embedDesc: 'Transmissão iniciada. Venha interagir no chat e pedir músicas.',
         includeThumbnail: true,
+        thumbType: 'auto',
+        customThumbnail: '',
         lastStreamId: '',
         lastStreams: {
           twitch: '',
@@ -215,6 +217,8 @@ export function sanitize(raw) {
     embedTitle: String(rawDc.embedTitle || '▸ {title}').trim(),
     embedDesc: String(rawDc.embedDesc || 'Transmissão iniciada. Venha interagir no chat e pedir músicas.').trim(),
     includeThumbnail: rawDc.includeThumbnail !== false,
+    thumbType: ['auto', 'custom', 'none'].includes(rawDc.thumbType) ? rawDc.thumbType : (rawDc.includeThumbnail === false ? 'none' : 'auto'),
+    customThumbnail: String(rawDc.customThumbnail || '').trim(),
     lastStreamId: String(rawDc.lastStreamId || ''),
     lastStreams: {
       twitch: String(rawLastStreams.twitch || rawDc.lastStreamId || ''),

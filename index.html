@@ -1240,16 +1240,34 @@ Transmissão: {url}</textarea>
         <textarea id="cfgDcEmbedDesc" rows="2">Transmissão iniciada. Venha interagir no chat e pedir músicas.</textarea>
       </div>
 
-      <!-- Miniatura Toggle -->
-      <div class="toggle-row">
-        <div>
-          <strong style="color:#fff;font-size:13px;">Incluir Miniatura da Live</strong>
-          <div class="field-desc">Exibe a imagem em tempo real da transmissão</div>
+      <!-- Imagem de Capa da Live (Thumbnail) -->
+      <div class="field">
+        <label>Imagem de Capa da Live (Thumbnail)</label>
+        <div class="mentions-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); margin-bottom: 8px;">
+          <label class="mention-card selected" id="dcThumbCardAuto">
+            <input type="radio" name="dcThumbType" value="auto" checked>
+            <span>Captura Automática</span>
+          </label>
+          <label class="mention-card" id="dcThumbCardCustom">
+            <input type="radio" name="dcThumbType" value="custom">
+            <span>Imagem Própria</span>
+          </label>
+          <label class="mention-card" id="dcThumbCardNone">
+            <input type="radio" name="dcThumbType" value="none">
+            <span>Sem Capa</span>
+          </label>
         </div>
-        <label class="switch">
-          <input type="checkbox" id="cfgDcIncludeThumb" checked>
-          <span class="slider"></span>
-        </label>
+
+        <div id="dcCustomThumbBox" style="display:none; margin-top:8px;">
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <input type="text" id="cfgDcCustomThumb" placeholder="Cole a URL da imagem (ex: https://i.imgur.com/capa.jpg)" style="flex:1; min-width:200px;">
+            <input type="file" id="cfgDcThumbFileInput" accept="image/*" style="display:none;">
+            <button type="button" class="btn ghost small" id="btnUploadThumb" style="white-space:nowrap; padding:9px 12px;">Escolher Arquivo</button>
+            <button type="button" class="btn ghost small" id="btnClearCustomThumb" style="white-space:nowrap; padding:9px 12px; display:none;">Limpar</button>
+          </div>
+          <div class="field-desc">Use um banner fixo ou capa personalizada para anunciar suas transmissões.</div>
+        </div>
+        <input type="checkbox" id="cfgDcIncludeThumb" checked style="display:none;">
       </div>
 
       <!-- Ações -->

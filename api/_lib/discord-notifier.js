@@ -275,11 +275,19 @@ export function buildDiscordPayload(cfg, streamInfo = {}, userInfo = {}) {
   }
 
   let previewImg = '';
-  if (streamInfo.thumbnail_url) {
-    previewImg = streamInfo.thumbnail_url.replace('{width}', '1280').replace('{height}', '720');
-    if (!previewImg.includes('?')) previewImg += `?t=${Date.now()}`;
-  } else if (platform === 'twitch') {
-    previewImg = `https://static-cdn.jtvnw.net/previews-ttv/live_user_${login}-1280x720.jpg?t=${Date.now()}`;
+  const thumbType = cfg.thumbType || (cfg.includeThumbnail === false ? 'none' : (cfg.customThumbnail ? 'custom' : 'auto'));
+
+  if (thumbType !== 'none') {
+    if (thumbType === 'custom' && cfg.customThumbnail) {
+      previewImg = cfg.customThumbnail;
+    } else if (streamInfo.thumbnail_url) {
+      previewImg = streamInfo.thumbnail_url.replace('{width}', '1280').replace('{height}', '720');
+      if (!previewImg.includes('?')) previewImg += `?t=${Date.now()}`;
+    } else if (cfg.customThumbnail) {
+      previewImg = cfg.customThumbnail;
+    } else if (platform === 'twitch') {
+      previewImg = `https://static-cdn.jtvnw.net/previews-ttv/live_user_${login}-1280x720.jpg?t=${Date.now()}`;
+    }
   }
 
   const avatarUrl = streamInfo.profile_image_url || userInfo.profile_image_url || DEFAULT_BOT_ICON;
@@ -320,7 +328,7 @@ export function buildDiscordPayload(cfg, streamInfo = {}, userInfo = {}) {
     timestamp: nowTs,
   };
 
-  if (cfg.includeThumbnail !== false && previewImg) {
+  if (thumbType !== 'none' && previewImg) {
     embed.image = { url: previewImg };
   }
   if (avatarUrl) {

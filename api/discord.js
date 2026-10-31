@@ -106,6 +106,8 @@ export default async function handler(req, res) {
         embedTitle: '▸ {title}',
         embedDesc: 'Transmissão iniciada. Venha interagir no chat e pedir músicas.',
         includeThumbnail: true,
+        thumbType: 'auto',
+        customThumbnail: '',
         lastStreamId: '',
         lastStreams: {},
         lastNotifiedAt: 0,
@@ -167,7 +169,9 @@ export default async function handler(req, res) {
         embedColor: String(incoming.embedColor || currentDiscord.embedColor || '#9146FF').trim(),
         embedTitle: String(incoming.embedTitle || currentDiscord.embedTitle || '▸ {title}').trim(),
         embedDesc: String(incoming.embedDesc || currentDiscord.embedDesc || 'Transmissão iniciada. Venha assistir e interagir!').trim(),
-        includeThumbnail: incoming.includeThumbnail !== false,
+        includeThumbnail: incoming.thumbType === 'none' ? false : (incoming.includeThumbnail !== false),
+        thumbType: ['auto', 'custom', 'none'].includes(incoming.thumbType) ? incoming.thumbType : (incoming.includeThumbnail === false ? 'none' : (currentDiscord.thumbType || 'auto')),
+        customThumbnail: String(incoming.customThumbnail !== undefined ? incoming.customThumbnail : (currentDiscord.customThumbnail || '')).trim(),
         channels: channelsCfg,
       };
 

@@ -2516,8 +2516,26 @@ function applyDiscordConfigToForm(c, fallbackChannel = '') {
   const mRadio = document.querySelector(`input[name="dcMentionType"][value="${mention}"]`);
   if (mRadio) {
     mRadio.checked = true;
-    $$('#tab-discord .mention-card').forEach((mc) => mc.classList.remove('selected'));
+    $$('#tab-discord input[name="dcMentionType"]').forEach((mc) => mc.closest('.mention-card')?.classList.remove('selected'));
     mRadio.closest('.mention-card')?.classList.add('selected');
+  }
+
+  // Capa da Live (Thumbnail)
+  const thumbType = c.thumbType || (c.includeThumbnail === false ? 'none' : (c.customThumbnail ? 'custom' : 'auto'));
+  const tRadio = document.querySelector(`input[name="dcThumbType"][value="${thumbType}"]`);
+  if (tRadio) {
+    tRadio.checked = true;
+    $$('#tab-discord input[name="dcThumbType"]').forEach((el) => el.closest('.mention-card')?.classList.remove('selected'));
+    tRadio.closest('.mention-card')?.classList.add('selected');
+  }
+  const customBox = $('#dcCustomThumbBox');
+  if (customBox) customBox.style.display = thumbType === 'custom' ? 'block' : 'none';
+  if ($('#cfgDcCustomThumb') && c.customThumbnail !== undefined) {
+    $('#cfgDcCustomThumb').value = c.customThumbnail || '';
+    if ($('#btnClearCustomThumb')) $('#btnClearCustomThumb').style.display = c.customThumbnail ? 'inline-block' : 'none';
+  }
+  if ($('#cfgDcIncludeThumb')) {
+    $('#cfgDcIncludeThumb').checked = thumbType !== 'none';
   }
 }
 
@@ -2746,8 +2764,22 @@ function updateDiscordPreview() {
   if ($('#dcPrevFieldGame')) $('#dcPrevFieldGame').textContent = game;
   if ($('#dcPrevFieldViewers')) $('#dcPrevFieldViewers').textContent = viewers;
 
-  const showThumb = $('#cfgDcIncludeThumb')?.checked !== false;
-  if ($('#dcPrevEmbedImage')) $('#dcPrevEmbedImage').style.display = showThumb ? 'block' : 'none';
+  const thumbType = document.querySelector('input[name="dcThumbType"]:checked')?.value || 'auto';
+  const customThumb = $('#cfgDcCustomThumb')?.value?.trim() || '';
+  const showThumb = thumbType !== 'none';
+  const prevImgEl = $('#dcPrevEmbedImage');
+  if (prevImgEl) {
+    prevImgEl.style.display = showThumb ? 'block' : 'none';
+    if (showThumb) {
+      if (thumbType === 'custom' && customThumb) {
+        prevImgEl.src = customThumb;
+      } else {
+        prevImgEl.src = discordLiveData?.thumbnail_url
+          ? discordLiveData.thumbnail_url.replace('{width}', '1280').replace('{height}', '720')
+          : `https://static-cdn.jtvnw.net/previews-ttv/live_user_${channel}-1280x720.jpg`;
+      }
+    }
+  }
 
   if (discordUserData?.profile_image_url && $('#dcPrevAuthorAvatar')) {
     $('#dcPrevAuthorAvatar').src = discordUserData.profile_image_url;
@@ -2771,6 +2803,9 @@ async function saveDiscordConfig(quiet = false) {
 
   const mType = document.querySelector('input[name="dcMentionType"]:checked')?.value || 'everyone';
   const isEnabled = $('#cfgDcEnabled') ? $('#cfgDcEnabled').checked : true;
+  const thumbType = document.querySelector('input[name="dcThumbType"]:checked')?.value || 'auto';
+  const customThumbnail = $('#cfgDcCustomThumb')?.value?.trim() || '';
+
   const config = {
     enabled: isEnabled,
     guildId: $('#cfgDcGuildSelect')?.value || '',
@@ -2782,7 +2817,9 @@ async function saveDiscordConfig(quiet = false) {
     embedTitle: $('#cfgDcEmbedTitle')?.value || '',
     embedDesc: $('#cfgDcEmbedDesc')?.value || '',
     embedColor: $('#cfgDcEmbedColor')?.value || '#9146FF',
-    includeThumbnail: $('#cfgDcIncludeThumb')?.checked !== false,
+    thumbType,
+    customThumbnail,
+    includeThumbnail: thumbType !== 'none',
     channels: {
       twitch: inputTwitch || (channel !== 'streamer' ? channel : '') || '',
       youtube: $('#cfgDcYoutubeChannel')?.value.trim() || '',
@@ -2936,6 +2973,59 @@ function initDiscordTabListeners() {
     $(`#${id}`)?.addEventListener('blur', () => saveDiscordConfig(true));
   });
   $('#cfgDcIncludeThumb')?.addEventListener('change', updateDiscordPreview);
+
+  // Modos de Capa da Live (Captura Automática, Imagem Própria, Sem Capa)
+  $$('input[name="dcThumbType"]').forEach((r) => {
+    r.addEventListener('change', () => {
+      $$('#tab-discord input[name="dcThumbType"]').forEach((el) => el.closest('.mention-card')?.classList.remove('selected'));
+      r.closest('.mention-card')?.classList.add('selected');
+      const customBox = $('#dcCustomThumbBox');
+      if (customBox) customBox.style.display = r.value === 'custom' ? 'block' : 'none';
+      if ($('#cfgDcIncludeThumb')) $('#cfgDcIncludeThumb').checked = r.value !== 'none';
+      updateDiscordPreview();
+      saveDiscordConfig(true);
+    });
+  });
+
+  $('#cfgDcCustomThumb')?.addEventListener('input', () => {
+    const val = $('#cfgDcCustomThumb')?.value?.trim() || '';
+    if ($('#btnClearCustomThumb')) $('#btnClearCustomThumb').style.display = val ? 'inline-block' : 'none';
+    updateDiscordPreview();
+  });
+  $('#cfgDcCustomThumb')?.addEventListener('change', () => saveDiscordConfig(true));
+  $('#cfgDcCustomThumb')?.addEventListener('blur', () => saveDiscordConfig(true));
+
+  $('#btnClearCustomThumb')?.addEventListener('click', () => {
+    if ($('#cfgDcCustomThumb')) $('#cfgDcCustomThumb').value = '';
+    if ($('#btnClearCustomThumb')) $('#btnClearCustomThumb').style.display = 'none';
+    updateDiscordPreview();
+    saveDiscordConfig(true);
+  });
+
+  $('#btnUploadThumb')?.addEventListener('click', () => {
+    $('#cfgDcThumbFileInput')?.click();
+  });
+
+  $('#cfgDcThumbFileInput')?.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast('A imagem deve ter no máximo 2MB.', 'error');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result;
+      if (dataUrl && $('#cfgDcCustomThumb')) {
+        $('#cfgDcCustomThumb').value = dataUrl;
+        if ($('#btnClearCustomThumb')) $('#btnClearCustomThumb').style.display = 'inline-block';
+        updateDiscordPreview();
+        saveDiscordConfig(true);
+        toast('Imagem carregada com sucesso!');
+      }
+    };
+    reader.readAsDataURL(file);
+  });
 
   // Ativação rápida da notificação com persistência imediata
   $('#cfgDcEnabled')?.addEventListener('change', async (e) => {
