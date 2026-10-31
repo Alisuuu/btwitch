@@ -4,6 +4,52 @@ const TWITCH_TOKEN = (process.env.TWITCH_BOT_TOKEN || 'te78do9otbn9t5ia4lxzr3div
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
 const APP_BASE_URL = (process.env.APP_URL || process.env.RENDER_EXTERNAL_URL || 'https://alive-bot-j126.onrender.com').replace(/\/+$/, '');
 const DEFAULT_BOT_ICON = `${APP_BASE_URL}/img/ic_splash_logo.webp`;
+const KVDB_BASE = 'https://kvdb.io/WFmviqxrR53HQjSYwnTmAQ';
+
+// Deduplicação global entre instâncias e processos (20 minutos)
+const NOTIF_COOLDOWN_MS = 20 * 60 * 1000;
+
+function hashString(str) {
+  let hash = 0;
+  const s = String(str || '');
+  for (let i = 0; i < s.length; i++) {
+    hash = ((hash << 5) - hash) + s.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
+}
+
+async function checkRemoteCooldown(key, maxAgeMs = NOTIF_COOLDOWN_MS) {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 2500);
+    const res = await fetch(`${KVDB_BASE}/dc_${key}`, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' },
+      signal: ctrl.signal,
+    }).finally(() => clearTimeout(t));
+    if (res.ok) {
+      const txt = await res.text();
+      const ts = Number(txt.trim());
+      if (ts && (Date.now() - ts < maxAgeMs)) {
+        return { inCooldown: true, lastSent: ts };
+      }
+    }
+  } catch {}
+  return { inCooldown: false };
+}
+
+async function setRemoteCooldown(key) {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 2500);
+    await fetch(`${KVDB_BASE}/dc_${key}`, {
+      method: 'POST',
+      body: String(Date.now()),
+      signal: ctrl.signal,
+    }).finally(() => clearTimeout(t));
+  } catch {}
+}
 
 let cachedClientId = null;
 async function getHelixHeaders() {
@@ -358,10 +404,32 @@ export function buildDiscordPayload(cfg, streamInfo = {}, userInfo = {}) {
   };
 }
 
-export async function sendDiscordWebhook(target, payload) {
+export async function sendDiscordWebhook(target, payload, options = {}) {
   const cleanTarget = String(target || '').trim();
   if (!cleanTarget) {
     throw new Error('Canal ou Webhook do Discord não configurado.');
+  }
+
+  const isTest = options.isTest === true || options.force === true;
+  const cooldownMs = options.cooldownMs || NOTIF_COOLDOWN_MS;
+  const dedupKey = hashString(cleanTarget);
+
+  if (!isTest) {
+    const memCache = (globalThis.__aliveDiscordWebhookPings = globalThis.__aliveDiscordWebhookPings || new Map());
+    const lastLocal = memCache.get(dedupKey);
+    if (lastLocal && (Date.now() - lastLocal < cooldownMs)) {
+      const waitSec = Math.round((Date.now() - lastLocal) / 1000);
+      console.log(`[alive-discord] Notificação descartada localmente: webhook já acionado recentemente (${waitSec}s atrás)`);
+      return { ok: true, deduplicated: true, reason: 'LOCAL_COOLDOWN' };
+    }
+
+    const remote = await checkRemoteCooldown(dedupKey, cooldownMs);
+    if (remote.inCooldown) {
+      const waitSec = Math.round((Date.now() - remote.lastSent) / 1000);
+      console.log(`[alive-discord] Notificação descartada remotamente via KVDB: webhook já acionado recentemente (${waitSec}s atrás)`);
+      memCache.set(dedupKey, remote.lastSent);
+      return { ok: true, deduplicated: true, reason: 'REMOTE_COOLDOWN' };
+    }
   }
 
   // Se for URL de Webhook do Discord
@@ -376,7 +444,13 @@ export async function sendDiscordWebhook(target, payload) {
       const text = await res.text().catch(() => '');
       throw new Error(`Discord retornou erro HTTP ${res.status}: ${text}`);
     }
-    return true;
+
+    if (!isTest) {
+      const memCache = (globalThis.__aliveDiscordWebhookPings = globalThis.__aliveDiscordWebhookPings || new Map());
+      memCache.set(dedupKey, Date.now());
+      setRemoteCooldown(dedupKey);
+    }
+    return { ok: true, sent: true };
   }
 
   // Se for ID numérico de canal do Discord
@@ -406,7 +480,13 @@ export async function sendDiscordWebhook(target, payload) {
       }
       throw new Error(`Discord API erro HTTP ${res.status}: ${text}`);
     }
-    return true;
+
+    if (!isTest) {
+      const memCache = (globalThis.__aliveDiscordWebhookPings = globalThis.__aliveDiscordWebhookPings || new Map());
+      memCache.set(dedupKey, Date.now());
+      setRemoteCooldown(dedupKey);
+    }
+    return { ok: true, sent: true };
   }
 
   throw new Error('Endereço inválido. Cole a URL do Webhook do Discord ou o ID numérico do canal.');

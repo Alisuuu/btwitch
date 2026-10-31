@@ -268,7 +268,7 @@ export default async function handler(req, res) {
       const payload = buildDiscordPayload({ ...incoming, channel, platform: testPlatform }, stream, user || {});
 
       try {
-        await sendDiscordWebhook(target, payload);
+        await sendDiscordWebhook(target, payload, { isTest: true });
         const namePlatform = testPlatform === 'kick' ? 'Kick' : testPlatform === 'youtube' ? 'YouTube' : testPlatform === 'tiktok' ? 'TikTok' : 'Twitch';
         return res.status(200).json({ ok: true, message: `Notificação de teste (${namePlatform}) enviada com sucesso ao Discord!` });
       } catch (err) {
@@ -398,6 +398,7 @@ export default async function handler(req, res) {
       const liveChannel = String(body.channel || channel || '').replace(/^#/, '').trim().toLowerCase();
       const liveTitle = String(body.title || '').trim();
       const liveGame = String(body.category || body.game || '').trim();
+      const liveSessionId = String(body.session_id || '').trim();
 
       if (!liveChannel) {
         return res.status(400).json({ error: 'Canal não informado.' });
@@ -413,8 +414,15 @@ export default async function handler(req, res) {
 
       if (!targetCfg.lastStreams) targetCfg.lastStreams = {};
       const now = Date.now();
+
+      // Deduplicação por session_id (evita reenvio se múltiplos endpoints responderem)
+      if (liveSessionId && targetCfg.lastLiveSessionId === liveSessionId) {
+        return res.status(200).json({ ok: true, skipped: true, reason: 'Live já notificada para esta sessão (session_id).' });
+      }
+
+      // Deduplicação geral por tempo (20 minutos de cooldown)
       const lastPingTime = targetCfg.lastStreams[`${livePlatform}_notified_at`] || targetCfg.lastStreams[`${livePlatform}_ping_time`] || targetCfg.lastNotifiedAt || 0;
-      if (now - lastPingTime < 900000) {
+      if (now - lastPingTime < 1200000) {
         return res.status(200).json({ ok: true, skipped: true, reason: 'Live já notificada recentemente via app.' });
       }
 
@@ -466,11 +474,15 @@ export default async function handler(req, res) {
 
       const payload = buildDiscordPayload({ ...targetCfg, channel: liveChannel, platform: livePlatform }, streamData, userData || {});
       try {
-        await sendDiscordWebhook(target, payload);
+        const hookRes = await sendDiscordWebhook(target, payload);
+        if (hookRes?.deduplicated) {
+          return res.status(200).json({ ok: true, skipped: true, deduplicated: true, reason: 'Live já notificada recentemente (deduplicação ativa).' });
+        }
         targetCfg.lastStreams[livePlatform] = streamData?.id || `app_${now}`;
         targetCfg.lastStreams[`${livePlatform}_notified_at`] = now;
         targetCfg.lastStreams[`${livePlatform}_ping_time`] = now;
         targetCfg.lastNotifiedAt = now;
+        if (liveSessionId) targetCfg.lastLiveSessionId = liveSessionId;
         await saveState(targetState, liveChannel);
         return res.status(200).json({ ok: true, notified: true, message: `Live do app Alive (${livePlatform}) notificada com sucesso no Discord!` });
       } catch (err) {
