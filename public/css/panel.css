@@ -263,7 +263,7 @@ body {
   bottom: 0;
   width: 290px;
   max-width: 85vw;
-  background: #F2121212;
+  background: rgba(18, 18, 18, 0.96);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 4px 0 32px rgba(0, 0, 0, 0.7);
   display: flex;
