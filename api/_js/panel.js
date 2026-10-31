@@ -418,6 +418,20 @@ function switchTab(name) {
       } catch { /* */ }
     }
   });
+  const tabTitles = {
+    fila: 'Estúdio & Fila',
+    widget: 'Widget de Música',
+    comandos: 'Comandos do Chat',
+    timers: 'Temporizadores',
+    ia: 'Inteligência Artificial',
+    config: 'Configuração Geral',
+    discord: 'Discord Live',
+  };
+  const currentBadge = $('#topbarCurrentTabBadge');
+  if (currentBadge && tabTitles[name]) {
+    currentBadge.textContent = tabTitles[name];
+  }
+
   $$('.panel').forEach((p) => p.classList.toggle('active', p.id === 'tab-' + name));
   if (name === 'widget') syncWidgetForm(store.state);
   if (name === 'config') syncConfigForm(store.state);
@@ -429,8 +443,42 @@ function switchTab(name) {
   setTimeout(updateTabsScrollIndicators, 120);
 }
 
+function initNavDrawer() {
+  const btnHamburger = $('#btnHamburger');
+  const btnClose = $('#btnNavDrawerClose');
+  const overlay = $('#navDrawerOverlay');
+
+  function openDrawer() {
+    if (overlay) overlay.classList.add('open');
+    document.body.classList.add('drawer-open');
+  }
+
+  function closeDrawer() {
+    if (overlay) overlay.classList.remove('open');
+    document.body.classList.remove('drawer-open');
+  }
+
+  if (btnHamburger) btnHamburger.addEventListener('click', openDrawer);
+  if (btnClose) btnClose.addEventListener('click', closeDrawer);
+  if (overlay) {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeDrawer();
+    });
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDrawer();
+  });
+
+  $$('.drawer-nav-item').forEach((item) => {
+    item.addEventListener('click', () => {
+      closeDrawer();
+    });
+  });
+}
+
 $$('.tab').forEach((t) => t.addEventListener('click', () => switchTab(t.dataset.tab)));
 initTabsScroll();
+initNavDrawer();
 
 // -------------------------------------------------------------- status/UI
 function renderUserHeader() {

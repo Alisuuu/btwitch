@@ -197,8 +197,202 @@ body {
   flex-shrink: 0;
 }
 
+/* ------------------------------------------------------------- hamburger & drawer */
+.btn-hamburger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius);
+  background: var(--card);
+  border: 1px solid var(--line);
+  color: var(--white);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+  padding: 0;
+}
+.btn-hamburger:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--line-light);
+  transform: translateY(-1px);
+}
+.btn-hamburger:active {
+  transform: scale(0.95);
+}
+
+.topbar-current-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--white);
+  letter-spacing: 0.03em;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+/* Nav Drawer */
+.nav-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nav-drawer-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.nav-drawer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 300px;
+  max-width: 85vw;
+  background: rgba(14, 14, 18, 0.96);
+  border-right: 1px solid var(--line);
+  box-shadow: 4px 0 32px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 1001;
+  user-select: none;
+}
+.nav-drawer-overlay.open .nav-drawer {
+  transform: translateX(0);
+}
+
+.nav-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.nav-drawer-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.nav-drawer-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--white);
+  border-color: var(--line-light);
+}
+
+.nav-drawer-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nav-drawer-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  padding: 6px 12px 8px;
+}
+
+.drawer-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.18s ease;
+  position: relative;
+}
+.drawer-nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--white);
+}
+.drawer-nav-item.active {
+  background: rgba(145, 70, 255, 0.15);
+  border-color: rgba(145, 70, 255, 0.35);
+  color: var(--white);
+  font-weight: 700;
+}
+.drawer-nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3.5px;
+  border-radius: 0 4px 4px 0;
+  background: #9146FF;
+}
+
+.drawer-nav-label {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+
+.nav-drawer-footer {
+  padding: 14px 18px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.drawer-status-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.drawer-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
 /* ------------------------------------------------------------------ tabs */
 .tabs-scroll-wrapper {
+  display: none !important;
   position: relative;
   display: flex;
   align-items: center;
@@ -1388,20 +1582,13 @@ label.check {
     width: 100% !important;
   }
 
-  /* Topbar em grade perfeita de 2 linhas: 
-     Linha 1: Marca à esquerda, Ações à direita (SEM quebrar)
-     Linha 2: 6 Abas perfeitamente distribuídas
-  */
+  /* Topbar mobile limpa e compacta com menu hamburguer */
   .topbar {
-    display: grid !important;
-    grid-template-columns: 1fr auto !important;
-    grid-template-rows: auto auto !important;
-    grid-template-areas:
-      "brand actions"
-      "tabs tabs" !important;
-    padding: 8px 12px 6px !important;
-    gap: 6px 8px !important;
+    display: flex !important;
+    justify-content: space-between !important;
     align-items: center !important;
+    padding: 8px 12px !important;
+    gap: 8px !important;
     background: var(--bg) !important;
     border-bottom: 1px solid var(--line) !important;
     box-sizing: border-box !important;
@@ -1410,12 +1597,14 @@ label.check {
   }
 
   .topbar-left {
-    grid-area: brand !important;
     display: flex !important;
     align-items: center !important;
     gap: 8px !important;
     min-width: 0 !important;
     flex: 1 1 auto !important;
+  }
+  .topbar-current-tab-badge {
+    display: none !important;
   }
   .brand {
     display: flex !important;
