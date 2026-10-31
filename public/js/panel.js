@@ -368,8 +368,56 @@ function widgetUrl() {
 }
 
 // ------------------------------------------------------------------- tabs
+function updateTabsScrollIndicators() {
+  const wrapper = $('#tabsScrollWrapper');
+  const nav = $('#tabsNav');
+  if (!wrapper || !nav) return;
+  const scrollLeft = nav.scrollLeft;
+  const maxScroll = nav.scrollWidth - nav.clientWidth;
+  const hasOverflow = maxScroll > 4;
+
+  wrapper.classList.toggle('can-scroll-left', hasOverflow && scrollLeft > 4);
+  wrapper.classList.toggle('can-scroll-right', hasOverflow && (maxScroll - scrollLeft) > 4);
+}
+
+function initTabsScroll() {
+  const wrapper = $('#tabsScrollWrapper');
+  const nav = $('#tabsNav');
+  const btnLeft = $('#tabsScrollLeft');
+  const btnRight = $('#tabsScrollRight');
+  if (!wrapper || !nav) return;
+
+  nav.addEventListener('scroll', updateTabsScrollIndicators, { passive: true });
+  window.addEventListener('resize', updateTabsScrollIndicators);
+
+  if (btnLeft) {
+    btnLeft.addEventListener('click', (e) => {
+      e.preventDefault();
+      nav.scrollBy({ left: -180, behavior: 'smooth' });
+    });
+  }
+  if (btnRight) {
+    btnRight.addEventListener('click', (e) => {
+      e.preventDefault();
+      nav.scrollBy({ left: 180, behavior: 'smooth' });
+    });
+  }
+
+  updateTabsScrollIndicators();
+  setTimeout(updateTabsScrollIndicators, 200);
+  setTimeout(updateTabsScrollIndicators, 600);
+}
+
 function switchTab(name) {
-  $$('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === name));
+  $$('.tab').forEach((t) => {
+    const isActive = t.dataset.tab === name;
+    t.classList.toggle('active', isActive);
+    if (isActive) {
+      try {
+        t.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      } catch { /* */ }
+    }
+  });
   $$('.panel').forEach((p) => p.classList.toggle('active', p.id === 'tab-' + name));
   if (name === 'widget') syncWidgetForm(store.state);
   if (name === 'config') syncConfigForm(store.state);
@@ -377,9 +425,12 @@ function switchTab(name) {
   if (name === 'timers') renderTimers(store.state);
   if (name === 'log') renderEvents(store.state);
   if (name === 'discord') syncDiscordTab();
+
+  setTimeout(updateTabsScrollIndicators, 120);
 }
 
 $$('.tab').forEach((t) => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+initTabsScroll();
 
 // -------------------------------------------------------------- status/UI
 function renderUserHeader() {
@@ -2183,7 +2234,7 @@ function bindIaTabEvents() {
 
   $('#btnPresetSweet')?.addEventListener('click', () => {
     applyPreset(
-      'Você é uma IA extremamente doce, carinhosa, fofa e gentil com todos do chat sem exceção. Use emojis fofos como (＾▽＾), ♡, ✨ e trate todos com muito afeto, paciência e carinho.',
+      'Você é uma IA extremamente doce, carinhosa, fofa e gentil com todos do chat sem exceção. Seja acolhedora e trate todos com muito afeto, paciência e carinho.',
       'Doce & Fofa'
     );
   });
