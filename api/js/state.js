@@ -105,16 +105,29 @@ export function defaultState() {
       discord: {
         enabled: true,
         guildId: '',
+        channelId: '',
         webhookUrl: '',
         channelName: 'lives',
         mention: 'everyone',
         roleId: '',
-        message: '[LIVE] **{streamer}** está ao vivo na Twitch | **{game}**',
+        channels: {
+          twitch: '',
+          youtube: '',
+          kick: '',
+          tiktok: '',
+        },
+        message: '[LIVE] **{streamer}** está ao vivo no {platform} | **{game}**',
         embedColor: '#9146FF',
         embedTitle: '▸ {title}',
         embedDesc: 'Transmissão iniciada. Venha interagir no chat e pedir músicas.',
         includeThumbnail: true,
         lastStreamId: '',
+        lastStreams: {
+          twitch: '',
+          youtube: '',
+          kick: '',
+          tiktok: '',
+        },
         lastNotifiedAt: 0,
       },
     },
@@ -181,19 +194,34 @@ export function sanitize(raw) {
   out.config.timers = cleanTimers;
 
   const rawDc = rc.discord || base.config.discord || {};
+  const rawChannels = rawDc.channels || {};
+  const rawLastStreams = rawDc.lastStreams || {};
   out.config.discord = {
     enabled: rawDc.enabled !== false,
     guildId: String(rawDc.guildId || '').trim(),
+    channelId: String(rawDc.channelId || '').trim(),
     webhookUrl: String(rawDc.webhookUrl || '').trim(),
     channelName: String(rawDc.channelName || 'lives').trim(),
     mention: String(rawDc.mention || 'everyone').trim(),
     roleId: String(rawDc.roleId || '').trim(),
-    message: String(rawDc.message || '[LIVE] **{streamer}** está ao vivo na Twitch | **{game}**').trim(),
+    channels: {
+      twitch: String(rawChannels.twitch || '').trim(),
+      youtube: String(rawChannels.youtube || '').trim(),
+      kick: String(rawChannels.kick || '').trim(),
+      tiktok: String(rawChannels.tiktok || '').trim(),
+    },
+    message: String(rawDc.message || '[LIVE] **{streamer}** está ao vivo no {platform} | **{game}**').trim(),
     embedColor: String(rawDc.embedColor || '#9146FF').trim(),
     embedTitle: String(rawDc.embedTitle || '▸ {title}').trim(),
     embedDesc: String(rawDc.embedDesc || 'Transmissão iniciada. Venha interagir no chat e pedir músicas.').trim(),
     includeThumbnail: rawDc.includeThumbnail !== false,
     lastStreamId: String(rawDc.lastStreamId || ''),
+    lastStreams: {
+      twitch: String(rawLastStreams.twitch || rawDc.lastStreamId || ''),
+      youtube: String(rawLastStreams.youtube || ''),
+      kick: String(rawLastStreams.kick || ''),
+      tiktok: String(rawLastStreams.tiktok || ''),
+    },
     lastNotifiedAt: Number(rawDc.lastNotifiedAt) || 0,
   };
 

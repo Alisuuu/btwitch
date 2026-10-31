@@ -70,29 +70,47 @@ export default async function handler(req, res) {
     }
 
     const state = await loadState(channel);
-    const discordCfg = state.config?.discord || {
-      enabled: true,
-      guildId: '',
-      channelId: '',
-      webhookUrl: '',
-      channelName: 'lives',
-      mention: 'everyone',
-      roleId: '',
-      channels: {
-        twitch: channel || '',
-        youtube: '',
-        kick: '',
-        tiktok: '',
-      },
-      message: '[LIVE] **{streamer}** está ao vivo no {platform} | **{game}**',
-      embedColor: '#9146FF',
-      embedTitle: '▸ {title}',
-      embedDesc: 'Transmissão iniciada. Venha interagir no chat e pedir músicas.',
-      includeThumbnail: true,
-      lastStreamId: '',
-      lastStreams: {},
-      lastNotifiedAt: 0,
-    };
+    let discordCfg = state.config?.discord;
+
+    const hasChannels = (c) => c && (c.twitch || c.youtube || c.kick || c.tiktok);
+    if (!hasChannels(discordCfg?.channels) && channel !== 'streamer') {
+      try {
+        const fb = await loadState('streamer');
+        if (hasChannels(fb.config?.discord?.channels)) {
+          discordCfg = {
+            ...(discordCfg || {}),
+            ...fb.config.discord,
+            channels: fb.config.discord.channels,
+          };
+        }
+      } catch {}
+    }
+
+    if (!discordCfg) {
+      discordCfg = {
+        enabled: true,
+        guildId: '',
+        channelId: '',
+        webhookUrl: '',
+        channelName: 'lives',
+        mention: 'everyone',
+        roleId: '',
+        channels: {
+          twitch: channel || '',
+          youtube: '',
+          kick: '',
+          tiktok: '',
+        },
+        message: '[LIVE] **{streamer}** está ao vivo no {platform} | **{game}**',
+        embedColor: '#9146FF',
+        embedTitle: '▸ {title}',
+        embedDesc: 'Transmissão iniciada. Venha interagir no chat e pedir músicas.',
+        includeThumbnail: true,
+        lastStreamId: '',
+        lastStreams: {},
+        lastNotifiedAt: 0,
+      };
+    }
     if (!discordCfg.channels) {
       discordCfg.channels = {
         twitch: channel || '',
@@ -162,6 +180,27 @@ export default async function handler(req, res) {
       state.updatedAt = Date.now();
       await saveState(state, channel);
       notifyRenderDaemon(channel);
+
+      // Sincroniza também sob a chave do canal Twitch e de streamer para redundância total
+      if (channelsCfg.twitch && channelsCfg.twitch !== channel) {
+        try {
+          const twitchState = await loadState(channelsCfg.twitch);
+          if (!twitchState.config) twitchState.config = {};
+          twitchState.config.discord = updatedDiscord;
+          twitchState.updatedAt = Date.now();
+          await saveState(twitchState, channelsCfg.twitch);
+          notifyRenderDaemon(channelsCfg.twitch);
+        } catch {}
+      }
+      if (channel !== 'streamer') {
+        try {
+          const streamerState = await loadState('streamer');
+          if (!streamerState.config) streamerState.config = {};
+          streamerState.config.discord = updatedDiscord;
+          streamerState.updatedAt = Date.now();
+          await saveState(streamerState, 'streamer');
+        } catch {}
+      }
 
       return res.status(200).json({ ok: true, config: updatedDiscord });
     }
@@ -335,6 +374,97 @@ export default async function handler(req, res) {
       await saveState(state, channel);
 
       return res.status(200).json({ ok: true, notified: anyNotified, platforms: results });
+    }
+
+    if (action === 'live_start') {
+      const livePlatform = String(body.platform || 'twitch').toLowerCase();
+      const liveChannel = String(body.channel || channel || '').replace(/^#/, '').trim().toLowerCase();
+      const liveTitle = String(body.title || '').trim();
+      const liveGame = String(body.category || body.game || '').trim();
+
+      if (!liveChannel) {
+        return res.status(400).json({ error: 'Canal não informado.' });
+      }
+
+      let targetState = await loadState(liveChannel);
+      let targetCfg = targetState.config?.discord;
+      if (!targetCfg?.webhookUrl && liveChannel !== 'streamer') {
+        const fb = await loadState('streamer');
+        if (fb.config?.discord?.webhookUrl) {
+          targetCfg = fb.config.discord;
+          targetState = fb;
+        }
+      }
+
+      const target = resolveDiscordTarget(targetCfg || {});
+      if (!target || !targetCfg?.enabled) {
+        return res.status(200).json({ ok: false, reason: 'Discord desativado ou sem webhook configurado para este canal.' });
+      }
+
+      if (!targetCfg.lastStreams) targetCfg.lastStreams = {};
+      const now = Date.now();
+      const lastPingTime = targetCfg.lastStreams[`${livePlatform}_ping_time`] || 0;
+      if (now - lastPingTime < 120000) {
+        return res.status(200).json({ ok: true, skipped: true, reason: 'Live já notificada recentemente via app.' });
+      }
+
+      let streamData = null;
+      let userData = null;
+
+      if (livePlatform === 'twitch') {
+        streamData = await getTwitchStream(liveChannel);
+        userData = await getTwitchUser(liveChannel);
+        if (!streamData) {
+          streamData = {
+            platform: 'twitch',
+            user_name: liveChannel,
+            user_login: liveChannel,
+            title: liveTitle || 'Transmissão Ao Vivo na Twitch • Alive App',
+            game_name: liveGame || 'Just Chatting',
+            viewer_count: 1,
+            url: `https://twitch.tv/${liveChannel}`,
+          };
+        }
+      } else if (livePlatform === 'kick') {
+        streamData = await getKickStream(liveChannel);
+        if (!streamData) {
+          streamData = {
+            platform: 'kick',
+            user_name: liveChannel,
+            user_login: liveChannel,
+            title: liveTitle || 'Transmissão Ao Vivo na Kick • Alive App',
+            game_name: liveGame || 'Just Chatting',
+            viewer_count: 1,
+            url: `https://kick.com/${liveChannel}`,
+          };
+        }
+      } else if (livePlatform === 'youtube') {
+        const ytHandle = liveChannel.startsWith('@') ? liveChannel : `@${liveChannel}`;
+        streamData = await getYoutubeStream(ytHandle);
+        if (!streamData) {
+          streamData = {
+            platform: 'youtube',
+            user_name: ytHandle,
+            user_login: ytHandle.replace(/^@/, ''),
+            title: liveTitle || 'Transmissão Ao Vivo no YouTube • Alive App',
+            game_name: liveGame || 'Gaming',
+            viewer_count: null,
+            url: `https://youtube.com/${ytHandle}`,
+          };
+        }
+      }
+
+      const payload = buildDiscordPayload({ ...targetCfg, channel: liveChannel, platform: livePlatform }, streamData, userData || {});
+      try {
+        await sendDiscordWebhook(target, payload);
+        targetCfg.lastStreams[livePlatform] = streamData?.id || `app_${now}`;
+        targetCfg.lastStreams[`${livePlatform}_ping_time`] = now;
+        targetCfg.lastNotifiedAt = now;
+        await saveState(targetState, liveChannel);
+        return res.status(200).json({ ok: true, notified: true, message: `Live do app Alive (${livePlatform}) notificada com sucesso no Discord!` });
+      } catch (err) {
+        return res.status(500).json({ ok: false, error: err.message });
+      }
     }
 
     return res.status(400).json({ error: 'Ação inválida.' });

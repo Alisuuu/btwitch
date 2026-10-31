@@ -2528,7 +2528,19 @@ async function syncDiscordTab() {
   const streamerName = $('#dcStreamerName');
   const streamerAvatar = $('#dcStreamerAvatar');
 
-  // Restaura dados salvos localmente no navegador antes de qualquer requisição de rede
+  // 1. Restaura canais dedicados salvos imediatamente
+  try {
+    const rawSavedChannels = localStorage.getItem('alive.discordChannels');
+    if (rawSavedChannels) {
+      const parsedChs = JSON.parse(rawSavedChannels);
+      if (parsedChs.twitch && $('#cfgDcTwitchChannel')) $('#cfgDcTwitchChannel').value = parsedChs.twitch;
+      if (parsedChs.youtube && $('#cfgDcYoutubeChannel')) $('#cfgDcYoutubeChannel').value = parsedChs.youtube;
+      if (parsedChs.kick && $('#cfgDcKickChannel')) $('#cfgDcKickChannel').value = parsedChs.kick;
+      if (parsedChs.tiktok && $('#cfgDcTiktokChannel')) $('#cfgDcTiktokChannel').value = parsedChs.tiktok;
+    }
+  } catch {}
+
+  // 2. Restaura dados salvos localmente no navegador antes de qualquer requisição de rede
   try {
     const cachedSpecific = channel ? localStorage.getItem(`alive.discordConfig_${channel}`) : null;
     const cachedGeneral = localStorage.getItem('alive.discordConfig');
@@ -2909,7 +2921,17 @@ function initDiscordTabListeners() {
     $(`#${id}`)?.addEventListener('input', updateDiscordPreview);
   });
   ['cfgDcTwitchChannel', 'cfgDcYoutubeChannel', 'cfgDcKickChannel', 'cfgDcTiktokChannel'].forEach((id) => {
-    $(`#${id}`)?.addEventListener('input', updateDiscordPreview);
+    $(`#${id}`)?.addEventListener('input', () => {
+      updateDiscordPreview();
+      try {
+        localStorage.setItem('alive.discordChannels', JSON.stringify({
+          twitch: $('#cfgDcTwitchChannel')?.value.trim() || '',
+          youtube: $('#cfgDcYoutubeChannel')?.value.trim() || '',
+          kick: $('#cfgDcKickChannel')?.value.trim() || '',
+          tiktok: $('#cfgDcTiktokChannel')?.value.trim() || '',
+        }));
+      } catch {}
+    });
     $(`#${id}`)?.addEventListener('change', () => saveDiscordConfig(true));
     $(`#${id}`)?.addEventListener('blur', () => saveDiscordConfig(true));
   });
@@ -2923,9 +2945,26 @@ function initDiscordTabListeners() {
     await saveDiscordConfig(true);
   });
 
-  // Salvar
+  // Salvar principal (rodapé)
   $('#btnSaveDiscordConfig')?.addEventListener('click', async () => {
     await saveDiscordConfig(false);
+  });
+
+  // Salvar rápido (abaixo da lista de canais)
+  $('#btnSaveChannelsQuick')?.addEventListener('click', async () => {
+    await saveDiscordConfig(false);
+  });
+
+  // Testar rápido (abaixo da lista de canais)
+  $('#btnTestChannelsQuick')?.addEventListener('click', async () => {
+    const btn = $('#btnTestChannelsQuick');
+    if (btn) btn.disabled = true;
+    let targetPlatform = 'twitch';
+    if ($('#cfgDcKickChannel')?.value.trim()) targetPlatform = 'kick';
+    else if ($('#cfgDcYoutubeChannel')?.value.trim()) targetPlatform = 'youtube';
+    else if ($('#cfgDcTiktokChannel')?.value.trim()) targetPlatform = 'tiktok';
+    await testDiscordNotification(targetPlatform, btn);
+    if (btn) btn.disabled = false;
   });
 
   async function testDiscordNotification(platform = 'twitch', triggerBtn = null) {
