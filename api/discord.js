@@ -293,13 +293,22 @@ export default async function handler(req, res) {
       if (twitchCh) {
         const stream = await getTwitchStream(twitchCh);
         results.twitch = stream ? { live: true, title: stream.title } : { live: false };
-        if (stream && discordCfg.lastStreams.twitch !== stream.id) {
-          const user = await getTwitchUser(twitchCh);
-          const payload = buildDiscordPayload({ ...discordCfg, channel: twitchCh, platform: 'twitch' }, { ...stream, platform: 'twitch' }, user || {});
-          await sendDiscordWebhook(target, payload);
-          discordCfg.lastStreams.twitch = stream.id;
-          anyNotified = true;
-        } else if (!stream) {
+        if (stream) {
+          const lastNotif = discordCfg.lastStreams.twitch_notified_at || discordCfg.lastNotifiedAt || 0;
+          const isRecent = (Date.now() - lastNotif) < 900000;
+          if (isRecent) {
+            if (discordCfg.lastStreams.twitch !== stream.id) {
+              discordCfg.lastStreams.twitch = stream.id;
+            }
+          } else if (discordCfg.lastStreams.twitch !== stream.id) {
+            const user = await getTwitchUser(twitchCh);
+            const payload = buildDiscordPayload({ ...discordCfg, channel: twitchCh, platform: 'twitch' }, { ...stream, platform: 'twitch' }, user || {});
+            await sendDiscordWebhook(target, payload);
+            discordCfg.lastStreams.twitch = stream.id;
+            discordCfg.lastStreams.twitch_notified_at = Date.now();
+            anyNotified = true;
+          }
+        } else {
           discordCfg.lastStreams.twitch = '';
         }
       }
@@ -309,12 +318,21 @@ export default async function handler(req, res) {
       if (kickCh) {
         const kickStream = await getKickStream(kickCh);
         results.kick = kickStream ? { live: true, title: kickStream.title } : { live: false };
-        if (kickStream && discordCfg.lastStreams.kick !== kickStream.id) {
-          const payload = buildDiscordPayload({ ...discordCfg, channel: kickCh, platform: 'kick' }, kickStream);
-          await sendDiscordWebhook(target, payload);
-          discordCfg.lastStreams.kick = kickStream.id;
-          anyNotified = true;
-        } else if (!kickStream) {
+        if (kickStream) {
+          const lastNotif = discordCfg.lastStreams.kick_notified_at || discordCfg.lastNotifiedAt || 0;
+          const isRecent = (Date.now() - lastNotif) < 900000;
+          if (isRecent) {
+            if (discordCfg.lastStreams.kick !== kickStream.id) {
+              discordCfg.lastStreams.kick = kickStream.id;
+            }
+          } else if (discordCfg.lastStreams.kick !== kickStream.id) {
+            const payload = buildDiscordPayload({ ...discordCfg, channel: kickCh, platform: 'kick' }, kickStream);
+            await sendDiscordWebhook(target, payload);
+            discordCfg.lastStreams.kick = kickStream.id;
+            discordCfg.lastStreams.kick_notified_at = Date.now();
+            anyNotified = true;
+          }
+        } else {
           discordCfg.lastStreams.kick = '';
         }
       }
@@ -324,12 +342,21 @@ export default async function handler(req, res) {
       if (ytCh) {
         const ytStream = await getYoutubeStream(ytCh);
         results.youtube = ytStream ? { live: true, title: ytStream.title } : { live: false };
-        if (ytStream && discordCfg.lastStreams.youtube !== ytStream.id) {
-          const payload = buildDiscordPayload({ ...discordCfg, channel: ytCh, platform: 'youtube' }, ytStream);
-          await sendDiscordWebhook(target, payload);
-          discordCfg.lastStreams.youtube = ytStream.id;
-          anyNotified = true;
-        } else if (!ytStream) {
+        if (ytStream) {
+          const lastNotif = discordCfg.lastStreams.youtube_notified_at || discordCfg.lastNotifiedAt || 0;
+          const isRecent = (Date.now() - lastNotif) < 900000;
+          if (isRecent) {
+            if (discordCfg.lastStreams.youtube !== ytStream.id) {
+              discordCfg.lastStreams.youtube = ytStream.id;
+            }
+          } else if (discordCfg.lastStreams.youtube !== ytStream.id) {
+            const payload = buildDiscordPayload({ ...discordCfg, channel: ytCh, platform: 'youtube' }, ytStream);
+            await sendDiscordWebhook(target, payload);
+            discordCfg.lastStreams.youtube = ytStream.id;
+            discordCfg.lastStreams.youtube_notified_at = Date.now();
+            anyNotified = true;
+          }
+        } else {
           discordCfg.lastStreams.youtube = '';
         }
       }
@@ -339,12 +366,21 @@ export default async function handler(req, res) {
       if (ttCh) {
         const ttStream = await getTiktokStream(ttCh);
         results.tiktok = ttStream ? { live: true, title: ttStream.title } : { live: false };
-        if (ttStream && discordCfg.lastStreams.tiktok !== ttStream.id) {
-          const payload = buildDiscordPayload({ ...discordCfg, channel: ttCh, platform: 'tiktok' }, ttStream);
-          await sendDiscordWebhook(target, payload);
-          discordCfg.lastStreams.tiktok = ttStream.id;
-          anyNotified = true;
-        } else if (!ttStream) {
+        if (ttStream) {
+          const lastNotif = discordCfg.lastStreams.tiktok_notified_at || discordCfg.lastNotifiedAt || 0;
+          const isRecent = (Date.now() - lastNotif) < 900000;
+          if (isRecent) {
+            if (discordCfg.lastStreams.tiktok !== ttStream.id) {
+              discordCfg.lastStreams.tiktok = ttStream.id;
+            }
+          } else if (discordCfg.lastStreams.tiktok !== ttStream.id) {
+            const payload = buildDiscordPayload({ ...discordCfg, channel: ttCh, platform: 'tiktok' }, ttStream);
+            await sendDiscordWebhook(target, payload);
+            discordCfg.lastStreams.tiktok = ttStream.id;
+            discordCfg.lastStreams.tiktok_notified_at = Date.now();
+            anyNotified = true;
+          }
+        } else {
           discordCfg.lastStreams.tiktok = '';
         }
       }
@@ -377,8 +413,8 @@ export default async function handler(req, res) {
 
       if (!targetCfg.lastStreams) targetCfg.lastStreams = {};
       const now = Date.now();
-      const lastPingTime = targetCfg.lastStreams[`${livePlatform}_ping_time`] || 0;
-      if (now - lastPingTime < 120000) {
+      const lastPingTime = targetCfg.lastStreams[`${livePlatform}_notified_at`] || targetCfg.lastStreams[`${livePlatform}_ping_time`] || targetCfg.lastNotifiedAt || 0;
+      if (now - lastPingTime < 900000) {
         return res.status(200).json({ ok: true, skipped: true, reason: 'Live já notificada recentemente via app.' });
       }
 
@@ -432,6 +468,7 @@ export default async function handler(req, res) {
       try {
         await sendDiscordWebhook(target, payload);
         targetCfg.lastStreams[livePlatform] = streamData?.id || `app_${now}`;
+        targetCfg.lastStreams[`${livePlatform}_notified_at`] = now;
         targetCfg.lastStreams[`${livePlatform}_ping_time`] = now;
         targetCfg.lastNotifiedAt = now;
         await saveState(targetState, liveChannel);
