@@ -25,7 +25,7 @@
 html {
   width: 100%;
   max-width: 100vw;
-  overflow-x: hidden;
+  overflow-x: clip;
   box-sizing: border-box;
 }
 
@@ -38,7 +38,7 @@ body {
   min-height: 100vh;
   width: 100%;
   max-width: 100vw;
-  overflow-x: hidden;
+  overflow-x: clip;
   position: relative;
   -webkit-font-smoothing: antialiased;
   box-sizing: border-box;
@@ -1627,19 +1627,26 @@ label.check {
   }
 
   html, body {
-    overflow-x: hidden !important;
+    overflow-x: clip !important;
     max-width: 100vw !important;
     width: 100% !important;
   }
 
   /* Topbar mobile limpa e compacta com menu hamburguer */
   .topbar {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 999 !important;
     display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
     justify-content: space-between !important;
     align-items: center !important;
     padding: 8px 12px !important;
     gap: 8px !important;
-    background: var(--bg) !important;
+    background: rgba(9, 9, 11, 0.96) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
     border-bottom: 1px solid var(--line) !important;
     box-sizing: border-box !important;
     width: 100% !important;
@@ -1648,10 +1655,11 @@ label.check {
 
   .topbar-left {
     display: flex !important;
+    flex-direction: row !important;
     align-items: center !important;
     gap: 8px !important;
     min-width: 0 !important;
-    flex: 0 0 auto !important;
+    flex: 0 1 auto !important;
   }
   .topbar-current-tab-badge {
     display: none !important;
@@ -1693,12 +1701,14 @@ label.check {
 
   .top-actions {
     display: flex !important;
+    flex-direction: row !important;
     align-items: center !important;
     justify-content: flex-end !important;
-    gap: 5px !important;
+    gap: 6px !important;
     flex-wrap: nowrap !important;
     flex: 0 0 auto !important;
     margin-left: auto !important;
+    width: auto !important;
     min-width: 0 !important;
   }
 
@@ -1713,6 +1723,7 @@ label.check {
     justify-content: center !important;
     gap: 5px !important;
     white-space: nowrap !important;
+    flex-shrink: 0 !important;
   }
   #btnWidget span:not([data-icon]) {
     display: none !important;
@@ -1723,6 +1734,8 @@ label.check {
   #btnTwitchTop {
     padding: 6px 9px !important;
     order: 9 !important;
+    margin-left: auto !important;
+    flex-shrink: 0 !important;
   }
   #btnTwitchTop span {
     display: inline !important;
@@ -1730,13 +1743,20 @@ label.check {
   }
   .user-profile-menu {
     position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
     order: 10 !important;
+    margin-left: auto !important;
+    flex-shrink: 0 !important;
   }
   .user-pill-btn {
     height: 32px !important;
     padding: 3px 8px 3px 5px !important;
     gap: 6px !important;
     font-size: 11.5px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
   }
   .user-avatar {
     width: 22px !important;
@@ -1744,7 +1764,7 @@ label.check {
     border-radius: 50% !important;
   }
   .user-name {
-    max-width: 75px !important;
+    max-width: 80px !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
@@ -2141,14 +2161,17 @@ label.check {
     width: auto;
   }
   .top-actions {
-    width: 100%;
-    justify-content: flex-end;
-  }
-  .top-actions #btnTwitchTop span {
-    display: none;
+    width: auto !important;
+    flex: 0 0 auto !important;
+    margin-left: auto !important;
+    justify-content: flex-end !important;
   }
   .top-actions #btnTwitchTop {
     padding: 6px 8px !important;
+  }
+  .top-actions #btnTwitchTop span {
+    display: inline !important;
+    font-size: 11px !important;
   }
 }
 
