@@ -2539,16 +2539,82 @@ function applyDiscordConfigToForm(c, fallbackChannel = '') {
   }
 }
 
+function resetDiscordTabUI() {
+  if ($('#cfgDcEnabled')) $('#cfgDcEnabled').checked = true;
+  if ($('#cfgDcGuildSelect')) {
+    $('#cfgDcGuildSelect').value = '';
+    delete $('#cfgDcGuildSelect').dataset.savedGuild;
+  }
+  if ($('#cfgDcChannelSelect')) {
+    $('#cfgDcChannelSelect').innerHTML = '<option value="">Selecione canal</option><option value="custom">Outro (Inserir Link de Webhook)</option>';
+  }
+  if ($('#cfgDcWebhook')) $('#cfgDcWebhook').value = '';
+  if ($('#cfgDcChannelName')) $('#cfgDcChannelName').value = 'lives';
+  if ($('#cfgDcMessage')) $('#cfgDcMessage').value = '[LIVE] **{streamer}** está ao vivo no {platform} | **{game}**';
+  if ($('#cfgDcEmbedTitle')) $('#cfgDcEmbedTitle').value = '▸ {title}';
+  if ($('#cfgDcEmbedDesc')) $('#cfgDcEmbedDesc').value = 'Transmissão iniciada. Venha assistir e interagir!';
+  if ($('#cfgDcEmbedColor')) $('#cfgDcEmbedColor').value = '#9146FF';
+  if ($('#cfgDcRoleId')) $('#cfgDcRoleId').value = '';
+  if ($('#cfgDcTwitchChannel')) $('#cfgDcTwitchChannel').value = '';
+  if ($('#cfgDcYoutubeChannel')) $('#cfgDcYoutubeChannel').value = '';
+  if ($('#cfgDcKickChannel')) $('#cfgDcKickChannel').value = '';
+  if ($('#cfgDcTiktokChannel')) $('#cfgDcTiktokChannel').value = '';
+  if ($('#cfgDcCustomThumb')) $('#cfgDcCustomThumb').value = '';
+  if ($('#btnClearCustomThumb')) $('#btnClearCustomThumb').style.display = 'none';
+  if ($('#dcCustomThumbBox')) $('#dcCustomThumbBox').style.display = 'none';
+
+  const mRadio = document.querySelector('input[name="dcMentionType"][value="everyone"]');
+  if (mRadio) {
+    mRadio.checked = true;
+    $$('#tab-discord input[name="dcMentionType"]').forEach((mc) => mc.closest('.mention-card')?.classList.remove('selected'));
+    mRadio.closest('.mention-card')?.classList.add('selected');
+  }
+
+  const tRadio = document.querySelector('input[name="dcThumbType"][value="auto"]');
+  if (tRadio) {
+    tRadio.checked = true;
+    $$('#tab-discord input[name="dcThumbType"]').forEach((el) => el.closest('.mention-card')?.classList.remove('selected'));
+    tRadio.closest('.mention-card')?.classList.add('selected');
+  }
+  if ($('#cfgDcIncludeThumb')) $('#cfgDcIncludeThumb').checked = true;
+}
+
 async function syncDiscordTab() {
   initDiscordTabListeners();
+
+  // Limpa chaves legadas sem isolamento para evitar vazamento entre contas
+  try {
+    localStorage.removeItem('alive.discordConfig');
+    localStorage.removeItem('alive.discordChannels');
+  } catch {}
+
   let channel = getMonitoredChannel();
   const notice = $('#dcAuthNotice');
   const streamerName = $('#dcStreamerName');
   const streamerAvatar = $('#dcStreamerAvatar');
 
-  // 1. Restaura canais dedicados salvos imediatamente
+  if (!channel || channel === 'streamer') {
+    const manualTwitch = $('#cfgDcTwitchChannel')?.value?.trim();
+    if (manualTwitch) {
+      channel = manualTwitch.toLowerCase();
+    }
+  }
+
+  if (!channel || channel === 'streamer') {
+    resetDiscordTabUI();
+    if (notice) notice.style.display = 'block';
+    if (streamerName) streamerName.textContent = 'Não conectado';
+    await loadDiscordGuildsAndChannels();
+    updateDiscordPreview();
+    return;
+  }
+
+  if (notice) notice.style.display = 'none';
+  if (streamerName) streamerName.textContent = `@${channel}`;
+
+  // 1. Restaura canais dedicados salvos isoladamente para este canal
   try {
-    const rawSavedChannels = localStorage.getItem('alive.discordChannels');
+    const rawSavedChannels = localStorage.getItem(`alive.discordChannels_${channel}`);
     if (rawSavedChannels) {
       const parsedChs = JSON.parse(rawSavedChannels);
       if (parsedChs.twitch && $('#cfgDcTwitchChannel')) $('#cfgDcTwitchChannel').value = parsedChs.twitch;
@@ -2558,29 +2624,13 @@ async function syncDiscordTab() {
     }
   } catch {}
 
-  // 2. Restaura dados salvos localmente no navegador antes de qualquer requisição de rede
+  // 2. Restaura config salva isoladamente para este canal
   try {
-    const cachedSpecific = channel ? localStorage.getItem(`alive.discordConfig_${channel}`) : null;
-    const cachedGeneral = localStorage.getItem('alive.discordConfig');
-    const fromStore = store?.state?.config?.discord;
-    const cached = cachedSpecific ? JSON.parse(cachedSpecific) : (cachedGeneral ? JSON.parse(cachedGeneral) : fromStore);
-    if (cached) {
-      applyDiscordConfigToForm(cached, channel !== 'streamer' ? channel : '');
+    const cachedSpecific = localStorage.getItem(`alive.discordConfig_${channel}`);
+    if (cachedSpecific) {
+      applyDiscordConfigToForm(JSON.parse(cachedSpecific), channel);
     }
   } catch {}
-
-  const manualTwitch = $('#cfgDcTwitchChannel')?.value?.trim();
-  if (channel && channel !== 'streamer') {
-    if (notice) notice.style.display = 'none';
-    if (streamerName) streamerName.textContent = `@${channel}`;
-  } else if (manualTwitch) {
-    if (notice) notice.style.display = 'none';
-    if (streamerName) streamerName.textContent = `@${manualTwitch}`;
-    channel = manualTwitch.toLowerCase();
-  } else {
-    if (notice) notice.style.display = 'block';
-    if (streamerName) streamerName.textContent = 'Não conectado';
-  }
 
   const authUser = (() => { try { return JSON.parse(localStorage.getItem('alive.user') || 'null'); } catch { return null; } })();
   if (authUser?.profile_image_url && streamerAvatar) {
@@ -2595,7 +2645,7 @@ async function syncDiscordTab() {
 async function loadDiscordGuildsAndChannels(targetGuildId) {
   const channel = getMonitoredChannel();
   try {
-    const res = await fetch(`/api/discord?action=guilds${channel ? `&channel=${encodeURIComponent(channel)}` : ''}`);
+    const res = await fetch(`/api/discord?action=guilds${channel && channel !== 'streamer' ? `&channel=${encodeURIComponent(channel)}` : ''}`);
     if (!res.ok) return;
     const d = await res.json();
     const rowGuild = $('#rowDcGuildSelect');
@@ -2606,7 +2656,7 @@ async function loadDiscordGuildsAndChannels(targetGuildId) {
         selGuild.innerHTML = '<option value="">Selecione o seu Servidor...</option>' +
           d.guilds.map((g) => `<option value="${g.id}">${g.name}</option>`).join('');
         
-        const saved = targetGuildId || selGuild.dataset.savedGuild || (selGuild.value && selGuild.value !== '' ? selGuild.value : '');
+        const saved = targetGuildId || selGuild.dataset.savedGuild;
         if (saved && d.guilds.some((g) => g.id === saved)) {
           selGuild.value = saved;
           await loadChannelsForGuild(saved, false);
@@ -2653,10 +2703,9 @@ async function loadChannelsForGuild(guildId, autoSelectFirst = false) {
 }
 
 async function loadDiscordData(channel) {
-  let activeCh = channel || getMonitoredChannel();
+  const activeCh = channel || getMonitoredChannel();
   if (!activeCh || activeCh === 'streamer') {
-    const manual = $('#cfgDcTwitchChannel')?.value.trim().toLowerCase().replace(/^#/, '');
-    activeCh = manual || store?.channel || currentChannel || 'streamer';
+    return;
   }
   try {
     const res = await fetch(`/api/discord?channel=${encodeURIComponent(activeCh)}`);
@@ -2683,7 +2732,7 @@ async function loadDiscordData(channel) {
     }
 
     if (d.config) {
-      applyDiscordConfigToForm(d.config, activeCh !== 'streamer' ? activeCh : '');
+      applyDiscordConfigToForm(d.config, activeCh);
       if (d.config.guildId && $('#cfgDcGuildSelect')) {
         $('#cfgDcGuildSelect').dataset.savedGuild = d.config.guildId;
         if ($('#cfgDcGuildSelect').value !== d.config.guildId) {
@@ -2692,9 +2741,9 @@ async function loadDiscordData(channel) {
         }
       }
       try {
-        localStorage.setItem('alive.discordConfig', JSON.stringify(d.config));
-        if (activeCh && activeCh !== 'streamer') {
-          localStorage.setItem(`alive.discordConfig_${activeCh}`, JSON.stringify(d.config));
+        localStorage.setItem(`alive.discordConfig_${activeCh}`, JSON.stringify(d.config));
+        if (d.config.channels) {
+          localStorage.setItem(`alive.discordChannels_${activeCh}`, JSON.stringify(d.config.channels));
         }
       } catch {}
     }
@@ -2793,7 +2842,11 @@ async function saveDiscordConfig(quiet = false) {
   let channel = getMonitoredChannel();
   const inputTwitch = $('#cfgDcTwitchChannel')?.value.trim().toLowerCase().replace(/^#/, '');
   if (!channel || channel === 'streamer') {
-    channel = inputTwitch || currentChannel || store?.channel || store?.state?.config?.channel || 'streamer';
+    channel = inputTwitch;
+  }
+  if (!channel || channel === 'streamer') {
+    if (!quiet) toast('Conecte sua conta da Twitch ou informe seu canal para salvar.', 'warning');
+    return false;
   }
   const btn = $('#btnSaveDiscordConfig');
   if (btn && !quiet) {
@@ -2821,27 +2874,26 @@ async function saveDiscordConfig(quiet = false) {
     customThumbnail,
     includeThumbnail: thumbType !== 'none',
     channels: {
-      twitch: inputTwitch || (channel !== 'streamer' ? channel : '') || '',
+      twitch: inputTwitch || channel || '',
       youtube: $('#cfgDcYoutubeChannel')?.value.trim() || '',
       kick: $('#cfgDcKickChannel')?.value.trim() || '',
       tiktok: $('#cfgDcTiktokChannel')?.value.trim() || '',
     },
   };
 
-  // 1. Persistência local imediata
+  // 1. Persistência local estritamente isolada por usuário
   try {
     const ser = JSON.stringify(config);
-    localStorage.setItem('alive.discordConfig', ser);
-    if (channel && channel !== 'streamer') {
-      localStorage.setItem(`alive.discordConfig_${channel}`, ser);
-    }
-    if (config.channels.twitch) {
+    localStorage.setItem(`alive.discordConfig_${channel}`, ser);
+    localStorage.setItem(`alive.discordChannels_${channel}`, JSON.stringify(config.channels));
+    if (config.channels.twitch && config.channels.twitch.toLowerCase() !== channel) {
       localStorage.setItem(`alive.discordConfig_${config.channels.twitch.toLowerCase()}`, ser);
+      localStorage.setItem(`alive.discordChannels_${config.channels.twitch.toLowerCase()}`, JSON.stringify(config.channels));
     }
   } catch {}
 
-  // 2. Atualiza no store da aplicação
-  if (store && store.state) {
+  // 2. Atualiza no store da aplicação se corresponder ao canal atual
+  if (store && store.state && (store.channel === channel || currentChannel === channel)) {
     if (!store.state.config) store.state.config = {};
     store.state.config.discord = {
       ...(store.state.config.discord || {}),
@@ -2850,7 +2902,7 @@ async function saveDiscordConfig(quiet = false) {
     try { store.flush(); } catch {}
   }
 
-  // 3. Sincroniza com o servidor
+  // 3. Sincroniza com o servidor exclusivamente para esta conta
   try {
     const res = await fetch('/api/discord', {
       method: 'POST',
@@ -2960,14 +3012,17 @@ function initDiscordTabListeners() {
   ['cfgDcTwitchChannel', 'cfgDcYoutubeChannel', 'cfgDcKickChannel', 'cfgDcTiktokChannel'].forEach((id) => {
     $(`#${id}`)?.addEventListener('input', () => {
       updateDiscordPreview();
-      try {
-        localStorage.setItem('alive.discordChannels', JSON.stringify({
-          twitch: $('#cfgDcTwitchChannel')?.value.trim() || '',
-          youtube: $('#cfgDcYoutubeChannel')?.value.trim() || '',
-          kick: $('#cfgDcKickChannel')?.value.trim() || '',
-          tiktok: $('#cfgDcTiktokChannel')?.value.trim() || '',
-        }));
-      } catch {}
+      const ch = getMonitoredChannel();
+      if (ch && ch !== 'streamer') {
+        try {
+          localStorage.setItem(`alive.discordChannels_${ch}`, JSON.stringify({
+            twitch: $('#cfgDcTwitchChannel')?.value.trim() || '',
+            youtube: $('#cfgDcYoutubeChannel')?.value.trim() || '',
+            kick: $('#cfgDcKickChannel')?.value.trim() || '',
+            tiktok: $('#cfgDcTiktokChannel')?.value.trim() || '',
+          }));
+        } catch {}
+      }
     });
     $(`#${id}`)?.addEventListener('change', () => saveDiscordConfig(true));
     $(`#${id}`)?.addEventListener('blur', () => saveDiscordConfig(true));

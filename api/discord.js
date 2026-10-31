@@ -65,26 +65,12 @@ export default async function handler(req, res) {
       return res.status(200).json(resChannels);
     }
 
-    if (!channel) {
+    if (!channel || channel === 'streamer') {
       return res.status(200).json({ bot: DISCORD_BOT_INFO, config: null, live: null });
     }
 
     const state = await loadState(channel);
     let discordCfg = state.config?.discord;
-
-    const hasChannels = (c) => c && (c.twitch || c.youtube || c.kick || c.tiktok);
-    if (!hasChannels(discordCfg?.channels) && channel !== 'streamer') {
-      try {
-        const fb = await loadState('streamer');
-        if (hasChannels(fb.config?.discord?.channels)) {
-          discordCfg = {
-            ...(discordCfg || {}),
-            ...fb.config.discord,
-            channels: fb.config.discord.channels,
-          };
-        }
-      } catch {}
-    }
 
     if (!discordCfg) {
       discordCfg = {
@@ -96,7 +82,7 @@ export default async function handler(req, res) {
         mention: 'everyone',
         roleId: '',
         channels: {
-          twitch: channel || '',
+          twitch: channel,
           youtube: '',
           kick: '',
           tiktok: '',
@@ -115,7 +101,7 @@ export default async function handler(req, res) {
     }
     if (!discordCfg.channels) {
       discordCfg.channels = {
-        twitch: channel || '',
+        twitch: channel,
         youtube: '',
         kick: '',
         tiktok: '',
@@ -185,7 +171,7 @@ export default async function handler(req, res) {
       await saveState(state, channel);
       notifyRenderDaemon(channel);
 
-      // Sincroniza também sob a chave do canal Twitch e de streamer para redundância total
+      // Sincroniza também sob a chave do canal Twitch caso o login difira
       if (channelsCfg.twitch && channelsCfg.twitch !== channel) {
         try {
           const twitchState = await loadState(channelsCfg.twitch);
@@ -194,15 +180,6 @@ export default async function handler(req, res) {
           twitchState.updatedAt = Date.now();
           await saveState(twitchState, channelsCfg.twitch);
           notifyRenderDaemon(channelsCfg.twitch);
-        } catch {}
-      }
-      if (channel !== 'streamer') {
-        try {
-          const streamerState = await loadState('streamer');
-          if (!streamerState.config) streamerState.config = {};
-          streamerState.config.discord = updatedDiscord;
-          streamerState.updatedAt = Date.now();
-          await saveState(streamerState, 'streamer');
         } catch {}
       }
 
@@ -392,13 +369,6 @@ export default async function handler(req, res) {
 
       let targetState = await loadState(liveChannel);
       let targetCfg = targetState.config?.discord;
-      if (!targetCfg?.webhookUrl && liveChannel !== 'streamer') {
-        const fb = await loadState('streamer');
-        if (fb.config?.discord?.webhookUrl) {
-          targetCfg = fb.config.discord;
-          targetState = fb;
-        }
-      }
 
       const target = resolveDiscordTarget(targetCfg || {});
       if (!target || !targetCfg?.enabled) {
