@@ -469,9 +469,16 @@ function initNavDrawer() {
     if (e.key === 'Escape') closeDrawer();
   });
 
-  $$('.drawer-nav-item').forEach((item) => {
+  $$('.drawer-item').forEach((item) => {
     item.addEventListener('click', () => {
       closeDrawer();
+    });
+    item.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        switchTab(item.dataset.tab);
+        closeDrawer();
+      }
     });
   });
 }
