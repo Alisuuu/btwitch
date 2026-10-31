@@ -2859,6 +2859,75 @@ label.check {
 .online .pulse-dot {
   animation: livePulse 1.4s infinite ease-in-out;
 }
+
+/* ------------------------------------------- Canais Multiplataforma Discord */
+.platform-channels-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+@media (min-width: 600px) {
+  .platform-channels-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.platform-channel-card {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.platform-channel-card:focus-within {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.04);
+}
+.platform-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.platform-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.platform-pill.twitch {
+  color: #a970ff;
+  background: rgba(145, 70, 255, 0.14);
+  border: 1px solid rgba(145, 70, 255, 0.3);
+}
+.platform-pill.youtube {
+  color: #ff4e4e;
+  background: rgba(255, 0, 0, 0.12);
+  border: 1px solid rgba(255, 0, 0, 0.28);
+}
+.platform-pill.kick {
+  color: #53fc18;
+  background: rgba(83, 252, 24, 0.12);
+  border: 1px solid rgba(83, 252, 24, 0.28);
+}
+.platform-pill.tiktok {
+  color: #25f4ee;
+  background: rgba(37, 244, 238, 0.1);
+  border: 1px solid rgba(37, 244, 238, 0.28);
+}
+.platform-channel-card input[type="text"] {
+  width: 100%;
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
 @keyframes livePulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.4; transform: scale(1.3); }

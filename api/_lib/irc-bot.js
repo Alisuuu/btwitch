@@ -8,7 +8,7 @@ import { createRunner } from '../js/commands.js';
 import { loadState, saveState } from './store.js';
 import { extractVideoId, extractListId, videoMeta, playlistVideos, searchVideos } from './youtube.js';
 import { sanitize } from '../js/state.js';
-import { getTwitchStream, getTwitchUser, buildDiscordPayload, sendDiscordWebhook } from './discord-notifier.js';
+import { getTwitchStream, getTwitchUser, getKickStream, getYoutubeStream, getTiktokStream, buildDiscordPayload, sendDiscordWebhook } from './discord-notifier.js';
 import { discordGateway } from './discord-gateway.js';
 
 export const BOT_DEFAULTS = {
@@ -211,23 +211,91 @@ export class TwitchBotService extends EventEmitter {
         try {
           const s = await loadState(ch);
           const d = s.config?.discord;
-          if (d && d.enabled && d.webhookUrl) {
-            const stream = await getTwitchStream(ch);
-            if (!stream) {
-              if (d.lastStreamId) {
-                d.lastStreamId = '';
-                await saveState(s, ch);
+          if (d && d.enabled && (d.webhookUrl || d.channelId)) {
+            const target = d.webhookUrl || d.channelId;
+            if (!d.lastStreams) d.lastStreams = {};
+            const channelsCfg = d.channels || {};
+            let stateChanged = false;
+
+            // 1. Twitch
+            const twitchCh = channelsCfg.twitch || ch;
+            if (twitchCh) {
+              const stream = await getTwitchStream(twitchCh);
+              if (!stream) {
+                if (d.lastStreams.twitch) {
+                  d.lastStreams.twitch = '';
+                  stateChanged = true;
+                }
+              } else if (d.lastStreams.twitch !== stream.id) {
+                const user = await getTwitchUser(twitchCh);
+                const payload = buildDiscordPayload({ ...d, channel: twitchCh, platform: 'twitch' }, { ...stream, platform: 'twitch' }, user || {});
+                await sendDiscordWebhook(target, payload);
+                d.lastStreams.twitch = stream.id;
+                d.lastNotifiedAt = Date.now();
+                stateChanged = true;
+                console.log(`[alive-discord] Notificação de live Twitch enviada para #${twitchCh}!`);
               }
-              continue;
             }
-            if (d.lastStreamId !== stream.id) {
-              const user = await getTwitchUser(ch);
-              const payload = buildDiscordPayload({ ...d, channel: ch }, stream, user || {});
-              await sendDiscordWebhook(d.webhookUrl, payload);
-              d.lastStreamId = stream.id;
-              d.lastNotifiedAt = Date.now();
+
+            // 2. Kick
+            const kickCh = channelsCfg.kick;
+            if (kickCh) {
+              const kickStream = await getKickStream(kickCh);
+              if (!kickStream) {
+                if (d.lastStreams.kick) {
+                  d.lastStreams.kick = '';
+                  stateChanged = true;
+                }
+              } else if (d.lastStreams.kick !== kickStream.id) {
+                const payload = buildDiscordPayload({ ...d, channel: kickCh, platform: 'kick' }, kickStream);
+                await sendDiscordWebhook(target, payload);
+                d.lastStreams.kick = kickStream.id;
+                d.lastNotifiedAt = Date.now();
+                stateChanged = true;
+                console.log(`[alive-discord] Notificação de live Kick enviada para #${kickCh}!`);
+              }
+            }
+
+            // 3. YouTube
+            const ytCh = channelsCfg.youtube;
+            if (ytCh) {
+              const ytStream = await getYoutubeStream(ytCh);
+              if (!ytStream) {
+                if (d.lastStreams.youtube) {
+                  d.lastStreams.youtube = '';
+                  stateChanged = true;
+                }
+              } else if (d.lastStreams.youtube !== ytStream.id) {
+                const payload = buildDiscordPayload({ ...d, channel: ytCh, platform: 'youtube' }, ytStream);
+                await sendDiscordWebhook(target, payload);
+                d.lastStreams.youtube = ytStream.id;
+                d.lastNotifiedAt = Date.now();
+                stateChanged = true;
+                console.log(`[alive-discord] Notificação de live YouTube enviada para @${ytCh}!`);
+              }
+            }
+
+            // 4. TikTok
+            const ttCh = channelsCfg.tiktok;
+            if (ttCh) {
+              const ttStream = await getTiktokStream(ttCh);
+              if (!ttStream) {
+                if (d.lastStreams.tiktok) {
+                  d.lastStreams.tiktok = '';
+                  stateChanged = true;
+                }
+              } else if (d.lastStreams.tiktok !== ttStream.id) {
+                const payload = buildDiscordPayload({ ...d, channel: ttCh, platform: 'tiktok' }, ttStream);
+                await sendDiscordWebhook(target, payload);
+                d.lastStreams.tiktok = ttStream.id;
+                d.lastNotifiedAt = Date.now();
+                stateChanged = true;
+                console.log(`[alive-discord] Notificação de live TikTok enviada para @${ttCh}!`);
+              }
+            }
+
+            if (stateChanged) {
               await saveState(s, ch);
-              console.log(`[alive-discord] Notificação de live enviada para #${ch}!`);
             }
           }
         } catch (e) {

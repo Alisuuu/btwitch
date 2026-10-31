@@ -1091,6 +1091,61 @@
       </div>
 
       <div class="panel-section-title">
+        <span>Canais Monitorados (Multiplataforma)</span>
+      </div>
+      <p class="field-desc" style="margin-bottom:12px;margin-top:-6px;">Adicione seus canais para anunciar no Discord quando iniciar live na Twitch, YouTube, Kick ou TikTok.</p>
+
+      <div class="platform-channels-grid">
+        <!-- Twitch -->
+        <div class="platform-channel-card">
+          <div class="platform-card-header">
+            <span class="platform-pill twitch">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
+              <span>Twitch</span>
+            </span>
+            <button type="button" class="btn ghost small btn-test-platform" data-platform="twitch" style="padding:2px 8px;font-size:10.5px;">Testar</button>
+          </div>
+          <input type="text" id="cfgDcTwitchChannel" placeholder="Nome do canal na Twitch (ex: streamer)" autocomplete="off">
+        </div>
+
+        <!-- YouTube -->
+        <div class="platform-channel-card">
+          <div class="platform-card-header">
+            <span class="platform-pill youtube">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+              <span>YouTube</span>
+            </span>
+            <button type="button" class="btn ghost small btn-test-platform" data-platform="youtube" style="padding:2px 8px;font-size:10.5px;">Testar</button>
+          </div>
+          <input type="text" id="cfgDcYoutubeChannel" placeholder="@handle ou canal (ex: @seucanal)" autocomplete="off">
+        </div>
+
+        <!-- Kick -->
+        <div class="platform-channel-card">
+          <div class="platform-card-header">
+            <span class="platform-pill kick">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h5.5v6.5h3L16 3h5l-6 8 6.5 10H16l-4.5-7h-3V21H3V3z"/></svg>
+              <span>Kick</span>
+            </span>
+            <button type="button" class="btn ghost small btn-test-platform" data-platform="kick" style="padding:2px 8px;font-size:10.5px;">Testar</button>
+          </div>
+          <input type="text" id="cfgDcKickChannel" placeholder="Slug / canal na Kick (ex: seucanal)" autocomplete="off">
+        </div>
+
+        <!-- TikTok -->
+        <div class="platform-channel-card">
+          <div class="platform-card-header">
+            <span class="platform-pill tiktok">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.31 0 .61.05.89.14V8.96a6.38 6.38 0 0 0-.89-.06 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V9.05a8.27 8.27 0 0 0 4.76 1.5V7.1a4.84 4.84 0 0 1-1-.41z"/></svg>
+              <span>TikTok</span>
+            </span>
+            <button type="button" class="btn ghost small btn-test-platform" data-platform="tiktok" style="padding:2px 8px;font-size:10.5px;">Testar</button>
+          </div>
+          <input type="text" id="cfgDcTiktokChannel" placeholder="Usuário no TikTok (ex: @seucanal)" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="panel-section-title">
         <span>Mensagem &amp; Menção</span>
       </div>
 
@@ -1135,6 +1190,7 @@ Transmissão: {url}</textarea>
           <button type="button" class="tag-btn" data-tag="{title}">{title}</button>
           <button type="button" class="tag-btn" data-tag="{game}">{game}</button>
           <button type="button" class="tag-btn" data-tag="{url}">{url}</button>
+          <button type="button" class="tag-btn" data-tag="{platform}">{platform}</button>
           <button type="button" class="tag-btn" data-tag="{viewers}">{viewers}</button>
         </div>
       </div>

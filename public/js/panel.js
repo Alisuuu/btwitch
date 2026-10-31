@@ -2581,6 +2581,12 @@ async function loadDiscordData(channel) {
       if ($('#cfgDcIncludeThumb')) $('#cfgDcIncludeThumb').checked = c.includeThumbnail !== false;
       if ($('#cfgDcRoleId')) $('#cfgDcRoleId').value = c.roleId || '';
 
+      const chs = c.channels || {};
+      if ($('#cfgDcTwitchChannel')) $('#cfgDcTwitchChannel').value = chs.twitch || channel || '';
+      if ($('#cfgDcYoutubeChannel')) $('#cfgDcYoutubeChannel').value = chs.youtube || '';
+      if ($('#cfgDcKickChannel')) $('#cfgDcKickChannel').value = chs.kick || '';
+      if ($('#cfgDcTiktokChannel')) $('#cfgDcTiktokChannel').value = chs.tiktok || '';
+
       const mRadio = document.querySelector(`input[name="dcMentionType"][value="${c.mention || 'everyone'}"]`);
       if (mRadio) {
         mRadio.checked = true;
@@ -2687,6 +2693,12 @@ async function saveDiscordConfig(quiet = false) {
     embedDesc: $('#cfgDcEmbedDesc')?.value || '',
     embedColor: $('#cfgDcEmbedColor')?.value || '#9146FF',
     includeThumbnail: $('#cfgDcIncludeThumb')?.checked !== false,
+    channels: {
+      twitch: $('#cfgDcTwitchChannel')?.value.trim() || channel || '',
+      youtube: $('#cfgDcYoutubeChannel')?.value.trim() || '',
+      kick: $('#cfgDcKickChannel')?.value.trim() || '',
+      tiktok: $('#cfgDcTiktokChannel')?.value.trim() || '',
+    },
   };
 
   try {
@@ -2788,7 +2800,7 @@ function initDiscordTabListeners() {
     });
   });
 
-  ['cfgDcMessage', 'cfgDcEmbedTitle', 'cfgDcEmbedDesc', 'cfgDcRoleId'].forEach((id) => {
+  ['cfgDcMessage', 'cfgDcEmbedTitle', 'cfgDcEmbedDesc', 'cfgDcRoleId', 'cfgDcTwitchChannel', 'cfgDcYoutubeChannel', 'cfgDcKickChannel', 'cfgDcTiktokChannel'].forEach((id) => {
     $(`#${id}`)?.addEventListener('input', updateDiscordPreview);
   });
   $('#cfgDcIncludeThumb')?.addEventListener('change', updateDiscordPreview);
@@ -2806,16 +2818,14 @@ function initDiscordTabListeners() {
     await saveDiscordConfig(false);
   });
 
-  // Testar
-  $('#btnTestDiscordWebhook')?.addEventListener('click', async () => {
+  async function testDiscordNotification(platform = 'twitch', triggerBtn = null) {
     const channel = getMonitoredChannel();
-    const btn = $('#btnTestDiscordWebhook');
     const webhookUrl = $('#cfgDcWebhook')?.value.trim() || '';
     const channelName = $('#cfgDcChannelName')?.value.trim() || '';
 
-    btn.disabled = true;
-    const oldText = btn.innerHTML;
-    btn.textContent = 'Enviando...';
+    if (triggerBtn) {
+      triggerBtn.disabled = true;
+    }
 
     const mType = document.querySelector('input[name="dcMentionType"]:checked')?.value || 'everyone';
     const config = {
@@ -2829,26 +2839,56 @@ function initDiscordTabListeners() {
       embedDesc: $('#cfgDcEmbedDesc')?.value || '',
       embedColor: $('#cfgDcEmbedColor')?.value || '#9146FF',
       includeThumbnail: $('#cfgDcIncludeThumb')?.checked !== false,
+      channels: {
+        twitch: $('#cfgDcTwitchChannel')?.value.trim() || channel || '',
+        youtube: $('#cfgDcYoutubeChannel')?.value.trim() || '',
+        kick: $('#cfgDcKickChannel')?.value.trim() || '',
+        tiktok: $('#cfgDcTiktokChannel')?.value.trim() || '',
+      },
     };
 
     try {
       const res = await fetch('/api/discord', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'test', channel, config }),
+        body: JSON.stringify({ action: 'test', channel, platform, config }),
       });
       const d = await res.json().catch(() => ({}));
       if (res.ok && d.ok) {
-        toast('Notificação de teste enviada ao Discord com sucesso!');
+        toast(d.message || 'Notificação de teste enviada ao Discord com sucesso!');
       } else {
         toast(d.error || 'Falha ao enviar notificação para o Discord.', 'error');
       }
     } catch (e) {
       toast('Erro de rede ao testar.', 'error');
     } finally {
-      btn.disabled = false;
-      btn.innerHTML = oldText;
+      if (triggerBtn) {
+        triggerBtn.disabled = false;
+      }
     }
+  }
+
+  // Botões de teste individuais por plataforma
+  $$('.btn-test-platform').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const platform = btn.dataset.platform || 'twitch';
+      const origText = btn.textContent;
+      btn.textContent = '...';
+      await testDiscordNotification(platform, btn);
+      btn.textContent = origText;
+    });
+  });
+
+  // Testar geral
+  $('#btnTestDiscordWebhook')?.addEventListener('click', async () => {
+    const btn = $('#btnTestDiscordWebhook');
+    btn.disabled = true;
+    const oldText = btn.innerHTML;
+    btn.textContent = 'Enviando...';
+    await testDiscordNotification('twitch', btn);
+    btn.disabled = false;
+    btn.innerHTML = oldText;
   });
 
   $('#btnCheckDiscordLive')?.addEventListener('click', async () => {
@@ -2866,11 +2906,16 @@ function initDiscordTabListeners() {
       await loadDiscordData(channel);
       updateDiscordPreview();
       if (d.notified) {
-        toast('🎉 Live detectada! Notificação enviada para o Discord!', 6000);
-      } else if (d.live) {
-        toast(`Ao vivo na Twitch (${d.reason || 'Notificação já enviada'})`);
+        toast('Live detectada! Notificação enviada para o Discord!', 6000);
+      } else if (d.ok && d.platforms) {
+        const liveOn = Object.entries(d.platforms).filter(([, val]) => val?.live).map(([p]) => p);
+        if (liveOn.length > 0) {
+          toast(`Canais ao vivo detectados: ${liveOn.join(', ')}`);
+        } else {
+          toast('Todos os canais monitorados estão offline no momento.');
+        }
       } else {
-        toast('Canal offline na Twitch no momento.');
+        toast('Verificação concluída.');
       }
     } catch {
       toast('Erro ao verificar live.', 'error');
