@@ -78,14 +78,29 @@ export default async function handler(req, res) {
       channelName: 'lives',
       mention: 'everyone',
       roleId: '',
-      message: '[LIVE] **{streamer}** está ao vivo na Twitch | **{game}**',
+      channels: {
+        twitch: channel || '',
+        youtube: '',
+        kick: '',
+        tiktok: '',
+      },
+      message: '[LIVE] **{streamer}** está ao vivo no {platform} | **{game}**',
       embedColor: '#9146FF',
       embedTitle: '▸ {title}',
       embedDesc: 'Transmissão iniciada. Venha interagir no chat e pedir músicas.',
       includeThumbnail: true,
       lastStreamId: '',
+      lastStreams: {},
       lastNotifiedAt: 0,
     };
+    if (!discordCfg.channels) {
+      discordCfg.channels = {
+        twitch: channel || '',
+        youtube: '',
+        kick: '',
+        tiktok: '',
+      };
+    }
 
     const stream = await getTwitchStream(channel);
     const user = await getTwitchUser(channel);
