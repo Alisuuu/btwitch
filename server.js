@@ -4,8 +4,8 @@ import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { botService } from './lib/irc-bot.js';
-import { discordGateway } from './lib/discord-gateway.js';
+import { botService } from './api/_lib/irc-bot.js';
+import { discordGateway } from './api/_lib/discord-gateway.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 

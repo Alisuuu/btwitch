@@ -178,7 +178,7 @@ export class TwitchBotService extends EventEmitter {
   }
 
   start() {
-    if (this.running && this.connected) return true;
+    if (this.running) return true;
     this.running = true;
     this.startedAt = Date.now();
     this.connect();
@@ -190,13 +190,17 @@ export class TwitchBotService extends EventEmitter {
   stop() {
     this.running = false;
     this.connected = false;
+    this._connecting = false;
     clearTimeout(this._reconnectTimer);
     this._stopHeartbeat();
     this._stopDiscordNotifier();
     this._queue = [];
     this._sending = false;
     if (this.socket) {
-      try { this.socket.destroy(); } catch {}
+      try {
+        this.socket.removeAllListeners();
+        this.socket.destroy();
+      } catch {}
       this.socket = null;
     }
     this.emit('status', { state: 'closed' });
@@ -416,10 +420,20 @@ export class TwitchBotService extends EventEmitter {
 
   connect() {
     if (!this.running) return;
+    if (this._connecting) return;
+    this._connecting = true;
 
     this.connected = false;
     this._sending = false;
     this._queue = [];
+
+    if (this.socket) {
+      try {
+        this.socket.removeAllListeners();
+        this.socket.destroy();
+      } catch {}
+      this.socket = null;
+    }
 
     this.readOnly = !this.token;
     if (this.readOnly) {
@@ -437,6 +451,7 @@ export class TwitchBotService extends EventEmitter {
     this.socket = socket;
 
     socket.on('connect', () => {
+      this._connecting = false;
       socket.write('CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership\r\n');
       if (this.token) {
         socket.write(`PASS oauth:${this.token}\r\n`);
@@ -458,11 +473,13 @@ export class TwitchBotService extends EventEmitter {
     });
 
     socket.on('error', (err) => {
+      this._connecting = false;
       console.warn('[alive-bot] Erro no socket:', err.message);
       this.emit('status', { state: 'error', message: err.message });
     });
 
     socket.on('close', () => {
+      this._connecting = false;
       this.connected = false;
       this._stopHeartbeat();
       this._queue = [];
@@ -636,6 +653,20 @@ export class TwitchBotService extends EventEmitter {
         channel: channelName,
         time: Date.now(),
       };
+
+      if (!this._seenMsgKeys) this._seenMsgKeys = new Map();
+      const msgKey = msgObj.messageId || `${channelName}:${userLogin}:${msgObj.text}`;
+      const now = Date.now();
+      const prevTime = this._seenMsgKeys.get(msgKey);
+      if (prevTime && (now - prevTime) < 5000) {
+        return; // Descarta duplicata de socket ou rede em menos de 5s
+      }
+      this._seenMsgKeys.set(msgKey, now);
+      if (this._seenMsgKeys.size > 200) {
+        for (const [k, t] of this._seenMsgKeys) {
+          if (now - t > 15000) this._seenMsgKeys.delete(k);
+        }
+      }
 
       this.recentChat.push(msgObj);
       if (this.recentChat.length > 200) this.recentChat.shift();
