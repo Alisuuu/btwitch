@@ -10,16 +10,20 @@ function getYt() {
     const YtdlClass = ytdlPkg.Ytdl || (ytdlPkg.default && ytdlPkg.default.Ytdl);
     if (typeof YtdlClass === 'function') {
       try {
-        ytInstance = new YtdlClass();
+        // visionos é o cliente mais rápido e confiável que não exige cookies no datacenter
+        ytInstance = new YtdlClass({ clients: ['visionos'] });
       } catch (err) {
-        console.warn('[alive api/audio] erro ao criar Ytdl:', err?.message || err);
+        console.warn('[alive api/audio] erro ao criar Ytdl visionos:', err?.message || err);
+        try {
+          ytInstance = new YtdlClass();
+        } catch {}
       }
     }
   }
   return ytInstance;
 }
 
-// Compatibilidade resiliente de exportações do @distube/ytdl-core com timeout generoso
+// Compatibilidade resiliente de exportações do @distube/ytdl-core com timeout generoso (30s)
 async function getAudioInfo(url) {
   const fetchOp = async () => {
     const yt = getYt();
@@ -33,24 +37,31 @@ async function getAudioInfo(url) {
       return await ytdlPkg.default.getInfo(url);
     }
     if (typeof ytdlPkg.Ytdl === 'function') {
-      const fresh = new ytdlPkg.Ytdl();
+      const fresh = new ytdlPkg.Ytdl({ clients: ['visionos'] });
       return await fresh.getInfo(url);
     }
     throw new Error('Método getInfo não encontrado em @distube/ytdl-core');
   };
 
-  const timer = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout ytdl')), 12000));
+  const timer = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout ytdl')), 30000));
   return await Promise.race([fetchOp(), timer]);
 }
 
 const AUDIO_WITHOUT_VIDEO = (formats = []) => {
   const list = formats.filter((f) => f && f.url && (f.hasAudio || f.audioBitrate) && !f.hasVideo);
   if (list.length) {
+    // Prioriza AAC / MP4 (itag 140 / 139) para suporte universal nativo (Android MediaPlayer, iOS, OBS, Chrome)
+    const itag140 = list.find((f) => f.itag === 140);
+    if (itag140) return itag140;
+    const m4a = list.find((f) => (f.mimeType || '').includes('audio/mp4') || f.container === 'm4a');
+    if (m4a) return m4a;
     list.sort((a, b) => (Number(b.bitrate || 0) || 0) - (Number(a.bitrate || 0) || 0));
     return list[0];
   }
   const fallback = formats.filter((f) => f && f.url && f.hasAudio);
   if (fallback.length) {
+    const m4a = fallback.find((f) => (f.mimeType || '').includes('audio/mp4') || f.container === 'm4a');
+    if (m4a) return m4a;
     fallback.sort((a, b) => (Number(b.bitrate || 0) || 0) - (Number(a.bitrate || 0) || 0));
     return fallback[0];
   }
@@ -67,7 +78,7 @@ async function fetchFallbackAudio(id) {
   ];
   const promises = endpoints.map(async (ep) => {
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 6000);
+    const t = setTimeout(() => ctrl.abort(), 7000);
     try {
       const resp = await fetch(ep, {
         headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
@@ -79,6 +90,15 @@ async function fetchFallbackAudio(id) {
 
       const pipedList = data.audioStreams || [];
       if (pipedList.length) {
+        const m4a = pipedList.find((f) => (f.mimeType || '').includes('audio/mp4') || f.format === 'M4A');
+        if (m4a && m4a.url) {
+          return {
+            url: m4a.url,
+            mimeType: m4a.mimeType || 'audio/mp4',
+            bitrate: Number(m4a.bitrate || 0),
+            duration: Number(data.duration || 0),
+          };
+        }
         pipedList.sort((a, b) => (Number(b.bitrate || 0) || 0) - (Number(a.bitrate || 0) || 0));
         const best = pipedList[0];
         if (best && best.url) {
@@ -93,6 +113,15 @@ async function fetchFallbackAudio(id) {
 
       const invFormats = (data.adaptiveFormats || []).filter((f) => f.type?.includes('audio') && f.url);
       if (invFormats.length) {
+        const m4a = invFormats.find((f) => f.type?.includes('audio/mp4'));
+        if (m4a) {
+          return {
+            url: m4a.url,
+            mimeType: m4a.type || 'audio/mp4',
+            bitrate: Number(m4a.bitrate || 0),
+            duration: Number(data.lengthSeconds || 0),
+          };
+        }
         invFormats.sort((a, b) => (Number(b.bitrate || 0) || 0) - (Number(a.bitrate || 0) || 0));
         const best = invFormats[0];
         return {
@@ -140,7 +169,9 @@ async function pipeAudioStream(req, res, targetUrl) {
     const rawRes = res.raw || res;
     if (upstream.body) {
       if (typeof Readable.fromWeb === 'function') {
-        Readable.fromWeb(upstream.body).pipe(rawRes);
+        const stream = Readable.fromWeb(upstream.body);
+        rawRes.on('close', () => { try { stream.destroy(); } catch {} });
+        stream.pipe(rawRes);
       } else {
         const reader = upstream.body.getReader();
         while (true) {
@@ -199,7 +230,7 @@ export default async function handler(req, res) {
       if (format && format.url) {
         result = {
           url: format.url,
-          mimeType: format.mimeType || 'audio/webm',
+          mimeType: format.mimeType || 'audio/mp4',
           bitrate: Number(format.bitrate || 0),
           duration: Number(info.videoDetails?.lengthSeconds || 0),
         };
@@ -227,7 +258,7 @@ export default async function handler(req, res) {
       url: `${origin}/api/audio?id=${id}&stream=1`,
       streamUrl: `${origin}/api/audio?id=${id}&stream=1`,
       directUrl: result.url,
-      mimeType: result.mimeType || 'audio/webm',
+      mimeType: result.mimeType || 'audio/mp4',
       bitrate: result.bitrate || 0,
       duration: result.duration || 0,
     };

@@ -48,29 +48,51 @@ const player = {
     if (audioEl) {
       const v = Math.max(0, Math.min(100, Number(vol ?? 70)));
       audioEl.volume = v / 100;
+      if (v > 0) audioEl.muted = false;
     }
   },
   loadVideoById(cleanId, start) {
     if (!audioEl) return;
     const streamUrl = `/api/audio?id=${encodeURIComponent(cleanId)}&stream=1`;
+    const targetTime = Number.isFinite(Number(start)) ? Math.max(0, Number(start)) : 0;
+
     if (audioEl.src !== streamUrl && !audioEl.src.endsWith(streamUrl)) {
+      audioEl.pause();
       audioEl.src = streamUrl;
+      audioEl.load();
     }
-    if (start > 0) {
-      audioEl.currentTime = Math.max(0, Number(start));
+    if (targetTime > 0) {
+      if (audioEl.readyState >= 1) {
+        try { audioEl.currentTime = targetTime; } catch {}
+      } else {
+        audioEl.addEventListener('loadedmetadata', () => {
+          try { audioEl.currentTime = targetTime; } catch {}
+        }, { once: true });
+      }
     }
-    audioEl.play().catch((err) => {
-      console.warn('[alive widget] Autoplay bloqueado pelo navegador:', err?.message);
-    });
+    const p = audioEl.play();
+    if (p && typeof p.catch === 'function') {
+      p.catch((err) => {
+        console.warn('[alive widget] Autoplay pendente de interação:', err?.message);
+      });
+    }
   },
   cueVideoById(cleanId, start) {
     if (!audioEl) return;
     const streamUrl = `/api/audio?id=${encodeURIComponent(cleanId)}&stream=1`;
+    const targetTime = Number.isFinite(Number(start)) ? Math.max(0, Number(start)) : 0;
     if (audioEl.src !== streamUrl && !audioEl.src.endsWith(streamUrl)) {
       audioEl.src = streamUrl;
+      audioEl.load();
     }
-    if (start > 0) {
-      audioEl.currentTime = Math.max(0, Number(start));
+    if (targetTime > 0) {
+      if (audioEl.readyState >= 1) {
+        try { audioEl.currentTime = targetTime; } catch {}
+      } else {
+        audioEl.addEventListener('loadedmetadata', () => {
+          try { audioEl.currentTime = targetTime; } catch {}
+        }, { once: true });
+      }
     }
   }
 };
@@ -639,6 +661,14 @@ async function initPlayer() {
     applyConfig(store.state);
     loadCurrent(store.state);
     checkAutoplay();
+
+    const unlockAudio = () => {
+      if (audioEl && store.state.now && !store.state.now.paused && audioEl.paused) {
+        audioEl.play().catch(() => {});
+      }
+    };
+    window.addEventListener('click', unlockAudio, { passive: true });
+    window.addEventListener('touchstart', unlockAudio, { passive: true });
   } catch (e) {
     console.error('[alive widget] initPlayer:', e);
     showToast('Erro ao inicializar áudio nativo: ' + e.message);
