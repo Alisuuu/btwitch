@@ -209,6 +209,69 @@ function loadYTApi() {
 
 const failedPanelIds = new Set();
 
+function recreatePanelPlayer(videoId, startSeconds = 0) {
+  try { panelPlayer?.destroy?.(); } catch {}
+  panelPlayer = null;
+  ytApiReady = false;
+  const box = document.getElementById('panelPlayerBox');
+  if (box) {
+    box.innerHTML = '<div id="panelYt"></div>';
+  }
+  const safeOrigin = (typeof location !== 'undefined' && location.origin && location.origin !== 'null' && !location.origin.startsWith('file:')) ? location.origin : undefined;
+  const safeStart = Number.isFinite(Number(startSeconds)) ? Math.max(0, Math.floor(Number(startSeconds))) : 0;
+  try {
+    panelPlayer = new window.YT.Player('panelYt', {
+      width: '100%',
+      height: '100%',
+      videoId: videoId || undefined,
+      playerVars: {
+        autoplay: (userInteracted && !webAudioMuted) ? 1 : 0,
+        start: safeStart,
+        controls: 1,
+        disablekb: 0,
+        fs: 0,
+        rel: 0,
+        playsinline: 1,
+        enablejsapi: 1,
+        widget_referrer: (typeof location !== 'undefined' && location.href) ? location.href : undefined,
+        ...(safeOrigin ? { origin: safeOrigin } : {}),
+      },
+      events: {
+        onReady: () => {
+          ytApiReady = true;
+          if (userInteracted && !webAudioMuted) {
+            try {
+              panelPlayer.unMute?.();
+              panelPlayer.setVolume?.(Number(store.state.volume ?? 70));
+              panelPlayer.playVideo?.();
+            } catch {}
+          } else {
+            try { panelPlayer.mute?.(); } catch {}
+          }
+        },
+        onStateChange: (ev) => {
+          const st = ev?.data;
+          if (st === 1) { // PLAYING
+            const d = panelPlayer?.getDuration?.() || 0;
+            if (d > 0 && store.state.now?.id === curPlayingId && Math.abs((store.state.now.duration || 0) - d) > 1) {
+              store.update((s) => { if (s.now?.id === curPlayingId) s.now.duration = Math.round(d); }, { remote: false });
+            }
+          }
+        },
+        onError: (ev) => {
+          const code = ev?.data;
+          console.warn('[alive panel] erro player local do painel:', code);
+          if (code === 101 || code === 150 || code === 153 || code === 2 || code === 5) {
+            tryFindAlternativePanel(store.state.now);
+          }
+        }
+      }
+    });
+  } catch (err) {
+    console.warn('[alive panel] erro ao recriar panel player:', err);
+  }
+}
+
 async function tryFindAlternativePanel(currentNow) {
   if (retryingPanelAlt || !currentNow) return;
   retryingPanelAlt = true;
@@ -223,21 +286,13 @@ async function tryFindAlternativePanel(currentNow) {
       .replace(/feat\..*$/gi, '')
       .trim();
     const query = `${cleanTitle} audio`;
-    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=8`).then((r) => r.json()).catch(() => null);
+    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=10`).then((r) => r.json()).catch(() => null);
     if (res && res.items && res.items.length) {
       const alt = res.items.find((it) => it.id !== currentNow.id && !failedPanelIds.has(it.id));
       if (alt) {
         toast(`Tocando versão alternativa: ${alt.title}`);
         curPlayingId = alt.id;
-        try {
-          panelPlayer?.loadVideoById({ videoId: alt.id, startSeconds: 0 });
-          if (!webAudioMuted && userInteracted) {
-            panelPlayer?.unMute?.();
-            panelPlayer?.setVolume?.(Number(store.state.volume ?? 70));
-          }
-        } catch (e) {
-          console.warn('[alive panel] erro ao carregar alternativa:', e);
-        }
+        recreatePanelPlayer(alt.id, 0);
         store.update((st) => {
           if (st.now) {
             st.now.id = alt.id;
@@ -256,7 +311,7 @@ async function tryFindAlternativePanel(currentNow) {
   } catch (err) {
     console.warn('[alive panel] erro ao buscar alternativa:', err);
   } finally {
-    setTimeout(() => { retryingPanelAlt = false; }, 3500);
+    setTimeout(() => { retryingPanelAlt = false; }, 4000);
   }
 }
 

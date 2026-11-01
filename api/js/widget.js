@@ -272,6 +272,89 @@ function loadYTApi() {
   });
 }
 
+let isTransitioning = false;
+let isTransitioningTimer = null;
+let retryingAlt = false;
+const failedVideoIds = new Set();
+
+function getSafeOrigin() {
+  try {
+    if (typeof location !== 'undefined' && location.origin && location.origin !== 'null' && !location.origin.startsWith('file:')) {
+      return location.origin;
+    }
+  } catch {}
+  return undefined;
+}
+
+function recreatePlayer(videoId, startSeconds = 0) {
+  try {
+    player?.destroy?.();
+  } catch {}
+  player = null;
+  ytReady = false;
+
+  isTransitioning = true;
+  clearTimeout(isTransitioningTimer);
+  isTransitioningTimer = setTimeout(() => { isTransitioning = false; }, 4000);
+
+  const stage = document.querySelector('.stage');
+  if (stage) {
+    stage.innerHTML = '<div id="yt"></div>';
+  }
+
+  const isPaused = !!store.state.now?.paused;
+  const w = store.state.config.widget || {};
+  const playAudio = params.has('audio')
+    ? params.get('audio') !== '0'
+    : (params.has('playAudio') ? params.get('playAudio') !== '0' : (w.playAudio !== 0));
+
+  const safeOrigin = getSafeOrigin();
+  const safeStart = Number.isFinite(Number(startSeconds)) ? Math.max(0, Math.floor(Number(startSeconds))) : 0;
+
+  try {
+    player = new window.YT.Player('yt', {
+      width: '100%',
+      height: '100%',
+      videoId: videoId || undefined,
+      playerVars: {
+        autoplay: isPaused ? 0 : 1,
+        start: safeStart,
+        controls: 0,
+        disablekb: 1,
+        fs: 0,
+        rel: 0,
+        playsinline: 1,
+        enablejsapi: 1,
+        modestbranding: 1,
+        iv_load_policy: 3,
+        widget_referrer: (typeof location !== 'undefined' && location.href) ? location.href : undefined,
+        ...(safeOrigin ? { origin: safeOrigin } : {}),
+      },
+      events: {
+        onReady: (ev) => {
+          ytReady = true;
+          if (!playAudio) {
+            try { ev.target.mute(); } catch {}
+          } else {
+            try {
+              ev.target.unMute();
+              ev.target.setVolume(Math.round(store.state.volume || 70));
+            } catch {}
+          }
+          if (!isPaused && videoId) {
+            try { ev.target.playVideo(); } catch {}
+          }
+          checkAutoplay();
+        },
+        onStateChange: onPlayerStateChange,
+        onError,
+      },
+    });
+  } catch (err) {
+    console.error('[alive widget] erro ao recriar player:', err);
+  }
+}
+
 function loadCurrent(s) {
   const now = s.now;
   if (!now || !now.id) {
@@ -292,10 +375,19 @@ function loadCurrent(s) {
   durationShown = now.duration || 0;
   const start = Math.max(0, Math.round(now.position || 0));
 
-  if (!ytReady || !player) return;
-
   const cleanId = String(now.id || '').trim();
   const safeStart = Number.isFinite(Number(start)) ? Math.max(0, Math.floor(Number(start))) : 0;
+
+  if (!ytReady || !player) {
+    if (window.YT && window.YT.Player) {
+      recreatePlayer(cleanId, safeStart);
+    }
+    return;
+  }
+
+  isTransitioning = true;
+  clearTimeout(isTransitioningTimer);
+  isTransitioningTimer = setTimeout(() => { isTransitioning = false; }, 3500);
 
   try {
     if (now.paused) {
@@ -320,15 +412,16 @@ function loadCurrent(s) {
       try { player.playVideo?.(); } catch {}
     }
   } catch (e) {
-    console.warn('[alive widget] loadVideoById:', e);
+    console.warn('[alive widget] loadVideoById falhou, recriando player do zero:', e);
+    recreatePlayer(cleanId, safeStart);
   }
 }
 
 function onPlayerStateChange(ev) {
   const st = ev?.data;
   if (st === YT_STATE.ENDED) {
-    if (retryingAlt) {
-      console.log('[alive widget] Ignorando ENDED durante troca para versão alternativa');
+    if (isTransitioning || retryingAlt) {
+      console.log('[alive widget] Ignorando ENDED transitório durante carregamento');
       return;
     }
 
@@ -336,14 +429,17 @@ function onPlayerStateChange(ev) {
     const playerDur = Number(player?.getDuration?.() || 0);
     const expectedDur = Number(playerDur || durationShown || store.state.now?.duration || 0);
 
-    // Se o vídeo NUNCA começou a tocar (startChecked == false e cur < 3) OU
-    // encerrou prematuramente nos primeiros segundos (cur < 3) OU
-    // terminou bem antes do fim esperado:
-    const neverStarted = !startChecked && cur < 3;
-    const endedPrematurely = (expectedDur > 10 && cur < expectedDur - 6) || cur < 3;
+    // Se o vídeo NUNCA começou a tocar e nada foi carregado (loadedFraction=0), é evento fantasma do vídeo anterior
+    const loadedFraction = Number(player?.getVideoLoadedFraction?.() || 0);
+    if (!startChecked && cur < 3 && loadedFraction === 0) {
+      console.log('[alive widget] Ignorando ENDED fantasma (cur=0, loadedFraction=0)');
+      return;
+    }
 
-    if (neverStarted || endedPrematurely) {
-      console.warn(`[alive widget] Vídeo terminou prematuramente (cur=${Math.round(cur)}s, dur=${Math.round(expectedDur)}s, started=${startChecked}). Buscando versão alternativa liberada...`);
+    // Se o vídeo encerrou prematuramente nos primeiros segundos (< 3s) ou antes do fim esperado:
+    const endedPrematurely = (expectedDur > 10 && cur < expectedDur - 6) || cur < 3;
+    if (endedPrematurely) {
+      console.warn(`[alive widget] Vídeo terminou prematuramente (cur=${Math.round(cur)}s, dur=${Math.round(expectedDur)}s, started=${startChecked}). Buscando alternativa liberada...`);
       tryFindAlternative(store.state.now, () => skipBrokenVideo('reprodução bloqueada'));
       return;
     }
@@ -354,6 +450,7 @@ function onPlayerStateChange(ev) {
     return;
   }
   if (st === YT_STATE.PLAYING) {
+    isTransitioning = false;
     retryingAlt = false;
     if (store.state.now?.paused) {
       try { player.pauseVideo?.(); } catch {}
@@ -382,9 +479,6 @@ function onPlayerStateChange(ev) {
   }
 }
 
-let retryingAlt = false;
-const failedVideoIds = new Set();
-
 async function tryFindAlternative(currentNow, onFail) {
   if (retryingAlt) return;
   if (!currentNow) {
@@ -403,7 +497,7 @@ async function tryFindAlternative(currentNow, onFail) {
       .replace(/feat\..*$/gi, '')
       .trim();
     const query = `${cleanTitle} audio`;
-    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=8`).then((r) => r.json()).catch(() => null);
+    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=10`).then((r) => r.json()).catch(() => null);
     if (res && res.items && res.items.length) {
       const alt = res.items.find((it) => it.id !== currentNow.id && !failedVideoIds.has(it.id));
       if (alt) {
@@ -413,25 +507,10 @@ async function tryFindAlternative(currentNow, onFail) {
         startChecked = false;
         stallCount = 0;
         stallAtEndCount = 0;
-        try {
-          player?.loadVideoById({ videoId: alt.id, startSeconds: 0 });
-          applyVolume(store.state.volume);
-          player?.unMute?.();
-          player?.playVideo?.();
-          setTimeout(() => {
-            try {
-              if (player && typeof player.getPlayerState === 'function') {
-                const s = player.getPlayerState();
-                if (s !== 1 && s !== 3) {
-                  player.unMute?.();
-                  player.playVideo?.();
-                }
-              }
-            } catch {}
-          }, 800);
-        } catch (e) {
-          console.warn('[alive widget] load alternative:', e);
-        }
+
+        // Limpa o player que sofreu erro e recria do zero para garantir reprodução imediata
+        recreatePlayer(alt.id, 0);
+
         store.update((st) => {
           if (st.now) {
             st.now.id = alt.id;
@@ -453,7 +532,7 @@ async function tryFindAlternative(currentNow, onFail) {
     console.warn('[alive] erro ao buscar alternativa:', err);
     if (typeof onFail === 'function') onFail();
   } finally {
-    setTimeout(() => { retryingAlt = false; }, 3500);
+    setTimeout(() => { retryingAlt = false; }, 4000);
   }
 }
 
@@ -480,11 +559,12 @@ function onError(ev) {
     100: 'Vídeo privado/apagado',
     101: 'Restrito para embed pelo YouTube',
     150: 'Restrito para embed pelo YouTube',
+    153: 'Restrito para embed pelo YouTube',
   };
   const desc = msgMap[code] || `Erro ${code}`;
 
-  // Se o YouTube bloquear o vídeo (101/150/100/2/5):
-  // Busca e toca a versão liberada. Se falhar em encontrar alternativa, avança a fila para não travar a live!
+  // Se o YouTube bloquear o vídeo (101/150/153/100/2/5):
+  // Busca e toca a versão liberada recriando o player. Se falhar em encontrar alternativa, avança a fila!
   tryFindAlternative(s.now, () => skipBrokenVideo(desc));
 }
 
@@ -494,41 +574,17 @@ function checkAutoplay() {
   setTimeout(() => {
     if (startChecked || !store.state.now || store.state.now.paused) return;
     try { player.playVideo?.(); } catch { /* ignora */ }
-  }, 1000);
+  }, 800);
 }
 
 const YT_STATE = { ENDED: 0, PLAYING: 1, PAUSED: 2, BUFFERING: 3, CUED: 5, UNSTARTED: -1 };
 
 async function initPlayer() {
   try {
-    const YT = await loadYTApi();
-    const isPaused = !!store.state.now?.paused;
-    player = new YT.Player('yt', {
-      width: '100%',
-      height: '100%',
-      playerVars: {
-        autoplay: isPaused ? 0 : 1,
-        controls: 0,
-        disablekb: 1,
-        fs: 0,
-        rel: 0,
-        playsinline: 1,
-        enablejsapi: 1,
-        modestbranding: 1,
-        iv_load_policy: 3,
-        origin: location.origin,
-      },
-      events: {
-        onReady: () => {
-          ytReady = true;
-          applyConfig(store.state);
-          loadCurrent(store.state);
-          checkAutoplay();
-        },
-        onStateChange: onPlayerStateChange,
-        onError,
-      },
-    });
+    await loadYTApi();
+    const nowId = store.state.now?.id;
+    const nowPos = store.state.now?.position || 0;
+    recreatePlayer(nowId || '', nowPos);
   } catch (e) {
     console.error('[alive widget]', e);
     showToast('Erro: ' + e.message);
