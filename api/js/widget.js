@@ -432,7 +432,12 @@ function onPlayerStateChange(ev) {
     if (finishedNaturally) {
       console.log(`[alive widget] Faixa finalizada com sucesso (${Math.round(cur)}s/${Math.round(dur)}s). Avançando fila...`);
       startChecked = false;
-      store.update((s) => { advanceQueue(s); });
+      const targetId = curId;
+      store.update((s) => {
+        if (s.now && s.now.id === targetId) {
+          advanceQueue(s);
+        }
+      });
       store.flush();
       return;
     }
@@ -666,7 +671,12 @@ function tick() {
       stallAtEndCount = 0;
       console.log('[alive widget] Final do vídeo alcançado no tick (cur=' + Math.round(cur) + 's, dur=' + Math.round(dur) + 's). Avançando fila...');
       startChecked = false;
-      store.update((s) => { advanceQueue(s); });
+      const targetId = curId;
+      store.update((s) => {
+        if (s.now && s.now.id === targetId) {
+          advanceQueue(s);
+        }
+      });
       store.flush();
       return;
     }

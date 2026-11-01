@@ -266,6 +266,21 @@ function recreatePanelPlayer(videoId, startSeconds = 0) {
               store.update((s) => { if (s.now?.id === curPlayingId) s.now.duration = Math.round(d); }, { remote: false });
             }
           }
+          if (st === 0) { // ENDED (Avanço cooperativo seguro caso apenas o painel esteja aberto)
+            const cur = Number(panelPlayer?.getCurrentTime?.() || 0);
+            const dur = Number(panelPlayer?.getDuration?.() || store.state.now?.duration || 0);
+            const finishedNaturally = cur >= 5 && ((dur > 0 && cur >= dur - 4) || (dur > 10 && cur >= dur * 0.85));
+            if (finishedNaturally && curPlayingId && store.state.now?.id === curPlayingId) {
+              const targetId = curPlayingId;
+              curPlayingId = null;
+              store.update((s) => {
+                if (s.now && s.now.id === targetId) {
+                  advanceQueue(s);
+                }
+              });
+              store.flush();
+            }
+          }
         },
         onError: (ev) => {
           const code = ev?.data;
@@ -318,6 +333,21 @@ async function initPanelPlayer() {
             const d = panelPlayer?.getDuration?.() || 0;
             if (d > 0 && store.state.now?.id === curPlayingId && Math.abs((store.state.now.duration || 0) - d) > 1) {
               store.update((s) => { if (s.now?.id === curPlayingId) s.now.duration = Math.round(d); }, { remote: false });
+            }
+          }
+          if (st === 0) { // ENDED (Avanço cooperativo seguro caso apenas o painel esteja aberto)
+            const cur = Number(panelPlayer?.getCurrentTime?.() || 0);
+            const dur = Number(panelPlayer?.getDuration?.() || store.state.now?.duration || 0);
+            const finishedNaturally = cur >= 5 && ((dur > 0 && cur >= dur - 4) || (dur > 10 && cur >= dur * 0.85));
+            if (finishedNaturally && curPlayingId && store.state.now?.id === curPlayingId) {
+              const targetId = curPlayingId;
+              curPlayingId = null;
+              store.update((s) => {
+                if (s.now && s.now.id === targetId) {
+                  advanceQueue(s);
+                }
+              });
+              store.flush();
             }
           }
         },
@@ -1192,7 +1222,9 @@ async function connect() {
       if (!msg.isEcho) {
         chatMessagesCount++;
       }
-      if (!msg.isEcho && runner) {
+      // Unificação com o backend: se o bot do servidor já estiver ativo e conectado, ele é a autoridade única de comandos
+      const serverActive = serverBotState && serverBotState.running && serverBotState.connected;
+      if (!msg.isEcho && runner && !serverActive) {
         runnerBusy = true;
         Promise.resolve()
           .then(() => runner(msg))
