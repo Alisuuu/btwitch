@@ -296,7 +296,9 @@ function loadCurrent(s) {
     return;
   }
   const nowStartedAt = now.startedAt || 0;
-  if (curId === now.id && curStartedAt === nowStartedAt) return;
+  if (curId === now.id && curStartedAt === nowStartedAt && ytReady) return;
+
+  if (!ytReady || !player) return;
 
   curId = now.id;
   curStartedAt = nowStartedAt;
@@ -308,21 +310,19 @@ function loadCurrent(s) {
   durationShown = now.duration || 0;
   const start = Math.max(0, Math.round(now.position || 0));
 
-  if (!ytReady || !player) return;
-
   const cleanId = String(now.id || '').trim();
   const safeStart = Number.isFinite(Number(start)) ? Math.max(0, Math.floor(Number(start))) : 0;
 
   try {
     if (now.paused) {
       if (typeof player.cueVideoById === 'function') {
-        player.cueVideoById({ videoId: cleanId, startSeconds: safeStart });
+        player.cueVideoById(cleanId, safeStart);
       } else {
-        player.loadVideoById({ videoId: cleanId, startSeconds: safeStart });
+        player.loadVideoById(cleanId, safeStart);
         setTimeout(() => { try { player.pauseVideo?.(); } catch {} }, 50);
       }
     } else {
-      player.loadVideoById({ videoId: cleanId, startSeconds: safeStart });
+      player.loadVideoById(cleanId, safeStart);
     }
     const w = s.config.widget || {};
     const playAudio = params.has('audio')
@@ -345,6 +345,7 @@ function onPlayerStateChange(ev) {
 
   // 1. Faixa tocando ativamente (PLAYING)
   if (st === YT_STATE.PLAYING) {
+    consecutiveErrors = 0;
     startChecked = true;
     wasPaused = false;
     document.body.classList.remove('paused');
@@ -408,6 +409,7 @@ function onPlayerStateChange(ev) {
 }
 
 let resolvingError = false;
+let consecutiveErrors = 0;
 
 async function onPlayerError(ev) {
   const code = ev?.data;
@@ -417,6 +419,23 @@ async function onPlayerError(ev) {
 
   resolvingError = true;
   failedVideoIds.add(current.id);
+  consecutiveErrors++;
+
+  // Proteção contra skip contínuo: se 3 vídeos falharem seguidos, pausa a fila para não queimar as músicas
+  if (consecutiveErrors >= 3) {
+    console.warn('[alive widget] Múltiplos erros consecutivos no YouTube. Pausando a reprodução por segurança.');
+    showToast('Aviso: Múltiplas faixas com reprodução restrita no YouTube. Fila pausada.');
+    store.update((st) => {
+      if (st.now) st.now.paused = true;
+      pushLog(st, 'error', 'Fila pausada automaticamente após falhas de embed no YouTube');
+    });
+    store.flush();
+    setTimeout(() => {
+      resolvingError = false;
+      consecutiveErrors = 0;
+    }, 4000);
+    return;
+  }
 
   const msgMap = {
     2: 'Parâmetro inválido',
@@ -465,7 +484,7 @@ async function onPlayerError(ev) {
         store.flush();
 
         try {
-          player?.loadVideoById({ videoId: alt.id, startSeconds: 0 });
+          player?.loadVideoById(alt.id, 0);
           applyVolume(store.state.volume);
           player?.unMute?.();
           player?.playVideo?.();
@@ -478,8 +497,8 @@ async function onPlayerError(ev) {
       }
     }
 
-    // Se nenhuma alternativa for encontrada, pula a faixa com segurança após aviso visível de 2.5s
-    showToast(`Faixa indisponível: ${current.title}. Pulando para a próxima...`);
+    // Se nenhuma alternativa for encontrada, avisa e pula a faixa com folga visível de 3.5s
+    showToast(`Faixa indisponível para streaming: ${current.title}. Pulando...`);
     setTimeout(() => {
       store.update((st) => {
         pushLog(st, 'skip', `Vídeo com erro (${desc}) pulado: ${current.title || current.id}`);
@@ -487,7 +506,7 @@ async function onPlayerError(ev) {
       });
       store.flush();
       resolvingError = false;
-    }, 2500);
+    }, 3500);
 
   } catch (err) {
     console.warn('[alive widget] erro no tratamento de fallback:', err);
@@ -495,7 +514,7 @@ async function onPlayerError(ev) {
       store.update((st) => { advanceQueue(st); });
       store.flush();
       resolvingError = false;
-    }, 2500);
+    }, 3500);
   }
 }
 

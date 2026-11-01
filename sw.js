@@ -44,8 +44,19 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(req.url);
 
-  // Não interceptar endpoints de API dinâmica nem websockets/chat
-  if (url.pathname.startsWith('/api') || url.pathname === '/health') {
+  // Somente intercepta requisições locais (mesma origem). Nunca intercepta YouTube nem CDNs externas
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  // Não interceptar endpoints de API dinâmica, health, nem o widget do OBS
+  if (
+    url.pathname.startsWith('/api') ||
+    url.pathname.startsWith('/widget') ||
+    url.pathname === '/widget.html' ||
+    url.pathname === '/health' ||
+    url.pathname === '/sw.js'
+  ) {
     return;
   }
 

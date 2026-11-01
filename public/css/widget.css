@@ -84,17 +84,18 @@ html[data-theme="transparent"] {
   transition: opacity 0.4s ease;
 }
 
-/* Modo sem vídeo (áudio oficial ativo no OBS, player oficial escondido atrás da UI) */
+/* Modo sem vídeo (áudio oficial ativo no OBS, player oficial ativo atrás da UI) */
 body[data-video="off"] .stage {
   position: absolute !important;
   left: 0 !important;
   top: 0 !important;
-  width: 200px !important;
+  width: 320px !important;
   height: 200px !important;
-  opacity: 0.001 !important;
-  pointer-events: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
   background: transparent !important;
-  z-index: -1 !important;
+  z-index: 1 !important;
+  overflow: hidden !important;
 }
 body[data-video="off"] .dim {
   display: none !important;

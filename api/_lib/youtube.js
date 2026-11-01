@@ -179,8 +179,18 @@ function collectVideos(data, { lockupOnlyVideo = false, skipCompact = false } = 
 }
 
 function finish(items, limit) {
-  return items
-    .filter((i) => i.id && i.title)
+  const valid = items.filter((i) => i.id && i.title);
+
+  // Prioriza faixas com áudio liberado (Topic, Audio, Lyrics) e desce canais VEVO que bloqueiam embed
+  valid.sort((a, b) => {
+    const aVevo = String(a.channel || '').toLowerCase().includes('vevo');
+    const bVevo = String(b.channel || '').toLowerCase().includes('vevo');
+    if (aVevo && !bVevo) return 1;
+    if (!aVevo && bVevo) return -1;
+    return 0;
+  });
+
+  return valid
     .slice(0, limit)
     .map((i) => ({
       id: i.id,
