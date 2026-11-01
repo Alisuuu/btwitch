@@ -327,6 +327,11 @@ function loadCurrent(s) {
 function onPlayerStateChange(ev) {
   const st = ev?.data;
   if (st === YT_STATE.ENDED) {
+    if (retryingAlt) {
+      console.log('[alive widget] Ignorando ENDED durante troca para versão alternativa');
+      return;
+    }
+
     const cur = Number(player?.getCurrentTime?.() || 0);
     const playerDur = Number(player?.getDuration?.() || 0);
     const expectedDur = Number(playerDur || durationShown || store.state.now?.duration || 0);
@@ -349,6 +354,7 @@ function onPlayerStateChange(ev) {
     return;
   }
   if (st === YT_STATE.PLAYING) {
+    retryingAlt = false;
     if (store.state.now?.paused) {
       try { player.pauseVideo?.(); } catch {}
       wasPaused = true;
@@ -380,7 +386,8 @@ let retryingAlt = false;
 const failedVideoIds = new Set();
 
 async function tryFindAlternative(currentNow, onFail) {
-  if (retryingAlt || !currentNow) {
+  if (retryingAlt) return;
+  if (!currentNow) {
     if (typeof onFail === 'function') onFail();
     return;
   }
@@ -409,6 +416,19 @@ async function tryFindAlternative(currentNow, onFail) {
         try {
           player?.loadVideoById({ videoId: alt.id, startSeconds: 0 });
           applyVolume(store.state.volume);
+          player?.unMute?.();
+          player?.playVideo?.();
+          setTimeout(() => {
+            try {
+              if (player && typeof player.getPlayerState === 'function') {
+                const s = player.getPlayerState();
+                if (s !== 1 && s !== 3) {
+                  player.unMute?.();
+                  player.playVideo?.();
+                }
+              }
+            } catch {}
+          }, 800);
         } catch (e) {
           console.warn('[alive widget] load alternative:', e);
         }
