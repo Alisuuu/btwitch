@@ -326,4 +326,23 @@ assert(store.state.now !== null, 'Primeira música tocou');
 assert(!store.state.now.title.startsWith('1.'), 'Prefixo numérico "1." foi removido do título');
 assert(store.state.queue.length === 4, 'As outras 4 músicas entraram na fila (total de 5 músicas adicionadas)');
 
+console.log('\n30) Desativar e reativar função de música');
+store.update((s) => {
+  s.config.musicEnabled = false;
+});
+await runner(msg('!play musica desativada', { userId: 'u99', displayName: 'User99' }));
+assert(sent.at(-1).includes('desativado'), 'pedidos de música bloqueados quando função está desativada');
+
+const queueBefore = store.state.queue.length;
+await runner(msg('!skip', { userId: 'mod1', displayName: 'Mod1', mod: true }));
+assert(store.state.queue.length === queueBefore, 'comandos de música ignorados quando desativado');
+
+store.update((s) => {
+  s.config.musicEnabled = true;
+  s.now = null;
+  s.queue = [];
+});
+await runner(msg('!play musica reativada', { userId: 'u100', displayName: 'User100' }));
+assert(store.state.now !== null && sent.at(-1).includes('Tocando agora'), 'músicas voltam a funcionar ao reativar');
+
 console.log('\n✅ Smoke test concluído.\n');

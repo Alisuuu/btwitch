@@ -188,6 +188,32 @@ function applyVolume(v) {
 
 // ------------------------------------------------------------------ render
 function render(s) {
+  const musicEnabled = (s.config?.musicEnabled !== false);
+  if (!musicEnabled) {
+    if (els.card) els.card.hidden = true;
+    if (els.idle) {
+      els.idle.hidden = false;
+      const idleTitle = els.idle.querySelector('.title') || els.idle.querySelector('.idle-title');
+      const idleSub = els.idle.querySelector('.sub');
+      if (idleTitle) idleTitle.textContent = 'Músicas desativadas';
+      if (idleSub) idleSub.innerHTML = 'A função de música está desativada no momento.';
+    }
+    if (els.next) els.next.hidden = true;
+    if (ytReady && player && typeof player.pauseVideo === 'function') {
+      try { player.pauseVideo(); } catch { /* */ }
+    }
+    return;
+  } else if (els.idle) {
+    const idleTitle = els.idle.querySelector('.title') || els.idle.querySelector('.idle-title');
+    const idleSub = els.idle.querySelector('.sub');
+    if (idleTitle && idleTitle.textContent === 'Músicas desativadas') {
+      idleTitle.textContent = 'Fila vazia';
+    }
+    if (idleSub && idleSub.textContent.includes('A função de música está desativada')) {
+      idleSub.innerHTML = 'Peça no chat com <b>!play &lt;nome da música&gt;</b>';
+    }
+  }
+
   const now = s.now;
   els.idle.hidden = !!now;
   els.card.hidden = !now;

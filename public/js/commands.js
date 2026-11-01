@@ -268,6 +268,9 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
   // ---------------------------------------------------------------- comandos
   async function cmdPlay(args, msg) {
     const cfg = store.state.config;
+    if (cfg.musicEnabled === false) {
+      return send(`O sistema de músicas está desativado no momento.`);
+    }
     const q = args.join(' ').trim();
     const isAuthorized = !!msg.mod || !!msg.broadcaster ||
       (msg.channel && (msg.login || '').toLowerCase() === msg.channel.toLowerCase()) ||
@@ -818,6 +821,13 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     const meta = ALIASES.get(name);
     if (meta) {
       if (store.state.config.commands && store.state.config.commands[meta.id] === 0) return; // desligado explicitamente
+      const musicCmds = ['play', 'skip', 'queue', 'np', 'vol', 'pause', 'resume', 'stop', 'remove', 'clear', 'shuffle'];
+      if (store.state.config?.musicEnabled === false && musicCmds.includes(meta.id)) {
+        if (meta.id === 'play') {
+          return send(`O sistema de músicas está desativado no momento.`);
+        }
+        return;
+      }
       const perm = store.state.config.cmdPermissions?.[meta.id] || meta.who || 'all';
       if (!canUserRun(perm, msg)) return;                // sem permissão: ignora em silêncio
       try {

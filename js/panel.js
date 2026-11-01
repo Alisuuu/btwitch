@@ -2072,7 +2072,56 @@ function updateLivePreview() {
 // ---------------------------------------------------------------- widget
 function syncWidgetForm(s) {
   const w = s.config.widget || {};
-  $('#widgetUrl').value = widgetUrl();
+  if ($('#widgetUrl')) $('#widgetUrl').value = widgetUrl();
+
+  const musicEnabled = (s.config?.musicEnabled !== false);
+  const badge = $('#musicStatusBadge');
+  const btn = $('#btnToggleMusic');
+  const btnText = $('#btnToggleMusicText');
+  const iconSpan = $('#btnToggleMusicIcon');
+  const desc = $('#musicStatusDesc');
+  const bannerLogo = $('#musicBannerLogo');
+  const check = $('#wMusicEnabled');
+
+  if (check) check.checked = musicEnabled;
+
+  if (badge) {
+    if (musicEnabled) {
+      badge.textContent = '● MÚSICA ATIVADA';
+      badge.style.background = 'rgba(29, 185, 84, 0.15)';
+      badge.style.color = '#1db954';
+      badge.style.borderColor = 'rgba(29, 185, 84, 0.3)';
+    } else {
+      badge.textContent = '● MÚSICA DESATIVADA';
+      badge.style.background = 'rgba(239, 68, 68, 0.15)';
+      badge.style.color = '#ef4444';
+      badge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+    }
+  }
+
+  if (desc) {
+    desc.innerHTML = musicEnabled
+      ? 'A reprodução de músicas, pedidos de espectadores no chat via <code>!play</code> e a fila no widget do OBS estão <b>ativos</b>.'
+      : 'A função de música está <b>desativada</b>. Pedidos no chat e reprodução no widget estão pausados temporariamente.';
+  }
+
+  if (bannerLogo) {
+    bannerLogo.style.borderColor = musicEnabled ? 'rgba(29, 185, 84, 0.5)' : 'rgba(239, 68, 68, 0.5)';
+    bannerLogo.style.boxShadow = musicEnabled ? '0 4px 16px rgba(29, 185, 84, 0.25)' : '0 4px 16px rgba(239, 68, 68, 0.25)';
+  }
+
+  if (btn) {
+    if (musicEnabled) {
+      btn.className = 'btn danger';
+      if (btnText) btnText.textContent = 'Desativar Músicas';
+      if (iconSpan) iconSpan.setAttribute('data-icon', 'power');
+    } else {
+      btn.className = 'btn primary';
+      if (btnText) btnText.textContent = 'Ativar Músicas';
+      if (iconSpan) iconSpan.setAttribute('data-icon', 'power');
+    }
+    renderIcons(btn);
+  }
 
   // Sincroniza seletores gráficos
   const curLayout = w.layout || 'card';
@@ -2124,6 +2173,29 @@ function syncWidgetForm(s) {
 }
 
 function bindWidgetForm() {
+  // 0. Botão principal e toggle da Função de Música
+  $('#btnToggleMusic')?.addEventListener('click', () => {
+    store.update((s) => {
+      s.config = s.config || {};
+      const current = (s.config.musicEnabled !== false);
+      s.config.musicEnabled = !current;
+      pushLog(s, 'config', `Função de música ${!current ? 'ativada' : 'desativada'} no painel do widget`);
+    });
+    store.flush();
+    syncWidgetForm(store.state);
+  });
+
+  $('#wMusicEnabled')?.addEventListener('change', (e) => {
+    const val = !!e.target.checked;
+    store.update((s) => {
+      s.config = s.config || {};
+      s.config.musicEnabled = val;
+      pushLog(s, 'config', `Função de música ${val ? 'ativada' : 'desativada'} no painel do widget`);
+    });
+    store.flush();
+    syncWidgetForm(store.state);
+  });
+
   // 1. Seletor gráfico de formato / layout
   $('#layoutPicker')?.addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-layout]');

@@ -21,6 +21,7 @@ export function defaultState() {
     config: {
       channel: '',                 // canal alvo (sem #)
       botNick: '',                 // nick da conta do bot
+      musicEnabled: true,          // função de música e songrequest ativa
       allowEveryonePlay: true,     // qualquer um pode pedir música
       perUserCooldown: 15,         // segundos entre pedidos por usuário
       globalCooldown: 2,           // segundos entre comandos (anti-flood)
@@ -161,6 +162,7 @@ export function sanitize(raw) {
   out.config = {
     ...base.config,
     ...rc,
+    musicEnabled: rc.musicEnabled !== false,
     commands: { ...base.config.commands, ...(rc.commands || {}) },
     cmdPermissions: { ...base.config.cmdPermissions, ...(rc.cmdPermissions || {}) },
     custom: { ...(rc.custom || {}) },
