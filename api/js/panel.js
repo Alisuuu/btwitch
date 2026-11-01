@@ -469,9 +469,16 @@ function initNavDrawer() {
     if (e.key === 'Escape') closeDrawer();
   });
 
-  $$('.drawer-nav-item').forEach((item) => {
+  $$('.drawer-item').forEach((item) => {
     item.addEventListener('click', () => {
       closeDrawer();
+    });
+    item.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        switchTab(item.dataset.tab);
+        closeDrawer();
+      }
     });
   });
 }
@@ -481,6 +488,52 @@ initTabsScroll();
 initNavDrawer();
 
 // -------------------------------------------------------------- status/UI
+async function fetchUserAvatar(username) {
+  if (!username) return '';
+  const clean = String(username).toLowerCase().replace(/^#/, '').trim();
+  if (!clean) return '';
+
+  // 1. Tenta decapi.me (retorna direto a URL da foto oficial da Twitch no CDN)
+  try {
+    const res = await fetch(`https://decapi.me/twitch/avatar/${encodeURIComponent(clean)}`);
+    if (res.ok) {
+      const url = (await res.text()).trim();
+      if (url && url.startsWith('http') && !url.includes('error') && !url.includes('User not found')) {
+        return url;
+      }
+    }
+  } catch {}
+
+  // 2. Tenta api.ivr.fi
+  try {
+    const res = await fetch(`https://api.ivr.fi/v2/twitch/user?login=${encodeURIComponent(clean)}`);
+    if (res.ok) {
+      const data = await res.json();
+      const logo = data?.[0]?.logo;
+      if (logo && logo.startsWith('http')) return logo;
+    }
+  } catch {}
+
+  // 3. Fallback via backend /api/twitch
+  try {
+    const token = (localStorage.getItem(LS_TOKEN) || '').trim();
+    if (token) {
+      const res = await fetch('/api/twitch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, clientId: '04ajnvlju5loqchkmzfl7v622veib6' }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        if (d?.profile_image_url) return d.profile_image_url;
+      }
+    }
+  } catch {}
+
+  return '';
+}
+window.fetchUserAvatar = fetchUserAvatar;
+
 function renderUserHeader() {
   const menu = $('#userProfileMenu');
   const avatar = $('#userAvatar');
@@ -514,8 +567,20 @@ function renderUserHeader() {
     if (nameLabel) nameLabel.textContent = displayName;
     if (dropdownUser) dropdownUser.textContent = '@' + displayName;
     if (dropdownChannel) dropdownChannel.textContent = 'Canal: #' + ch;
-    if (avatar && user?.profile_image_url) {
-      avatar.src = user.profile_image_url;
+    if (avatar) {
+      if (user?.profile_image_url) {
+        avatar.src = user.profile_image_url;
+      } else if (ch) {
+        fetchUserAvatar(ch).then((url) => {
+          if (url && avatar) {
+            avatar.src = url;
+            if (user) {
+              user.profile_image_url = url;
+              try { localStorage.setItem('alive.user', JSON.stringify(user)); } catch {}
+            }
+          }
+        }).catch(() => {});
+      }
     }
   } else {
     // Bloqueio de segurança em guia anônima / deslogado
@@ -2069,10 +2134,10 @@ async function copyWidget() {
   toast(ok ? 'Link do widget copiado!' : 'Erro ao copiar: ' + widgetUrl(), 3500);
 }
 
-$('#btnCopyWidget').addEventListener('click', copyWidget);
-$('#btnCopyWidget2').addEventListener('click', copyWidget);
-$('#btnWidget').addEventListener('click', () => window.open(widgetUrl(), '_blank', 'noopener'));
-$('#btnWidgetPreview').addEventListener('click', () => window.open(widgetUrl(), '_blank', 'noopener'));
+$('#btnCopyWidget')?.addEventListener('click', copyWidget);
+$('#btnCopyWidget2')?.addEventListener('click', copyWidget);
+$('#btnWidget')?.addEventListener('click', () => window.open(widgetUrl(), '_blank', 'noopener'));
+$('#btnWidgetPreview')?.addEventListener('click', () => window.open(widgetUrl(), '_blank', 'noopener'));
 
 // ---------------------------------------------------------------- config
 function syncConfigForm(s) {

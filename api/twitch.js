@@ -61,6 +61,18 @@ export default async function handler(req, res) {
       }
     }
 
+    if (!profile_image_url && login) {
+      try {
+        const decRes = await fetch(`https://decapi.me/twitch/avatar/${encodeURIComponent(login)}`);
+        if (decRes.ok) {
+          const txt = (await decRes.text()).trim();
+          if (txt && txt.startsWith('http') && !txt.includes('error') && !txt.includes('User not found')) {
+            profile_image_url = txt;
+          }
+        }
+      } catch {}
+    }
+
     if (!login) {
       console.warn('[alive api/twitch] falha ao extrair login do token');
       return res.status(401).json({ error: 'Token inválido ou expirado na Twitch.' });

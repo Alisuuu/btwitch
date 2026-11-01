@@ -124,6 +124,15 @@
 
         if (u && u.login) {
           const login = String(u.login).toLowerCase();
+          if (!u.profile_image_url) {
+            try {
+              const aRes = await fetch(`https://decapi.me/twitch/avatar/${encodeURIComponent(login)}`);
+              if (aRes.ok) {
+                const txt = (await aRes.text()).trim();
+                if (txt && txt.startsWith('http') && !txt.includes('error')) u.profile_image_url = txt;
+              }
+            } catch {}
+          }
           localStorage.setItem(LS_LOGIN, login);
           localStorage.setItem(LS_CHANNEL, login);
           localStorage.setItem(LS_USER, JSON.stringify(u));
