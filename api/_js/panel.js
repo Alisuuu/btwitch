@@ -207,20 +207,25 @@ function loadYTApi() {
   });
 }
 
+const failedPanelIds = new Set();
+
 async function tryFindAlternativePanel(currentNow) {
   if (retryingPanelAlt || !currentNow) return;
   retryingPanelAlt = true;
+  if (currentNow.id) failedPanelIds.add(currentNow.id);
+
   try {
     toast('Buscando versão com áudio liberado...');
     const cleanTitle = (currentNow.title || '')
       .replace(/\(Official.*?\)/gi, '')
       .replace(/\[Official.*?\]/gi, '')
       .replace(/ft\..*$/gi, '')
+      .replace(/feat\..*$/gi, '')
       .trim();
     const query = `${cleanTitle} audio`;
-    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=5`).then((r) => r.json()).catch(() => null);
+    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=8`).then((r) => r.json()).catch(() => null);
     if (res && res.items && res.items.length) {
-      const alt = res.items.find((it) => it.id !== currentNow.id);
+      const alt = res.items.find((it) => it.id !== currentNow.id && !failedPanelIds.has(it.id));
       if (alt) {
         toast(`Tocando versão alternativa: ${alt.title}`);
         curPlayingId = alt.id;
@@ -234,7 +239,7 @@ async function tryFindAlternativePanel(currentNow) {
           console.warn('[alive panel] erro ao carregar alternativa:', e);
         }
         store.update((st) => {
-          if (st.now && st.now.id === currentNow.id) {
+          if (st.now) {
             st.now.id = alt.id;
             st.now.title = alt.title;
             if (alt.thumb) st.now.thumb = alt.thumb;
@@ -251,7 +256,7 @@ async function tryFindAlternativePanel(currentNow) {
   } catch (err) {
     console.warn('[alive panel] erro ao buscar alternativa:', err);
   } finally {
-    setTimeout(() => { retryingPanelAlt = false; }, 5000);
+    setTimeout(() => { retryingPanelAlt = false; }, 3500);
   }
 }
 
@@ -294,7 +299,7 @@ async function initPanelPlayer() {
           } else if (st === 0) { // ENDED prematuro
             const cur = panelPlayer?.getCurrentTime?.() || 0;
             const dur = panelPlayer?.getDuration?.() || 0;
-            if (dur > 5 && cur < 3) {
+            if (cur < 3 || (dur > 5 && cur < dur - 6)) {
               console.warn('[alive panel] Vídeo abortado prematuramente aos 0s pelo YouTube, buscando alternativa...');
               tryFindAlternativePanel(store.state.now);
             }

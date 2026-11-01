@@ -327,14 +327,19 @@ function loadCurrent(s) {
 function onPlayerStateChange(ev) {
   const st = ev?.data;
   if (st === YT_STATE.ENDED) {
-    const cur = player?.getCurrentTime?.() || 0;
-    const dur = player?.getDuration?.() || 0;
+    const cur = Number(player?.getCurrentTime?.() || 0);
+    const playerDur = Number(player?.getDuration?.() || 0);
+    const expectedDur = Number(playerDur || durationShown || store.state.now?.duration || 0);
 
-    // Se o vídeo encerrou prematuramente antes de chegar ao fim (ex: caiu no meio, erro de stream ou aborto):
-    // NUNCA avança a fila e NUNCA pula de música no meio!
-    if (dur > 10 && cur < dur - 5) {
-      console.warn(`[alive widget] Vídeo terminou prematuramente aos ${Math.round(cur)}s de ${Math.round(dur)}s. Buscando versão alternativa...`);
-      tryFindAlternative(store.state.now, () => skipBrokenVideo('término prematuro'));
+    // Se o vídeo NUNCA começou a tocar (startChecked == false e cur < 3) OU
+    // encerrou prematuramente nos primeiros segundos (cur < 3) OU
+    // terminou bem antes do fim esperado:
+    const neverStarted = !startChecked && cur < 3;
+    const endedPrematurely = (expectedDur > 10 && cur < expectedDur - 6) || cur < 3;
+
+    if (neverStarted || endedPrematurely) {
+      console.warn(`[alive widget] Vídeo terminou prematuramente (cur=${Math.round(cur)}s, dur=${Math.round(expectedDur)}s, started=${startChecked}). Buscando versão alternativa liberada...`);
+      tryFindAlternative(store.state.now, () => skipBrokenVideo('reprodução bloqueada'));
       return;
     }
 
@@ -372,6 +377,7 @@ function onPlayerStateChange(ev) {
 }
 
 let retryingAlt = false;
+const failedVideoIds = new Set();
 
 async function tryFindAlternative(currentNow, onFail) {
   if (retryingAlt || !currentNow) {
@@ -379,23 +385,27 @@ async function tryFindAlternative(currentNow, onFail) {
     return;
   }
   retryingAlt = true;
+  if (currentNow.id) failedVideoIds.add(currentNow.id);
+
   try {
-    showToast('Buscando versão com reprodução liberada...');
+    showToast('Buscando versão com áudio liberado...');
     const cleanTitle = (currentNow.title || '')
       .replace(/\(Official.*?\)/gi, '')
       .replace(/\[Official.*?\]/gi, '')
       .replace(/ft\..*$/gi, '')
+      .replace(/feat\..*$/gi, '')
       .trim();
     const query = `${cleanTitle} audio`;
-    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=5`).then((r) => r.json()).catch(() => null);
+    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=8`).then((r) => r.json()).catch(() => null);
     if (res && res.items && res.items.length) {
-      const alt = res.items.find((it) => it.id !== currentNow.id);
+      const alt = res.items.find((it) => it.id !== currentNow.id && !failedVideoIds.has(it.id));
       if (alt) {
-        showToast(`Tocando versão alternativa: ${alt.title}`);
+        showToast(`Tocando versão liberada: ${alt.title}`);
         curId = alt.id;
         curStartedAt = Date.now();
         startChecked = false;
         stallCount = 0;
+        stallAtEndCount = 0;
         try {
           player?.loadVideoById({ videoId: alt.id, startSeconds: 0 });
           applyVolume(store.state.volume);
@@ -403,7 +413,7 @@ async function tryFindAlternative(currentNow, onFail) {
           console.warn('[alive widget] load alternative:', e);
         }
         store.update((st) => {
-          if (st.now && st.now.id === currentNow.id) {
+          if (st.now) {
             st.now.id = alt.id;
             st.now.title = alt.title;
             if (alt.thumb) st.now.thumb = alt.thumb;
@@ -423,7 +433,7 @@ async function tryFindAlternative(currentNow, onFail) {
     console.warn('[alive] erro ao buscar alternativa:', err);
     if (typeof onFail === 'function') onFail();
   } finally {
-    setTimeout(() => { retryingAlt = false; }, 4000);
+    setTimeout(() => { retryingAlt = false; }, 3500);
   }
 }
 
