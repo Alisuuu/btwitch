@@ -92,7 +92,7 @@ body[data-video="off"] .stage {
   width: 320px !important;
   height: 200px !important;
   opacity: 1 !important;
-  pointer-events: auto !important;
+  pointer-events: none !important;
   background: transparent !important;
   z-index: 1 !important;
   overflow: hidden !important;

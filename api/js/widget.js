@@ -287,6 +287,11 @@ function getSafeOrigin() {
 }
 
 let userInteracted = false;
+try {
+  if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('alive_interacted') === '1') {
+    userInteracted = true;
+  }
+} catch {}
 
 function showUnmutePrompt() {
   const el = document.getElementById('unmutePrompt');
@@ -300,6 +305,9 @@ function hideUnmutePrompt() {
 
 function markUserInteracted() {
   userInteracted = true;
+  try {
+    sessionStorage.setItem('alive_interacted', '1');
+  } catch {}
   hideUnmutePrompt();
   if (ytReady && player && store.state.now && !store.state.now.paused) {
     try {
@@ -352,10 +360,6 @@ function loadCurrent(s) {
         setTimeout(() => { try { player.pauseVideo?.(); } catch {} }, 50);
       }
     } else {
-      // Se ainda não houve interação do usuário, garante início mutado para não ser bloqueado por Autoplay Policy
-      if (!userInteracted) {
-        try { player.mute?.(); } catch {}
-      }
       player.loadVideoById(cleanId, safeStart);
       try { player.playVideo?.(); } catch {}
     }
@@ -367,7 +371,7 @@ function loadCurrent(s) {
 
     if (!playAudio) {
       player.mute?.();
-    } else if (userInteracted) {
+    } else {
       player.unMute?.();
       applyVolume(s.volume);
     }
@@ -645,7 +649,7 @@ async function initPlayer() {
       height: '100%',
       playerVars: {
         autoplay: 1,
-        mute: 1,
+        mute: userInteracted ? 0 : 1,
         controls: 0,
         disablekb: 1,
         fs: 0,
@@ -732,6 +736,33 @@ function tick() {
 
   cur = Number.isFinite(cur) ? Math.max(0, cur) : 0;
   dur = Number.isFinite(dur) ? Math.max(0, dur) : 0;
+
+  // Sincronização contínua de áudio/mute
+  if (!now.paused && ytReady && player && typeof player.isMuted === 'function') {
+    try {
+      const w = store.state.config?.widget || {};
+      const playAudio = params.has('audio')
+        ? params.get('audio') !== '0'
+        : (params.has('playAudio') ? params.get('playAudio') !== '0' : (w.playAudio !== 0));
+
+      if (playAudio) {
+        if (player.isMuted()) {
+          // Tenta desmutar continuamente se tiver permissão
+          player.unMute();
+          applyVolume(store.state.volume);
+          if (player.isMuted()) {
+            showUnmutePrompt();
+          } else {
+            hideUnmutePrompt();
+          }
+        } else {
+          hideUnmutePrompt();
+        }
+      } else {
+        hideUnmutePrompt();
+      }
+    } catch {}
+  }
 
   // Watchdog de término de vídeo: se o player atingiu o final (cur >= dur - 0.5) mas o evento ENDED não disparou no OBS
   if (!now.paused && ytReady && player && dur > 5 && cur >= dur - 0.5 && startChecked) {
