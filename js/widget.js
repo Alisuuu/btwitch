@@ -5,7 +5,7 @@ import { advanceQueue, pushLog, fmtTime, thumbFor } from './state.js';
 const $ = (s) => (typeof document !== 'undefined' ? document.querySelector(s) : null);
 
 const params = typeof location !== 'undefined' ? new URLSearchParams(location.search) : new URLSearchParams();
-const channel = (params.get('channel') || params.get('ch') || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+const channel = (params.get('channel') || params.get('ch') || (typeof localStorage !== 'undefined' ? (localStorage.getItem('alive.channel') || localStorage.getItem('alive.tokenLogin') || '') : '')).toLowerCase().replace(/[^a-z0-9_]/g, '');
 const store = new Store(channel);
 
 let player = null;
@@ -16,8 +16,10 @@ let wasPaused = false;
 let durationShown = 0;
 let lastPosWrite = 0;
 let lastQueueLen = store.state.queue.length;
+let firstQueueRender = true;
 let startChecked = false;
 let stallCount = 0;
+let stallAtEndCount = 0;
 let lastStallPos = -1;
 
 const els = typeof document !== 'undefined' ? {
@@ -135,8 +137,7 @@ function applyConfig(s) {
   document.body.classList.toggle('no-marquee', !marquee);
   document.body.classList.toggle('muted-widget', !playAudio);
 
-  const isActuallyPlaying = (ytReady && player && typeof player.getPlayerState === 'function' && player.getPlayerState() === 1);
-  const paused = isActuallyPlaying ? false : !!s.now?.paused;
+  const paused = !!s.now?.paused;
   document.body.classList.toggle('paused', paused);
   if (els.kicker) els.kicker.textContent = paused ? 'PAUSADO' : 'TOCANDO AGORA';
 
@@ -225,14 +226,15 @@ function render(s) {
     )).join('');
   }
 
-  // aviso de nova música na fila
-  if (s.queue.length > lastQueueLen && lastQueueLen >= 0) {
+  // aviso de nova música na fila (ignora no carregamento inicial)
+  if (!firstQueueRender && s.queue.length > lastQueueLen && lastQueueLen >= 0) {
     const newest = s.queue[s.queue.length - 1];
     showToast(`Nova música na fila: ${newest.title}${newest.requestedBy ? ' — ' + newest.requestedBy : ''}`);
     els.card.classList.remove('flash');
     void els.card.offsetWidth;
     els.card.classList.add('flash');
   }
+  firstQueueRender = false;
   lastQueueLen = s.queue.length;
 }
 
@@ -240,14 +242,32 @@ function render(s) {
 function loadYTApi() {
   return new Promise((resolve, reject) => {
     if (window.YT && window.YT.Player) return resolve(window.YT);
+    let resolved = false;
     const prev = window.onYouTubeIframeAPIReady;
     window.onYouTubeIframeAPIReady = () => {
+      if (resolved) return;
+      resolved = true;
       if (typeof prev === 'function') prev();
       resolve(window.YT);
     };
+    const timer = setTimeout(() => {
+      if (!resolved) {
+        if (window.YT && window.YT.Player) {
+          resolved = true;
+          return resolve(window.YT);
+        }
+        console.warn('[alive widget] Timeout carregando API do YouTube, tentando novamente...');
+        const retryTag = document.createElement('script');
+        retryTag.src = 'https://www.youtube.com/iframe_api?retry=' + Date.now();
+        document.head.appendChild(retryTag);
+      }
+    }, 12000);
     const tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
-    tag.onerror = () => reject(new Error('falha ao carregar API do YouTube'));
+    tag.onerror = () => {
+      clearTimeout(timer);
+      reject(new Error('falha ao carregar API do YouTube'));
+    };
     document.head.appendChild(tag);
   });
 }
@@ -320,6 +340,7 @@ function onPlayerStateChange(ev) {
 
     // A música realmente tocou até o final: avança para a próxima música da fila
     store.update((s) => { advanceQueue(s); });
+    store.flush();
     return;
   }
   if (st === YT_STATE.PLAYING) {
@@ -537,6 +558,20 @@ function tick() {
   cur = Number.isFinite(cur) ? Math.max(0, cur) : 0;
   dur = Number.isFinite(dur) ? Math.max(0, dur) : 0;
 
+  // Watchdog de término de vídeo: se o player atingiu o final (cur >= dur - 0.5) mas o evento ENDED não disparou no OBS
+  if (!now.paused && ytReady && player && dur > 5 && cur >= dur - 0.5) {
+    stallAtEndCount++;
+    if (stallAtEndCount >= 5) { // 2.5 segundos parado no final
+      stallAtEndCount = 0;
+      console.log('[alive widget] Final do vídeo alcançado no tick (cur=' + Math.round(cur) + 's, dur=' + Math.round(dur) + 's). Avançando fila...');
+      store.update((s) => { advanceQueue(s); });
+      store.flush();
+      return;
+    }
+  } else {
+    stallAtEndCount = 0;
+  }
+
   // Watchdog contra congelamento no OBS: se o player estiver despausado mas travado no mesmo segundo por > 25s
   if (!now.paused && ytReady && player) {
     const roundedCur = Math.floor(cur);
@@ -611,4 +646,23 @@ if (typeof window !== 'undefined') {
   setInterval(() => writePosition(false), 40000);
   window.addEventListener('beforeunload', () => writePosition(true));
   document.addEventListener('visibilitychange', () => { if (document.hidden) writePosition(true); });
+
+  // Desbloqueia áudio instantaneamente em caso de clique ou interação na janela
+  const unlockAudio = () => {
+    if (ytReady && player && store.state.now && !store.state.now.paused) {
+      try {
+        const w = store.state.config.widget || {};
+        const playAudio = params.has('audio')
+          ? params.get('audio') !== '0'
+          : (params.has('playAudio') ? params.get('playAudio') !== '0' : (w.playAudio !== 0));
+        if (playAudio) {
+          player.unMute?.();
+          applyVolume(store.state.volume);
+        }
+        player.playVideo?.();
+      } catch {}
+    }
+  };
+  window.addEventListener('pointerdown', unlockAudio, { passive: true });
+  window.addEventListener('keydown', unlockAudio, { passive: true });
 }

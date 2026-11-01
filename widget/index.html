@@ -14,14 +14,11 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" type="image/webp" href="/img/ic_splash_logo.webp">
 <link rel="apple-touch-icon" href="/img/icon-192.png">
-<link rel="stylesheet" href="/css/widget.css">
+<link rel="stylesheet" href="/css/widget.css?v=1.2.0">
 </head>
 <body data-video="off" data-start="0">
 
-  <!-- player de áudio nativo (toca streams extraídos diretamente sem restrição de embed) -->
-  <audio id="nativeAudio" preload="auto"></audio>
-
-  <!-- player oficial do YouTube (fallback) -->
+  <!-- player oficial do YouTube (áudio e vídeo com controle nativo) -->
   <div class="stage"><div id="yt"></div></div>
   <div class="dim"></div>
 
@@ -32,14 +29,10 @@
       <div class="card" id="card" hidden>
         <div class="art" id="art">
           <img id="thumb" alt="" draggable="false">
-          <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
-          <span class="paused-badge" id="pausedBadge" hidden>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="4" height="16" x="6" y="4"/><rect width="4" height="16" x="14" y="4"/></svg>
-          </span>
         </div>
         <div class="meta" id="metaBox">
           <div class="kicker"><span class="dot"></span><span id="kickerText">TOCANDO AGORA</span></div>
-          <div class="title" id="title">—</div>
+          <div class="title-wrap"><div class="title" id="title">—</div></div>
           <div class="sub" id="sub"></div>
           <div class="progress" id="progress">
             <div class="fill" id="fill"><span class="knob"></span></div>
@@ -59,7 +52,7 @@
         </div>
         <div class="meta">
           <div class="kicker"><span class="dot idle-dot"></span><span>ALIVE BOT · AGUARDANDO</span></div>
-          <div class="title idle-title">Fila vazia</div>
+          <div class="title-wrap"><div class="title idle-title">Fila vazia</div></div>
           <div class="sub">Peça no chat com <b>!play &lt;nome da música&gt;</b></div>
         </div>
       </div>
@@ -78,12 +71,6 @@
   <!-- aviso de nova música -->
   <div class="toast" id="toast" hidden></div>
 
-  <!-- desbloqueio de áudio quando necessário -->
-  <button class="start-overlay" id="startOverlay" hidden>
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-    Clique para iniciar o áudio
-  </button>
-
-  <script type="module" src="/js/widget.js"></script>
+  <script type="module" src="/js/widget.js?v=1.2.1"></script>
 </body>
 </html>
