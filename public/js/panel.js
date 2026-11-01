@@ -2235,14 +2235,51 @@ $$('.btn-twitch-auth, #btnTwitchTop, #btnTwitchDiscord, #btnLoginTwitch, #btnTwi
 });
 
 async function copyWidget() {
-  const ok = await copyText(widgetUrl());
-  toast(ok ? 'Link do widget copiado!' : 'Erro ao copiar: ' + widgetUrl(), 3500);
+  let ch = currentChannel || store?.state?.config?.channel || (typeof localStorage !== 'undefined' ? (localStorage.getItem('alive.channel') || localStorage.getItem('alive.tokenLogin') || '') : '');
+  if (!ch) {
+    const ask = prompt('Digite o nome do seu canal na Twitch para vincular ao widget:');
+    if (ask) {
+      const clean = ask.trim().toLowerCase().replace(/^#/, '').replace(/[^a-z0-9_]/g, '');
+      if (clean) {
+        currentChannel = clean;
+        localStorage.setItem('alive.channel', clean);
+        store.setChannel(clean);
+        store.update((s) => { s.config.channel = clean; });
+        if ($('#cfgChannel')) $('#cfgChannel').value = clean;
+        renderUserHeader();
+        if ($('#widgetUrl')) $('#widgetUrl').value = widgetUrl();
+      }
+    }
+  }
+  const url = widgetUrl();
+  const ok = await copyText(url);
+  toast(ok ? 'Link do widget copiado!' : 'Erro ao copiar: ' + url, 3500);
+}
+
+function openWidget() {
+  let ch = currentChannel || store?.state?.config?.channel || (typeof localStorage !== 'undefined' ? (localStorage.getItem('alive.channel') || localStorage.getItem('alive.tokenLogin') || '') : '');
+  if (!ch) {
+    const ask = prompt('Digite o nome do seu canal na Twitch para abrir o widget:');
+    if (ask) {
+      const clean = ask.trim().toLowerCase().replace(/^#/, '').replace(/[^a-z0-9_]/g, '');
+      if (clean) {
+        currentChannel = clean;
+        localStorage.setItem('alive.channel', clean);
+        store.setChannel(clean);
+        store.update((s) => { s.config.channel = clean; });
+        if ($('#cfgChannel')) $('#cfgChannel').value = clean;
+        renderUserHeader();
+        if ($('#widgetUrl')) $('#widgetUrl').value = widgetUrl();
+      }
+    }
+  }
+  window.open(widgetUrl(), '_blank', 'noopener');
 }
 
 $('#btnCopyWidget')?.addEventListener('click', copyWidget);
 $('#btnCopyWidget2')?.addEventListener('click', copyWidget);
-$('#btnWidget')?.addEventListener('click', () => window.open(widgetUrl(), '_blank', 'noopener'));
-$('#btnWidgetPreview')?.addEventListener('click', () => window.open(widgetUrl(), '_blank', 'noopener'));
+$('#btnWidget')?.addEventListener('click', openWidget);
+$('#btnWidgetPreview')?.addEventListener('click', openWidget);
 
 // ---------------------------------------------------------------- config
 function syncConfigForm(s) {

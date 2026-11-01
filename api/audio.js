@@ -10,10 +10,11 @@ function getYt() {
     if (typeof YtdlClass === 'function') {
       const ClientEnum = ytdlPkg.Client || (ytdlPkg.default && ytdlPkg.default.Client) || {};
       const clients = [
-        ClientEnum.VisionOS || 'visionos',
-        ClientEnum.WebEmbedded || 'web_embedded',
+        ClientEnum.Android || 'android',
+        ClientEnum.Ios || 'ios',
         ClientEnum.Tv || 'tv',
-        ClientEnum.Mweb || 'mweb',
+        ClientEnum.VisionOS || 'visionos',
+        ClientEnum.TvEmbedded || 'tv_embedded',
       ].filter(Boolean);
       ytInstance = new YtdlClass({ clients });
     }
@@ -21,23 +22,28 @@ function getYt() {
   return ytInstance;
 }
 
-// Compatibilidade resiliente de exportações do @distube/ytdl-core
+// Compatibilidade resiliente de exportações do @distube/ytdl-core com timeout rigoroso
 async function getAudioInfo(url) {
-  const yt = getYt();
-  if (yt && typeof yt.getInfo === 'function') {
-    return await yt.getInfo(url);
-  }
-  if (typeof ytdlPkg.getInfo === 'function') {
-    return await ytdlPkg.getInfo(url);
-  }
-  if (ytdlPkg.default && typeof ytdlPkg.default.getInfo === 'function') {
-    return await ytdlPkg.default.getInfo(url);
-  }
-  if (typeof ytdlPkg.Ytdl === 'function') {
-    const fresh = new ytdlPkg.Ytdl();
-    return await fresh.getInfo(url);
-  }
-  throw new Error('Método getInfo não encontrado em @distube/ytdl-core');
+  const fetchOp = async () => {
+    const yt = getYt();
+    if (yt && typeof yt.getInfo === 'function') {
+      return await yt.getInfo(url);
+    }
+    if (typeof ytdlPkg.getInfo === 'function') {
+      return await ytdlPkg.getInfo(url);
+    }
+    if (ytdlPkg.default && typeof ytdlPkg.default.getInfo === 'function') {
+      return await ytdlPkg.default.getInfo(url);
+    }
+    if (typeof ytdlPkg.Ytdl === 'function') {
+      const fresh = new ytdlPkg.Ytdl();
+      return await fresh.getInfo(url);
+    }
+    throw new Error('Método getInfo não encontrado em @distube/ytdl-core');
+  };
+
+  const timer = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout ytdl')), 4500));
+  return await Promise.race([fetchOp(), timer]);
 }
 
 const AUDIO_WITHOUT_VIDEO = (formats = []) => {
@@ -54,11 +60,13 @@ const AUDIO_WITHOUT_VIDEO = (formats = []) => {
   return null;
 };
 
-// Fallback caso ytdl falhe por bot-check na cloud
+// Fallbacks de APIs públicas distribuídas caso o ytdl primário sofra bot-check
 async function fetchFallbackAudio(id) {
   const endpoints = [
     `https://pipedapi.tokhmi.xyz/streams/${id}`,
     `https://api.piped.private.coffee/streams/${id}`,
+    `https://piped-api.garudalinux.org/streams/${id}`,
+    `https://inv.riverside.rocks/api/v1/videos/${id}`,
   ];
   for (const ep of endpoints) {
     try {
@@ -70,10 +78,12 @@ async function fetchFallbackAudio(id) {
       }).finally(() => clearTimeout(t));
       if (!resp.ok) continue;
       const data = await resp.json().catch(() => null);
-      const list = data?.audioStreams || [];
-      if (list.length) {
-        list.sort((a, b) => (Number(b.bitrate || 0) || 0) - (Number(a.bitrate || 0) || 0));
-        const best = list[0];
+      
+      // Formato Piped
+      const pipedList = data?.audioStreams || [];
+      if (pipedList.length) {
+        pipedList.sort((a, b) => (Number(b.bitrate || 0) || 0) - (Number(a.bitrate || 0) || 0));
+        const best = pipedList[0];
         if (best && best.url) {
           return {
             url: best.url,
@@ -82,6 +92,19 @@ async function fetchFallbackAudio(id) {
             duration: Number(data.duration || 0),
           };
         }
+      }
+
+      // Formato Invidious
+      const invFormats = (data?.adaptiveFormats || []).filter((f) => f.type?.includes('audio') && f.url);
+      if (invFormats.length) {
+        invFormats.sort((a, b) => (Number(b.bitrate || 0) || 0) - (Number(a.bitrate || 0) || 0));
+        const best = invFormats[0];
+        return {
+          url: best.url,
+          mimeType: best.type || 'audio/webm',
+          bitrate: Number(best.bitrate || 0),
+          duration: Number(data.lengthSeconds || 0),
+        };
       }
     } catch {}
   }

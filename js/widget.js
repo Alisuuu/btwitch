@@ -359,6 +359,40 @@ function onPlayerStateChange(ev) {
       return;
     }
 
+    // Regra Crítica: Desmutar e aplicar volume imediatamente no início ativo da reprodução
+    try {
+      const w = store.state.config?.widget || {};
+      const playAudio = params.has('audio')
+        ? params.get('audio') !== '0'
+        : (params.has('playAudio') ? params.get('playAudio') !== '0' : (w.playAudio !== 0));
+      if (playAudio && player) {
+        player.unMute?.();
+        applyVolume(store.state.volume);
+      }
+    } catch {}
+
+    // Reforços escalonados contra bloqueio de autoplay do navegador
+    setTimeout(() => {
+      try {
+        const w = store.state.config?.widget || {};
+        const playAudio = params.has('audio') ? params.get('audio') !== '0' : (w.playAudio !== 0);
+        if (playAudio && player) {
+          player.unMute?.();
+          applyVolume(store.state.volume);
+        }
+      } catch {}
+    }, 250);
+    setTimeout(() => {
+      try {
+        const w = store.state.config?.widget || {};
+        const playAudio = params.has('audio') ? params.get('audio') !== '0' : (w.playAudio !== 0);
+        if (playAudio && player) {
+          player.unMute?.();
+          applyVolume(store.state.volume);
+        }
+      } catch {}
+    }, 900);
+
     const d = player.getDuration?.() || 0;
     if (d > 0 && store.state.now?.id === curId && Math.abs((store.state.now.duration || 0) - d) > 1) {
       store.update((s) => { if (s.now?.id === curId) s.now.duration = Math.round(d); }, { remote: false });
@@ -539,6 +573,7 @@ async function initPlayer() {
     const safeOrigin = getSafeOrigin();
 
     player = new YT.Player('yt', {
+      host: 'https://www.youtube-nocookie.com',
       width: '100%',
       height: '100%',
       playerVars: {
@@ -551,7 +586,8 @@ async function initPlayer() {
         enablejsapi: 1,
         modestbranding: 1,
         iv_load_policy: 3,
-        ...(safeOrigin ? { origin: safeOrigin } : {}),
+        origin: safeOrigin || (typeof location !== 'undefined' ? location.origin : undefined),
+        widget_referrer: (typeof location !== 'undefined' ? location.href : undefined),
       },
       events: {
         onReady: () => {
