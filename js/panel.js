@@ -2397,6 +2397,8 @@ function syncConfigForm(s) {
   } catch { /* storage indisponível */ }
 
   if ($('#cfgEveryone')) $('#cfgEveryone').checked = !!c.allowEveryonePlay;
+  if ($('#cfgQuietMode')) $('#cfgQuietMode').checked = !!c.quietMode;
+  if ($('#cfgCooldownWarn')) $('#cfgCooldownWarn').checked = c.cooldownWarnings !== false;
   if ($('#cfgAnnounceNow')) $('#cfgAnnounceNow').checked = !!c.announceNow;
   if ($('#cfgAnnounceQueue')) $('#cfgAnnounceQueue').checked = !!c.announceQueue;
   if ($('#cfgAutoSkip')) $('#cfgAutoSkip').checked = !!c.autoSkipError;
@@ -2446,6 +2448,8 @@ function saveConfig() {
     if (newChan) s.config.channel = newChan;
     if ($('#cfgNick')) s.config.botNick = $('#cfgNick').value.trim().toLowerCase();
     if ($('#cfgEveryone')) s.config.allowEveryonePlay = $('#cfgEveryone').checked;
+    if ($('#cfgQuietMode')) s.config.quietMode = $('#cfgQuietMode').checked;
+    if ($('#cfgCooldownWarn')) s.config.cooldownWarnings = $('#cfgCooldownWarn').checked;
     if ($('#cfgAnnounceNow')) s.config.announceNow = $('#cfgAnnounceNow').checked;
     if ($('#cfgAnnounceQueue')) s.config.announceQueue = $('#cfgAnnounceQueue').checked;
     if ($('#cfgAutoSkip')) s.config.autoSkipError = $('#cfgAutoSkip').checked;
@@ -2790,10 +2794,12 @@ store.subscribe((s) => {
     return;
   }
   if (runnerBusy) { prevNowId = id; return; }
-  if (id && id !== prevNowId && s.config.announceNow) {
+  // Evita anunciar se a música foi iniciada por um comando direto (!play) há menos de 4s (já anunciada pelo comando)
+  const isDirectAdd = s.now?.startedAt && (Date.now() - s.now.startedAt < 4000) && (s.now?.requestedAt && (Date.now() - s.now.requestedAt < 4000));
+  if (id && id !== prevNowId && s.config.announceNow && !isDirectAdd && !s.config.quietMode) {
     send(`Tocando agora: ${short(s.now.title, 70)} — pedido por ${s.now.requestedBy}`);
   }
-  if (grew && newest && s.config.announceQueue) {
+  if (grew && newest && s.config.announceQueue && !s.config.quietMode) {
     send(`Na fila: ${short(newest.title, 60)} (posição ${s.queue.length}) — ${newest.requestedBy}`);
   }
   prevNowId = id;

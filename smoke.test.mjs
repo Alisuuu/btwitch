@@ -345,4 +345,32 @@ store.update((s) => {
 await runner(msg('!play musica reativada', { userId: 'u100', displayName: 'User100' }));
 assert(store.state.now !== null && sent.at(-1).includes('Tocando agora'), 'músicas voltam a funcionar ao reativar');
 
+console.log('\n31) Anti-poluição de chat e Modo Chat Limpo (quietMode)');
+store.update((s) => {
+  s.config.quietMode = true;
+  s.now = null;
+  s.queue = [];
+});
+// 1. !play com resposta concisa e limpa
+await runner(msg('!play musica curta', { userId: 'u101', displayName: 'User101' }));
+assert(sent.at(-1).startsWith('▶ Tocando:'), 'resposta de reprodução concisa no modo limpo');
+
+// 2. !vol silencioso no chat
+const lenBeforeVol = sent.length;
+await runner(msg('!vol 80', { userId: 'mod1', displayName: 'Mod1', mod: true }));
+assert(store.state.volume === 80, 'volume foi ajustado no store');
+assert(sent.length === lenBeforeVol, 'ajuste de volume não poluiu o chat no modo limpo');
+
+// 3. Cooldown silencioso quando cooldownWarnings está desligado
+store.update((s) => {
+  s.config.quietMode = false;
+  s.config.cooldownWarnings = false;
+  s.config.perUserCooldown = 60;
+  s.config.globalCooldown = 0;
+});
+await runner(msg('!play primeira', { userId: 'u102', displayName: 'User102' }));
+const countBeforeCd = sent.length;
+await runner(msg('!play segunda_imediata', { userId: 'u102', displayName: 'User102' }));
+assert(sent.length === countBeforeCd, 'cooldown silencioso não poluiu o chat com aviso de bronca');
+
 console.log('\n✅ Smoke test concluído.\n');

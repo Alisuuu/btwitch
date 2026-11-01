@@ -242,7 +242,8 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     const l = lastKey.get(k) || 0;
     if (seconds > 0 && now - l < seconds * 1000) {
       const w = lastWarn.get(k) || 0;
-      if (now - w > 10000 && seconds > 2) {
+      const warnEnabled = store.state.config?.cooldownWarnings !== false && !store.state.config?.quietMode;
+      if (warnEnabled && now - w > 10000 && seconds > 2) {
         lastWarn.set(k, now);
         send(`Calma, ${msg.displayName}! Faltam ${Math.ceil((seconds * 1000 - (now - l)) / 1000)}s para usar !${name} de novo.`);
       }
@@ -347,8 +348,16 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
       pushLog(st, 'play', `${msg.displayName} pediu: ${short(it.title, 60)}`);
     });
 
+    if (msg.silent) return;
+
     if (startedNow) {
+      if (cfg.quietMode) {
+        return send(`▶ Tocando: ${short(it.title, 50)} (@${msg.displayName})`);
+      }
       return send(`Tocando agora: ${short(it.title, 70)} — pedido por ${msg.displayName}`);
+    }
+    if (cfg.quietMode) {
+      return send(`✔ #${pos} na fila: ${short(it.title, 50)} (@${msg.displayName})`);
     }
     return send(`${short(it.title, 60)} entrou na fila (posição ${pos}) — pedido por ${msg.displayName}`);
   }
@@ -375,7 +384,10 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     const need = Math.max(1, Number(store.state.config.skipVotes) || 3);
     const votes = store.state.skip?.id === s.now.id ? [...store.state.skip.votes] : [];
     if (votes.includes(msg.userId)) {
-      return send(`Você já votou para pular (${votes.length}/${need}).`);
+      if (!store.state.config?.quietMode) {
+        return send(`Você já votou para pular (${votes.length}/${need}).`);
+      }
+      return;
     }
     votes.push(msg.userId);
     store.update((st) => {
@@ -393,10 +405,11 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
   async function cmdQueue(args, msg) {
     const s = store.state;
     if (!s.queue.length) return send(`Fila vazia${s.now ? ' (uma música tocando)' : ''}. Peça algo com !play`);
-    const lines = s.queue.slice(0, 8).map((x, i) => `${i + 1}. ${short(x.title, 42)} (${x.requestedBy})`);
-    const head = `Fila (${s.queue.length}/${s.config.maxQueue}) — pedido por: `;
+    const limit = s.config?.quietMode ? 3 : 5;
+    const lines = s.queue.slice(0, limit).map((x, i) => `${i + 1}. ${short(x.title, 36)} (${x.requestedBy})`);
+    const head = `Fila (${s.queue.length}/${s.config.maxQueue}): `;
     let out = head + lines.join(' | ');
-    if (s.queue.length > 8) out += ` | … +${s.queue.length - 8}`;
+    if (s.queue.length > limit) out += ` | … +${s.queue.length - limit} músicas`;
     return send(out);
   }
 
@@ -436,6 +449,7 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
       st.volume = vol;
       pushLog(st, 'vol', `${msg.displayName} definiu volume para ${vol}%`);
     });
+    if (store.state.config?.quietMode) return;
     return send(`Volume ajustado para ${vol}% por ${msg.displayName}.`);
   }
 
@@ -698,10 +712,10 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
           }
         }
 
-        // Toca e enfileira cada faixa sequencialmente
+        // Toca e enfileira cada faixa sequencialmente (silent para não duplicar avisos após resposta da IA)
         for (const song of songsToPlay) {
           try {
-            await cmdPlay(song.split(/\s+/), aiMsgContext);
+            await cmdPlay(song.split(/\s+/), { ...aiMsgContext, silent: true });
             await new Promise((r) => setTimeout(r, 250));
           } catch (e) {
             console.warn('[alive ia cmdPlay error]', e);

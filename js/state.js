@@ -28,8 +28,10 @@ export function defaultState() {
       maxQueue: 50,
       maxPlaylist: 20,             // máximo de músicas absorvidas de uma playlist
       skipVotes: 3,                // votos necessários para pular (mods pulam na hora)
-      announceNow: true,           // anunciar no chat o que começou a tocar
-      announceQueue: false,        // anunciar cada entrada na fila
+      announceNow: false,          // anunciar no chat o que começou a tocar (desligado por padrão para evitar poluição; o widget OBS já mostra)
+      announceQueue: false,        // anunciar cada entrada na fila (desligado por padrão para evitar duplicação)
+      quietMode: false,            // modo chat limpo (respostas concisas e sem mensagens de erro verbosas)
+      cooldownWarnings: true,      // avisar cooldown no chat ("Calma, @User...")
       autoSkipError: true,         // pular automático se o vídeo não tocar
       pollInterval: 5,             // segundos de sincronização com a API
       commands: {
@@ -71,17 +73,17 @@ export function defaultState() {
         social: {
           name: 'Redes Sociais',
           message: 'Gosta da live? Siga nas redes sociais e entre no nosso Discord! Links na tela.',
-          interval: 15,
-          minLines: 2,
-          enabled: true,
+          interval: 20,
+          minLines: 15,
+          enabled: false,
           lastRun: 0,
         },
         songrequest: {
           name: 'Songrequest',
           message: 'Peça sua música favorita no chat usando !play <nome ou link> · Tocando agora: {np}',
-          interval: 20,
-          minLines: 2,
-          enabled: true,
+          interval: 25,
+          minLines: 15,
+          enabled: false,
           lastRun: 0,
         },
       },
@@ -163,6 +165,10 @@ export function sanitize(raw) {
     ...base.config,
     ...rc,
     musicEnabled: rc.musicEnabled !== false,
+    announceNow: rc.announceNow === true,
+    announceQueue: rc.announceQueue === true,
+    quietMode: rc.quietMode === true,
+    cooldownWarnings: rc.cooldownWarnings !== false,
     commands: { ...base.config.commands, ...(rc.commands || {}) },
     cmdPermissions: { ...base.config.cmdPermissions, ...(rc.cmdPermissions || {}) },
     custom: { ...(rc.custom || {}) },
