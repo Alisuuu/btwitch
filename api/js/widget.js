@@ -408,7 +408,6 @@ function onPlayerStateChange(ev) {
 }
 
 let resolvingError = false;
-const failedVideoIds = new Set();
 
 async function onPlayerError(ev) {
   const code = ev?.data;
@@ -503,10 +502,13 @@ async function onPlayerError(ev) {
 function checkAutoplay() {
   if (startChecked || !ytReady || !player || !store.state.now) return;
   if (store.state.now.paused) return;
+  try {
+    player.playVideo?.();
+  } catch { /* ignora */ }
   setTimeout(() => {
     if (startChecked || !store.state.now || store.state.now.paused) return;
     try { player.playVideo?.(); } catch { /* ignora */ }
-  }, 800);
+  }, 600);
 }
 
 const YT_STATE = { ENDED: 0, PLAYING: 1, PAUSED: 2, BUFFERING: 3, CUED: 5, UNSTARTED: -1 };
@@ -709,5 +711,7 @@ if (typeof window !== 'undefined') {
     }
   };
   window.addEventListener('pointerdown', unlockAudio, { passive: true });
+  window.addEventListener('click', unlockAudio, { passive: true });
+  document.addEventListener('click', unlockAudio, { passive: true });
   window.addEventListener('keydown', unlockAudio, { passive: true });
 }

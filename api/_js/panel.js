@@ -122,10 +122,20 @@ function getAuthStreamer() {
 
 const authStreamer = getAuthStreamer();
 const hasOAuthTokenInHash = typeof location !== 'undefined' && location.hash && location.hash.includes('access_token=');
+const panelUrlParams = typeof location !== 'undefined' ? new URLSearchParams(location.search) : new URLSearchParams();
 
-// SEGURANÇA: O painel só pode ser acessado pelo streamer autenticado!
-// Se estiver em guia anônima ou não logado, bloqueia acesso a qualquer canal com o Auth Gate
-let currentChannel = authStreamer ? authStreamer.login : '';
+// Canal unificado com garantia de sincronia com o widget do OBS:
+// 1. ?channel= ou ?ch= na URL
+// 2. Streamer logado via OAuth (authStreamer.login)
+// 3. Canal salvo em localStorage ('alive.channel' ou 'alive.tokenLogin')
+const savedChannelPref = typeof localStorage !== 'undefined' ? (localStorage.getItem('alive.channel') || localStorage.getItem('alive.tokenLogin') || '') : '';
+let currentChannel = (
+  panelUrlParams.get('channel') ||
+  panelUrlParams.get('ch') ||
+  authStreamer?.login ||
+  savedChannelPref ||
+  ''
+).toLowerCase().replace(/[^a-z0-9_]/g, '');
 
 const store = new Store(currentChannel);
 let irc = null;
@@ -259,10 +269,7 @@ function recreatePanelPlayer(videoId, startSeconds = 0) {
         },
         onError: (ev) => {
           const code = ev?.data;
-          console.warn('[alive panel] erro player local do painel:', code);
-          if (code === 101 || code === 150 || code === 153 || code === 2 || code === 5) {
-            tryFindAlternativePanel(store.state.now);
-          }
+          console.warn('[alive panel] erro no preview do navegador:', code);
         }
       }
     });
@@ -272,46 +279,8 @@ function recreatePanelPlayer(videoId, startSeconds = 0) {
 }
 
 async function tryFindAlternativePanel(currentNow) {
-  if (retryingPanelAlt || !currentNow) return;
-  retryingPanelAlt = true;
-  if (currentNow.id) failedPanelIds.add(currentNow.id);
-
-  try {
-    toast('Buscando versão com áudio liberado...');
-    const cleanTitle = (currentNow.title || '')
-      .replace(/\(Official.*?\)/gi, '')
-      .replace(/\[Official.*?\]/gi, '')
-      .replace(/ft\..*$/gi, '')
-      .replace(/feat\..*$/gi, '')
-      .trim();
-    const query = `${cleanTitle} audio`;
-    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=10`).then((r) => r.json()).catch(() => null);
-    if (res && res.items && res.items.length) {
-      const alt = res.items.find((it) => it.id !== currentNow.id && !failedPanelIds.has(it.id));
-      if (alt) {
-        toast(`Tocando versão alternativa: ${alt.title}`);
-        curPlayingId = alt.id;
-        recreatePanelPlayer(alt.id, 0);
-        store.update((st) => {
-          if (st.now) {
-            st.now.id = alt.id;
-            st.now.title = alt.title;
-            if (alt.thumb) st.now.thumb = alt.thumb;
-            if (alt.duration) st.now.duration = alt.duration;
-            st.now.position = 0;
-            st.now.startedAt = Date.now();
-            pushLog(st, 'play', `Alternativa liberada: ${alt.title}`);
-          }
-        });
-        store.flush();
-        return;
-      }
-    }
-  } catch (err) {
-    console.warn('[alive panel] erro ao buscar alternativa:', err);
-  } finally {
-    setTimeout(() => { retryingPanelAlt = false; }, 4000);
-  }
+  // O widget do OBS é a autoridade máxima de reprodução e substituição de faixas
+  console.log('[alive panel] Preview local: reprodução principal e substituição executadas pelo widget.');
 }
 
 async function initPanelPlayer() {
@@ -350,21 +319,11 @@ async function initPanelPlayer() {
             if (d > 0 && store.state.now?.id === curPlayingId && Math.abs((store.state.now.duration || 0) - d) > 1) {
               store.update((s) => { if (s.now?.id === curPlayingId) s.now.duration = Math.round(d); }, { remote: false });
             }
-          } else if (st === 0) { // ENDED prematuro
-            const cur = panelPlayer?.getCurrentTime?.() || 0;
-            const dur = panelPlayer?.getDuration?.() || 0;
-            if (cur < 3 || (dur > 5 && cur < dur - 6)) {
-              console.warn('[alive panel] Vídeo abortado prematuramente aos 0s pelo YouTube, buscando alternativa...');
-              tryFindAlternativePanel(store.state.now);
-            }
           }
         },
         onError: (ev) => {
           const code = ev?.data;
-          console.warn('[alive panel] erro player local do painel:', code);
-          if (code === 101 || code === 150 || code === 2 || code === 5) {
-            tryFindAlternativePanel(store.state.now);
-          }
+          console.warn('[alive panel] erro no preview do navegador:', code);
         }
       }
     });
@@ -3661,6 +3620,10 @@ async function boot() {
       }),
     }).then(() => checkServerBot()).catch(() => {});
   } else {
+    if (currentChannel) {
+      store.setChannel(currentChannel);
+      if ($('#cfgChannel')) $('#cfgChannel').value = currentChannel;
+    }
     setStatus('off', 'não conectado (clique em Entrar com a Twitch)');
   }
 
