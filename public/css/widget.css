@@ -1,6 +1,15 @@
 /* Alive Bot — Widget do OBS (Minimalista Preto e Branco & Multi-estilos) */
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
 
 html, body {
   width: 100%;
@@ -10,6 +19,7 @@ html, body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color: var(--text-color, #ffffff);
   -webkit-font-smoothing: antialiased;
+  touch-action: manipulation;
 }
 
 :root {

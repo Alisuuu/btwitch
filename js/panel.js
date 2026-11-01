@@ -17,6 +17,93 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => { try { renderIcons(document); } catch { /* */ } });
 }
 
+// ============================================================== PWA & UX HELPERS
+// Registra Service Worker para PWA (compatível com Chrome, Firefox, Safari e Edge)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then((reg) => {
+        reg.onupdatefound = () => {
+          const installing = reg.installing;
+          if (installing) {
+            installing.onstatechange = () => {
+              if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('[alive] PWA atualizado em segundo plano.');
+              }
+            };
+          }
+        };
+      })
+      .catch((err) => console.warn('[alive] Service Worker registro:', err));
+  });
+}
+
+// Bloqueio de gestos de pinça e duplo toque para zoom (Mobile / iOS Safari / Android)
+document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+document.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
+
+let lastTouchEnd = 0;
+document.addEventListener('touchend', (e) => {
+  const now = Date.now();
+  if (now - lastTouchEnd <= 300) {
+    const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+    if (tag !== 'input' && tag !== 'textarea' && !e.target.isContentEditable) {
+      e.preventDefault();
+    }
+  }
+  lastTouchEnd = now;
+}, false);
+
+// Desativa seleção e cópia de qualquer texto do site (mobile e PC), liberando estritamente inputs
+document.addEventListener('selectstart', (e) => {
+  const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+  if (tag !== 'input' && tag !== 'textarea' && !e.target.isContentEditable) {
+    e.preventDefault();
+  }
+});
+
+document.addEventListener('copy', (e) => {
+  const active = document.activeElement;
+  const tag = (active && active.tagName) ? active.tagName.toLowerCase() : '';
+  if (tag !== 'input' && tag !== 'textarea' && !(active && active.isContentEditable)) {
+    e.preventDefault();
+  }
+});
+
+// Efeito de Ripple tátil e clique com aceleração de hardware (GPU)
+(function setupRipples() {
+  document.addEventListener('pointerdown', (e) => {
+    if (e.button && e.button !== 0) return;
+
+    const target = e.target.closest(
+      '.btn, .tab, button, [role="button"], .btn-hamburger, .action-btn, .queue-action, .btn-save, .btn-test, .channel-chip, .user-menu-btn, .tab-item, .badge-btn'
+    );
+    if (!target || target.disabled || target.classList.contains('disabled')) return;
+
+    const rect = target.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    if (!target.classList.contains('ripple-target')) {
+      target.classList.add('ripple-target');
+    }
+
+    const size = Math.max(rect.width, rect.height) * 1.5;
+    const x = e.clientX - rect.left - (size / 2);
+    const y = e.clientY - rect.top - (size / 2);
+
+    const wave = document.createElement('span');
+    wave.className = 'ripple-wave';
+    wave.style.width = size + 'px';
+    wave.style.height = size + 'px';
+    wave.style.left = x + 'px';
+    wave.style.top = y + 'px';
+
+    target.appendChild(wave);
+    wave.addEventListener('animationend', () => wave.remove(), { once: true });
+  }, { passive: true });
+})();
+
 const urlParams = new URLSearchParams(location.search);
 
 function getAuthStreamer() {

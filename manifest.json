@@ -1,0 +1,46 @@
+{
+  "id": "/?source=pwa",
+  "name": "Alive Bot — Studio Dashboard",
+  "short_name": "Alive Bot",
+  "description": "Painel de controle de live streaming, música e automação do Alive Bot para Twitch, YouTube e Kick.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
+  "orientation": "any",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "categories": ["utilities", "entertainment", "productivity"],
+  "icons": [
+    {
+      "src": "/img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/img/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/img/ic_splash_logo.webp",
+      "sizes": "1080x1080",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    }
+  ]
+}

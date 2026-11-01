@@ -129,9 +129,15 @@ async function serveStatic(res, urlPath) {
   if (found) {
     try {
       const buf = await fs.readFile(found);
+      const ext = path.extname(found).toLowerCase();
       res.statusCode = 200;
-      res.setHeader('Content-Type', MIME[path.extname(found).toLowerCase()] || 'application/octet-stream');
-      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Content-Type', MIME[ext] || 'application/octet-stream');
+      if (path.basename(found) === 'sw.js') {
+        res.setHeader('Service-Worker-Allowed', '/');
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      } else {
+        res.setHeader('Cache-Control', 'no-cache');
+      }
       res.end(buf);
       return;
     } catch { /* erro de leitura */ }
