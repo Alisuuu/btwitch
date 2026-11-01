@@ -176,10 +176,10 @@ server.listen(PORT, async () => {
   if (process.env.DISCORD_BOT_TOKEN) {
     discordGateway.start();
   }
-  if (process.env.TWITCH_CHANNEL || (botService.channel && process.env.AUTO_START_BOT === '1')) {
+  if (!botService.running && (process.env.TWITCH_CHANNEL || (botService.channel && process.env.AUTO_START_BOT === '1'))) {
     botService.start();
-    console.log(`     Bot Twitch conectado em #${botService.channel}`);
   }
+  console.log(`     Bot Twitch ativo em: ${Array.from(botService.channels).map((c) => '#' + c).join(', ') || 'nenhum'}`);
   console.log(`\n  Alive Bot rodando em  http://localhost:${PORT}`);
   console.log(`     Painel:  http://localhost:${PORT}/`);
   console.log(`     Widget:  http://localhost:${PORT}/widget`);
