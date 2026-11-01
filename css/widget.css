@@ -622,3 +622,40 @@ html[data-layout="vinyl"] .art img {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* ------------------------------------------------------------- prompt para ativar áudio */
+.unmute-prompt {
+  pointer-events: auto !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(220, 38, 38, 0.9) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  border-radius: 9999px !important;
+  padding: 8px 16px !important;
+  font-family: inherit;
+  font-size: calc(12.5px * var(--scale)) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.3px;
+  box-shadow: 0 8px 24px rgba(220, 38, 38, 0.45) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: pulse-unmute 2s infinite ease-in-out;
+  margin: calc(4px * var(--scale)) auto 0 auto;
+  z-index: 99 !important;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.unmute-prompt[hidden] {
+  display: none !important;
+}
+.unmute-prompt:hover {
+  background: rgba(239, 68, 68, 1) !important;
+  transform: scale(1.04);
+}
+@keyframes pulse-unmute {
+  0%, 100% { transform: scale(1); box-shadow: 0 4px 16px rgba(220, 38, 38, 0.4); }
+  50% { transform: scale(1.05); box-shadow: 0 6px 26px rgba(239, 68, 68, 0.7); }
+}

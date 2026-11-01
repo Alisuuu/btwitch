@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="referrer" content="no-referrer-when-downgrade">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="theme-color" content="#09090b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -56,6 +56,12 @@
           <div class="sub">Peça no chat com <b>!play &lt;nome da música&gt;</b></div>
         </div>
       </div>
+
+      <!-- aviso flutuante para liberar áudio caso o navegador ou OBS bloqueie o som por falta de clique -->
+      <button class="unmute-prompt" id="unmutePrompt" hidden type="button">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+        <span>Clique para ativar o áudio</span>
+      </button>
 
       <!-- próximas músicas -->
       <div class="next" id="next" hidden>

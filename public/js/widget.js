@@ -286,6 +286,36 @@ function getSafeOrigin() {
   return undefined;
 }
 
+let userInteracted = false;
+
+function showUnmutePrompt() {
+  const el = document.getElementById('unmutePrompt');
+  if (el) el.hidden = false;
+}
+
+function hideUnmutePrompt() {
+  const el = document.getElementById('unmutePrompt');
+  if (el) el.hidden = true;
+}
+
+function markUserInteracted() {
+  userInteracted = true;
+  hideUnmutePrompt();
+  if (ytReady && player && store.state.now && !store.state.now.paused) {
+    try {
+      const w = store.state.config.widget || {};
+      const playAudio = params.has('audio')
+        ? params.get('audio') !== '0'
+        : (params.has('playAudio') ? params.get('playAudio') !== '0' : (w.playAudio !== 0));
+      if (playAudio) {
+        player.unMute?.();
+        applyVolume(store.state.volume);
+      }
+      player.playVideo?.();
+    } catch {}
+  }
+}
+
 function loadCurrent(s) {
   const now = s.now;
   if (!now || !now.id) {
@@ -322,18 +352,24 @@ function loadCurrent(s) {
         setTimeout(() => { try { player.pauseVideo?.(); } catch {} }, 50);
       }
     } else {
+      // Se ainda não houve interação do usuário, garante início mutado para não ser bloqueado por Autoplay Policy
+      if (!userInteracted) {
+        try { player.mute?.(); } catch {}
+      }
       player.loadVideoById(cleanId, safeStart);
+      try { player.playVideo?.(); } catch {}
     }
+
     const w = s.config.widget || {};
     const playAudio = params.has('audio')
       ? params.get('audio') !== '0'
       : (params.has('playAudio') ? params.get('playAudio') !== '0' : (w.playAudio !== 0));
-    if (!playAudio) player.mute?.();
-    else applyVolume(s.volume);
-    if (now.paused) {
-      try { player.pauseVideo?.(); } catch {}
-    } else {
-      try { player.playVideo?.(); } catch {}
+
+    if (!playAudio) {
+      player.mute?.();
+    } else if (userInteracted) {
+      player.unMute?.();
+      applyVolume(s.volume);
     }
   } catch (e) {
     console.warn('[alive widget] loadVideoById erro:', e);
@@ -342,6 +378,16 @@ function loadCurrent(s) {
 
 function onPlayerStateChange(ev) {
   const st = ev?.data;
+
+  // 0. Se a faixa entrou em estado CUED e não está pausada, inicia imediatamente
+  if (st === YT_STATE.CUED && !store.state.now?.paused) {
+    console.log('[alive widget] Faixa em estado CUED. Disparando playVideo...');
+    try {
+      if (!userInteracted) player?.mute?.();
+      player?.playVideo?.();
+    } catch {}
+    return;
+  }
 
   // 1. Faixa tocando ativamente (PLAYING)
   if (st === YT_STATE.PLAYING) {
@@ -359,39 +405,36 @@ function onPlayerStateChange(ev) {
       return;
     }
 
-    // Regra Crítica: Desmutar e aplicar volume imediatamente no início ativo da reprodução
+    // Regra Crítica: Desmutar e aplicar volume na reprodução ativa
     try {
       const w = store.state.config?.widget || {};
       const playAudio = params.has('audio')
         ? params.get('audio') !== '0'
         : (params.has('playAudio') ? params.get('playAudio') !== '0' : (w.playAudio !== 0));
       if (playAudio && player) {
-        player.unMute?.();
-        applyVolume(store.state.volume);
+        if (userInteracted) {
+          player.unMute?.();
+          applyVolume(store.state.volume);
+          hideUnmutePrompt();
+        } else {
+          // Tenta desmutar com tolerância (OBS com áudio monitorado permite diretamente)
+          player.unMute?.();
+          applyVolume(store.state.volume);
+        }
       }
     } catch {}
 
-    // Reforços escalonados contra bloqueio de autoplay do navegador
+    // Reforços escalonados
     setTimeout(() => {
       try {
         const w = store.state.config?.widget || {};
         const playAudio = params.has('audio') ? params.get('audio') !== '0' : (w.playAudio !== 0);
-        if (playAudio && player) {
+        if (playAudio && player && userInteracted) {
           player.unMute?.();
           applyVolume(store.state.volume);
         }
       } catch {}
-    }, 250);
-    setTimeout(() => {
-      try {
-        const w = store.state.config?.widget || {};
-        const playAudio = params.has('audio') ? params.get('audio') !== '0' : (w.playAudio !== 0);
-        if (playAudio && player) {
-          player.unMute?.();
-          applyVolume(store.state.volume);
-        }
-      } catch {}
-    }, 900);
+    }, 300);
 
     const d = player.getDuration?.() || 0;
     if (d > 0 && store.state.now?.id === curId && Math.abs((store.state.now.duration || 0) - d) > 1) {
@@ -402,6 +445,18 @@ function onPlayerStateChange(ev) {
 
   // 2. Faixa pausada (PAUSED)
   if (st === YT_STATE.PAUSED) {
+    // Se o player pausou mas a faixa não foi pausada pelo bot/usuário e ainda não houve interação,
+    // significa que o navegador pausou por restrição de autoplay com som. Retoma mutado e exibe o prompt.
+    if (!store.state.now?.paused && !userInteracted) {
+      console.warn('[alive widget] Pausado pelo navegador por autoplay policy. Retomando mutado e aguardando clique...');
+      try {
+        player.mute?.();
+        player.playVideo?.();
+      } catch {}
+      showUnmutePrompt();
+      return;
+    }
+
     wasPaused = true;
     document.body.classList.add('paused');
     if (els.kicker) els.kicker.textContent = 'PAUSADO';
@@ -561,11 +616,19 @@ function checkAutoplay() {
   if (startChecked || !ytReady || !player || !store.state.now) return;
   if (store.state.now.paused) return;
   try {
+    if (!userInteracted) {
+      player.mute?.();
+    }
     player.playVideo?.();
   } catch { /* ignora */ }
   setTimeout(() => {
     if (startChecked || !store.state.now || store.state.now.paused) return;
-    try { player.playVideo?.(); } catch { /* ignora */ }
+    try {
+      if (!userInteracted) {
+        player.mute?.();
+      }
+      player.playVideo?.();
+    } catch { /* ignora */ }
   }, 600);
 }
 
@@ -574,7 +637,6 @@ const YT_STATE = { ENDED: 0, PLAYING: 1, PAUSED: 2, BUFFERING: 3, CUED: 5, UNSTA
 async function initPlayer() {
   try {
     const YT = await loadYTApi();
-    const isPaused = !!store.state.now?.paused;
     const safeOrigin = getSafeOrigin();
 
     player = new YT.Player('yt', {
@@ -582,7 +644,8 @@ async function initPlayer() {
       width: '100%',
       height: '100%',
       playerVars: {
-        autoplay: isPaused ? 0 : 1,
+        autoplay: 1,
+        mute: 1,
         controls: 0,
         disablekb: 1,
         fs: 0,
@@ -595,8 +658,14 @@ async function initPlayer() {
         widget_referrer: (typeof location !== 'undefined' ? location.href : undefined),
       },
       events: {
-        onReady: () => {
+        onReady: (ev) => {
           ytReady = true;
+          try {
+            const iframe = ev?.target?.getIframe?.();
+            if (iframe) {
+              iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
+            }
+          } catch {}
           applyConfig(store.state);
           loadCurrent(store.state);
           checkAutoplay();
@@ -760,23 +829,13 @@ if (typeof window !== 'undefined') {
   document.addEventListener('visibilitychange', () => { if (document.hidden) writePosition(true); });
 
   // Desbloqueia áudio instantaneamente em caso de clique ou interação na janela
-  const unlockAudio = () => {
-    if (ytReady && player && store.state.now && !store.state.now.paused) {
-      try {
-        const w = store.state.config.widget || {};
-        const playAudio = params.has('audio')
-          ? params.get('audio') !== '0'
-          : (params.has('playAudio') ? params.get('playAudio') !== '0' : (w.playAudio !== 0));
-        if (playAudio) {
-          player.unMute?.();
-          applyVolume(store.state.volume);
-        }
-        player.playVideo?.();
-      } catch {}
-    }
-  };
-  window.addEventListener('pointerdown', unlockAudio, { passive: true });
-  window.addEventListener('click', unlockAudio, { passive: true });
-  document.addEventListener('click', unlockAudio, { passive: true });
-  window.addEventListener('keydown', unlockAudio, { passive: true });
+  window.addEventListener('pointerdown', markUserInteracted, { passive: true });
+  window.addEventListener('click', markUserInteracted, { passive: true });
+  document.addEventListener('click', markUserInteracted, { passive: true });
+  window.addEventListener('keydown', markUserInteracted, { passive: true });
+  window.addEventListener('touchstart', markUserInteracted, { passive: true });
+  document.getElementById('unmutePrompt')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    markUserInteracted();
+  });
 }
