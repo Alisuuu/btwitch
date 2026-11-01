@@ -53,7 +53,8 @@ const player = {
   },
   loadVideoById(cleanId, start) {
     if (!audioEl) return;
-    const streamUrl = `/api/audio?id=${encodeURIComponent(cleanId)}&stream=1`;
+    const songTitle = store.state.now?.title || '';
+    const streamUrl = `/api/audio?id=${encodeURIComponent(cleanId)}&title=${encodeURIComponent(songTitle)}&stream=1`;
     const targetTime = Number.isFinite(Number(start)) ? Math.max(0, Number(start)) : 0;
 
     if (audioEl.src !== streamUrl && !audioEl.src.endsWith(streamUrl)) {
@@ -79,7 +80,8 @@ const player = {
   },
   cueVideoById(cleanId, start) {
     if (!audioEl) return;
-    const streamUrl = `/api/audio?id=${encodeURIComponent(cleanId)}&stream=1`;
+    const songTitle = store.state.now?.title || '';
+    const streamUrl = `/api/audio?id=${encodeURIComponent(cleanId)}&title=${encodeURIComponent(songTitle)}&stream=1`;
     const targetTime = Number.isFinite(Number(start)) ? Math.max(0, Number(start)) : 0;
     if (audioEl.src !== streamUrl && !audioEl.src.endsWith(streamUrl)) {
       audioEl.src = streamUrl;

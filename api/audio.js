@@ -1,5 +1,6 @@
 import * as ytdlPkg from '@distube/ytdl-core';
 import { Readable } from 'node:stream';
+import { searchVideos } from '../lib/youtube.js';
 
 // Cache em memória de streams para evitar requisições repetidas ao YouTube
 const audioCache = new Map();
@@ -23,7 +24,7 @@ function getYt() {
   return ytInstance;
 }
 
-// Compatibilidade resiliente de exportações do @distube/ytdl-core com timeout generoso (30s)
+// Compatibilidade resiliente de exportações do @distube/ytdl-core com timeout generoso (25s)
 async function getAudioInfo(url) {
   const fetchOp = async () => {
     const yt = getYt();
@@ -43,7 +44,7 @@ async function getAudioInfo(url) {
     throw new Error('Método getInfo não encontrado em @distube/ytdl-core');
   };
 
-  const timer = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout ytdl')), 30000));
+  const timer = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout ytdl')), 25000));
   return await Promise.race([fetchOp(), timer]);
 }
 
@@ -199,6 +200,7 @@ export default async function handler(req, res) {
   }
 
   const id = String(req.query?.id || req.query?.v || '').trim();
+  const title = String(req.query?.title || req.query?.t || '').trim();
   if (!id || !/^[a-zA-Z0-9_-]{10,13}$/.test(id)) {
     return res.status(400).json({ error: 'id de vídeo inválido' });
   }
@@ -239,7 +241,41 @@ export default async function handler(req, res) {
       console.warn(`[alive api/audio] ytdl primário falhou para ${id}:`, primaryErr?.message || primaryErr);
     }
 
-    // 3. Fallback em instâncias públicas se o ytdl falhou
+    // 3. Fallback inteligente por busca de áudio alternativo se o vídeo estiver com bloqueio de bot
+    if (!result && title) {
+      try {
+        const clean = title
+          .replace(/\(Official.*?\)/gi, '')
+          .replace(/\[Official.*?\]/gi, '')
+          .replace(/ft\..*$/gi, '')
+          .replace(/feat\..*$/gi, '')
+          .trim();
+        const alts = await searchVideos(`${clean} audio`, 4);
+        for (const alt of alts) {
+          if (alt.id !== id) {
+            try {
+              const altInfo = await getAudioInfo(`https://www.youtube.com/watch?v=${alt.id}`);
+              const altFmt = AUDIO_WITHOUT_VIDEO(altInfo?.formats || []);
+              if (altFmt && altFmt.url) {
+                result = {
+                  url: altFmt.url,
+                  mimeType: altFmt.mimeType || 'audio/mp4',
+                  bitrate: Number(altFmt.bitrate || 0),
+                  duration: Number(altInfo.videoDetails?.lengthSeconds || 0),
+                  altId: alt.id,
+                };
+                console.log(`[alive api/audio] Alternativa resolvida com sucesso para "${title}": ${alt.id}`);
+                break;
+              }
+            } catch {}
+          }
+        }
+      } catch (searchErr) {
+        console.warn(`[alive api/audio] busca de alternativa falhou para "${title}":`, searchErr?.message || searchErr);
+      }
+    }
+
+    // 4. Fallback em instâncias públicas
     if (!result) {
       result = await fetchFallbackAudio(id);
     }
@@ -255,6 +291,7 @@ export default async function handler(req, res) {
     const payload = {
       ok: true,
       id,
+      altId: result.altId || null,
       url: `${origin}/api/audio?id=${id}&stream=1`,
       streamUrl: `${origin}/api/audio?id=${id}&stream=1`,
       directUrl: result.url,
@@ -264,6 +301,9 @@ export default async function handler(req, res) {
     };
 
     audioCache.set(id, { url: result.url, time: Date.now(), payload });
+    if (result.altId) {
+      audioCache.set(result.altId, { url: result.url, time: Date.now(), payload });
+    }
     if (audioCache.size > 150) {
       const first = audioCache.keys().next().value;
       audioCache.delete(first);

@@ -190,7 +190,8 @@ const panelPlayer = {
     if (!panelAudioEl) return;
     const cleanId = typeof opts === 'object' ? opts.videoId : opts;
     const startSec = typeof opts === 'object' ? (opts.startSeconds || 0) : (start || 0);
-    const streamUrl = `/api/audio?id=${encodeURIComponent(cleanId)}&stream=1`;
+    const songTitle = store.state.now?.title || '';
+    const streamUrl = `/api/audio?id=${encodeURIComponent(cleanId)}&title=${encodeURIComponent(songTitle)}&stream=1`;
     const targetTime = Number.isFinite(Number(startSec)) ? Math.max(0, Number(startSec)) : 0;
 
     if (panelAudioEl.src !== streamUrl && !panelAudioEl.src.endsWith(streamUrl)) {
@@ -221,7 +222,8 @@ const panelPlayer = {
     if (!panelAudioEl) return;
     const cleanId = typeof opts === 'object' ? opts.videoId : opts;
     const startSec = typeof opts === 'object' ? (opts.startSeconds || 0) : (start || 0);
-    const streamUrl = `/api/audio?id=${encodeURIComponent(cleanId)}&stream=1`;
+    const songTitle = store.state.now?.title || '';
+    const streamUrl = `/api/audio?id=${encodeURIComponent(cleanId)}&title=${encodeURIComponent(songTitle)}&stream=1`;
     const targetTime = Number.isFinite(Number(startSec)) ? Math.max(0, Number(startSec)) : 0;
     if (panelAudioEl.src !== streamUrl && !panelAudioEl.src.endsWith(streamUrl)) {
       panelAudioEl.src = streamUrl;
