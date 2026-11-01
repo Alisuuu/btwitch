@@ -93,9 +93,12 @@ async function handleApi(req, res, url) {
       status(code) { res.statusCode = code; return resShim; },
       json(obj) { sent = true; json(res, res.statusCode || 200, obj); return resShim; },
       end(txt) { sent = true; res.end(txt); return resShim; },
+      write(chunk) { sent = true; return res.write(chunk); },
+      writeHead(code, headers) { res.writeHead(code, headers); return resShim; },
+      raw: res,
     };
     await handler(reqShim, resShim);
-    if (!sent) res.end();
+    if (!sent && !res.writableEnded) res.end();
   } catch (e) {
     console.error('[alive] erro na function:', e);
     json(res, 500, { error: e.message });

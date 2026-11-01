@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="referrer" content="no-referrer-when-downgrade">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="theme-color" content="#09090b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -18,8 +18,11 @@
 </head>
 <body data-video="off" data-start="0">
 
-  <!-- player oficial do YouTube (áudio e vídeo com controle nativo) -->
-  <div class="stage"><div id="yt"></div></div>
+  <!-- player de áudio nativo (YTDL streaming direto) -->
+  <div class="stage">
+    <div id="yt"></div>
+    <audio id="aliveAudio" preload="auto" playsinline style="display:none;"></audio>
+  </div>
   <div class="dim"></div>
 
   <div class="ui">
