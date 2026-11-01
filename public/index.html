@@ -1429,11 +1429,9 @@ Transmissão: {url}</textarea>
 
 </main>
 
-<!-- Player de áudio do painel (nativo YTDL) -->
-<div id="panelYtContainer" style="position:fixed;bottom:0;right:0;width:1px;height:1px;opacity:0.01;pointer-events:none;overflow:hidden;z-index:-999;">
-  <div id="panelYt"></div>
-  <audio id="panelAudio" preload="auto" playsinline style="display:none;"></audio>
-</div>
+<!-- Player de áudio do painel (nativo + YouTube invisível) -->
+
+<div id="panelYtContainer" style="position:fixed;bottom:0;right:0;width:1px;height:1px;opacity:0.01;pointer-events:none;overflow:hidden;z-index:-999;"><div id="panelYt"></div></div>
 
 <!-- Rodapé Flutuante de Status do Bot -->
 <aside class="floating-status-bar" id="floatingStatusBar" aria-label="Status do Bot">

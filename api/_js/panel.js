@@ -149,97 +149,8 @@ let editingCmd = null;
 let serverBotState = { running: false, connected: false };
 let lastServerChatTime = 0;
 
-// Player de áudio nativo (YTDL puro) no navegador do painel
-let panelAudioEl = null;
-const panelPlayer = {
-  getCurrentTime() {
-    return (panelAudioEl && Number.isFinite(panelAudioEl.currentTime)) ? Math.max(0, panelAudioEl.currentTime) : 0;
-  },
-  getDuration() {
-    return (panelAudioEl && Number.isFinite(panelAudioEl.duration) && panelAudioEl.duration > 0) ? panelAudioEl.duration : (store.state.now?.duration || 0);
-  },
-  playVideo() {
-    if (panelAudioEl) {
-      return panelAudioEl.play().catch(() => {});
-    }
-  },
-  pauseVideo() {
-    if (panelAudioEl) panelAudioEl.pause();
-  },
-  stopVideo() {
-    if (panelAudioEl) {
-      panelAudioEl.pause();
-      panelAudioEl.removeAttribute('src');
-      panelAudioEl.load();
-    }
-  },
-  mute() {
-    if (panelAudioEl) panelAudioEl.muted = true;
-  },
-  unMute() {
-    if (panelAudioEl) panelAudioEl.muted = false;
-  },
-  setVolume(vol) {
-    if (panelAudioEl) {
-      const v = Math.max(0, Math.min(100, Number(vol ?? 70)));
-      panelAudioEl.volume = v / 100;
-      if (v > 0 && !webAudioMuted) panelAudioEl.muted = false;
-    }
-  },
-  loadVideoById(opts, start) {
-    if (!panelAudioEl) return;
-    const cleanId = typeof opts === 'object' ? opts.videoId : opts;
-    const startSec = typeof opts === 'object' ? (opts.startSeconds || 0) : (start || 0);
-    const songTitle = store.state.now?.title || '';
-    const streamUrl = `/api/audio?id=${encodeURIComponent(cleanId)}&title=${encodeURIComponent(songTitle)}&stream=1`;
-    const targetTime = Number.isFinite(Number(startSec)) ? Math.max(0, Number(startSec)) : 0;
-
-    if (panelAudioEl.src !== streamUrl && !panelAudioEl.src.endsWith(streamUrl)) {
-      panelAudioEl.pause();
-      panelAudioEl.src = streamUrl;
-      panelAudioEl.load();
-    }
-    if (targetTime > 0) {
-      if (panelAudioEl.readyState >= 1) {
-        try { panelAudioEl.currentTime = targetTime; } catch {}
-      } else {
-        panelAudioEl.addEventListener('loadedmetadata', () => {
-          try { panelAudioEl.currentTime = targetTime; } catch {}
-        }, { once: true });
-      }
-    }
-    panelAudioEl.muted = webAudioMuted;
-    panelAudioEl.volume = Math.max(0, Math.min(100, Number(store.state.volume ?? 70))) / 100;
-
-    if (!webAudioMuted && (!store.state.now || !store.state.now.paused)) {
-      const p = panelAudioEl.play();
-      if (p && typeof p.catch === 'function') {
-        p.catch(() => {});
-      }
-    }
-  },
-  cueVideoById(opts, start) {
-    if (!panelAudioEl) return;
-    const cleanId = typeof opts === 'object' ? opts.videoId : opts;
-    const startSec = typeof opts === 'object' ? (opts.startSeconds || 0) : (start || 0);
-    const songTitle = store.state.now?.title || '';
-    const streamUrl = `/api/audio?id=${encodeURIComponent(cleanId)}&title=${encodeURIComponent(songTitle)}&stream=1`;
-    const targetTime = Number.isFinite(Number(startSec)) ? Math.max(0, Number(startSec)) : 0;
-    if (panelAudioEl.src !== streamUrl && !panelAudioEl.src.endsWith(streamUrl)) {
-      panelAudioEl.src = streamUrl;
-      panelAudioEl.load();
-    }
-    if (targetTime > 0) {
-      if (panelAudioEl.readyState >= 1) {
-        try { panelAudioEl.currentTime = targetTime; } catch {}
-      } else {
-        panelAudioEl.addEventListener('loadedmetadata', () => {
-          try { panelAudioEl.currentTime = targetTime; } catch {}
-        }, { once: true });
-      }
-    }
-  }
-};
+// Player do YouTube no navegador do painel
+let panelPlayer = null;
 let ytApiReady = false;
 let curPlayingId = null;
 let curPlayingStartedAt = 0;
@@ -275,13 +186,15 @@ function updateWebMuteUI() {
 function markUserInteracted() {
   userInteracted = true;
   try {
-    if (panelAudioEl) {
-      if (!webAudioMuted) {
-        panelAudioEl.muted = false;
-        panelAudioEl.volume = Math.max(0, Math.min(100, Number(store.state.volume ?? 70))) / 100;
-        if (store.state.now && !store.state.now.paused && panelAudioEl.paused) {
-          panelAudioEl.play().catch(() => {});
-        }
+    if (panelPlayer && typeof panelPlayer.unMute === 'function') {
+      if (webAudioMuted) {
+        panelPlayer.mute?.();
+      } else {
+        panelPlayer.unMute?.();
+        panelPlayer.setVolume?.(Number(store.state.volume ?? 70));
+      }
+      if (store.state.now && !store.state.now.paused) {
+        panelPlayer.playVideo?.();
       }
     }
   } catch { /* ignora */ }
@@ -290,57 +203,162 @@ window.addEventListener('click', markUserInteracted, { passive: true });
 window.addEventListener('touchstart', markUserInteracted, { passive: true });
 
 function loadYTApi() {
-  return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    if (window.YT && window.YT.Player) return resolve(window.YT);
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      if (typeof prev === 'function') prev();
+      resolve(window.YT);
+    };
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    tag.onerror = () => reject(new Error('Falha ao carregar API do YouTube'));
+    document.head.appendChild(tag);
+  });
 }
 
 const failedPanelIds = new Set();
 
 function recreatePanelPlayer(videoId, startSeconds = 0) {
-  if (videoId) {
-    panelPlayer.loadVideoById({ videoId, startSeconds });
+  try { panelPlayer?.destroy?.(); } catch {}
+  panelPlayer = null;
+  ytApiReady = false;
+  const box = document.getElementById('panelPlayerBox');
+  if (box) {
+    box.innerHTML = '<div id="panelYt"></div>';
+  }
+  const safeOrigin = (typeof location !== 'undefined' && location.origin && location.origin !== 'null' && (location.origin.startsWith('http://') || location.origin.startsWith('https://'))) ? location.origin : undefined;
+  const safeStart = Number.isFinite(Number(startSeconds)) ? Math.max(0, Math.floor(Number(startSeconds))) : 0;
+  try {
+    panelPlayer = new window.YT.Player('panelYt', {
+      width: '100%',
+      height: '100%',
+      videoId: videoId || undefined,
+      playerVars: {
+        autoplay: (userInteracted && !webAudioMuted) ? 1 : 0,
+        start: safeStart,
+        controls: 1,
+        disablekb: 0,
+        fs: 0,
+        rel: 0,
+        playsinline: 1,
+        enablejsapi: 1,
+        ...(safeOrigin ? { origin: safeOrigin } : {}),
+      },
+      events: {
+        onReady: () => {
+          ytApiReady = true;
+          if (userInteracted && !webAudioMuted) {
+            try {
+              panelPlayer.unMute?.();
+              panelPlayer.setVolume?.(Number(store.state.volume ?? 70));
+              panelPlayer.playVideo?.();
+            } catch {}
+          } else {
+            try { panelPlayer.mute?.(); } catch {}
+          }
+        },
+        onStateChange: (ev) => {
+          const st = ev?.data;
+          if (st === 1) { // PLAYING
+            const d = panelPlayer?.getDuration?.() || 0;
+            if (d > 0 && store.state.now?.id === curPlayingId && Math.abs((store.state.now.duration || 0) - d) > 1) {
+              store.update((s) => { if (s.now?.id === curPlayingId) s.now.duration = Math.round(d); }, { remote: false });
+            }
+          }
+          if (st === 0) { // ENDED (Avanço cooperativo seguro caso apenas o painel esteja aberto)
+            const cur = Number(panelPlayer?.getCurrentTime?.() || 0);
+            const dur = Number(panelPlayer?.getDuration?.() || store.state.now?.duration || 0);
+            const finishedNaturally = cur >= 5 && ((dur > 0 && cur >= dur - 4) || (dur > 10 && cur >= dur * 0.85));
+            if (finishedNaturally && curPlayingId && store.state.now?.id === curPlayingId) {
+              const targetId = curPlayingId;
+              curPlayingId = null;
+              store.update((s) => {
+                if (s.now && s.now.id === targetId) {
+                  advanceQueue(s);
+                }
+              });
+              store.flush();
+            }
+          }
+        },
+        onError: (ev) => {
+          const code = ev?.data;
+          console.warn('[alive panel] erro no preview do navegador:', code);
+        }
+      }
+    });
+  } catch (err) {
+    console.warn('[alive panel] erro ao recriar panel player:', err);
   }
 }
 
 async function tryFindAlternativePanel(currentNow) {
-  console.log('[alive panel] Preview local: reprodução principal e substituição executadas pelo fluxo de áudio nativo.');
+  // O widget do OBS é a autoridade máxima de reprodução e substituição de faixas
+  console.log('[alive panel] Preview local: reprodução principal e substituição executadas pelo widget.');
 }
 
 async function initPanelPlayer() {
   try {
-    panelAudioEl = document.getElementById('panelAudio');
-    if (!panelAudioEl) {
-      panelAudioEl = document.createElement('audio');
-      panelAudioEl.id = 'panelAudio';
-      panelAudioEl.preload = 'auto';
-      panelAudioEl.playsInline = true;
-      document.body.appendChild(panelAudioEl);
-    }
-
-    panelAudioEl.addEventListener('ended', () => {
-      const cur = Number(panelAudioEl.currentTime || 0);
-      const dur = Number(panelAudioEl.duration || store.state.now?.duration || 0);
-      const finishedNaturally = cur >= 5 && ((dur > 0 && cur >= dur - 4) || (dur > 10 && cur >= dur * 0.85));
-      if (finishedNaturally && curPlayingId && store.state.now?.id === curPlayingId) {
-        const targetId = curPlayingId;
-        curPlayingId = null;
-        store.update((s) => {
-          if (s.now && s.now.id === targetId) {
-            advanceQueue(s);
+    const YT = await loadYTApi();
+    panelPlayer = new YT.Player('panelYt', {
+      width: '100%',
+      height: '100%',
+      playerVars: {
+        autoplay: 0,
+        controls: 1,
+        disablekb: 0,
+        fs: 0,
+        rel: 0,
+        playsinline: 1,
+        enablejsapi: 1,
+        origin: location.origin,
+      },
+      events: {
+        onReady: () => {
+          ytApiReady = true;
+          if (userInteracted && !webAudioMuted) {
+            try {
+              panelPlayer.unMute?.();
+              panelPlayer.setVolume?.(Number(store.state.volume ?? 70));
+            } catch {}
+          } else {
+            try { panelPlayer.mute?.(); } catch {}
           }
-        });
-        store.flush();
+          syncPanelPlayer(store.state);
+        },
+        onStateChange: (ev) => {
+          const st = ev?.data;
+          if (st === 1) { // PLAYING
+            const d = panelPlayer?.getDuration?.() || 0;
+            if (d > 0 && store.state.now?.id === curPlayingId && Math.abs((store.state.now.duration || 0) - d) > 1) {
+              store.update((s) => { if (s.now?.id === curPlayingId) s.now.duration = Math.round(d); }, { remote: false });
+            }
+          }
+          if (st === 0) { // ENDED (Avanço cooperativo seguro caso apenas o painel esteja aberto)
+            const cur = Number(panelPlayer?.getCurrentTime?.() || 0);
+            const dur = Number(panelPlayer?.getDuration?.() || store.state.now?.duration || 0);
+            const finishedNaturally = cur >= 5 && ((dur > 0 && cur >= dur - 4) || (dur > 10 && cur >= dur * 0.85));
+            if (finishedNaturally && curPlayingId && store.state.now?.id === curPlayingId) {
+              const targetId = curPlayingId;
+              curPlayingId = null;
+              store.update((s) => {
+                if (s.now && s.now.id === targetId) {
+                  advanceQueue(s);
+                }
+              });
+              store.flush();
+            }
+          }
+        },
+        onError: (ev) => {
+          const code = ev?.data;
+          console.warn('[alive panel] erro no preview do navegador:', code);
+        }
       }
     });
-
-    panelAudioEl.addEventListener('error', () => {
-      console.warn('[alive panel] erro no fluxo de áudio do painel:', panelAudioEl.error?.message);
-    });
-
-    ytApiReady = true;
-    updateWebMuteUI();
-    syncPanelPlayer(store.state);
   } catch (e) {
-    console.warn('[alive panel] erro ao iniciar player de áudio nativo:', e);
+    console.warn('[alive panel] erro ao iniciar player do YouTube:', e);
   }
 }
 

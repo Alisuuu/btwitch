@@ -8,96 +8,7 @@ const params = typeof location !== 'undefined' ? new URLSearchParams(location.se
 const channel = (params.get('channel') || params.get('ch') || (typeof localStorage !== 'undefined' ? (localStorage.getItem('alive.channel') || localStorage.getItem('alive.tokenLogin') || '') : '')).toLowerCase().replace(/[^a-z0-9_]/g, '');
 const store = new Store(channel);
 
-let audioEl = null;
-const player = {
-  getCurrentTime() {
-    return (audioEl && Number.isFinite(audioEl.currentTime)) ? Math.max(0, audioEl.currentTime) : 0;
-  },
-  getDuration() {
-    return (audioEl && Number.isFinite(audioEl.duration) && audioEl.duration > 0) ? audioEl.duration : (durationShown || 0);
-  },
-  playVideo() {
-    if (audioEl) {
-      return audioEl.play().catch((err) => {
-        console.warn('[alive widget] Play pendente:', err?.message);
-      });
-    }
-  },
-  pauseVideo() {
-    if (audioEl) audioEl.pause();
-  },
-  stopVideo() {
-    if (audioEl) {
-      audioEl.pause();
-      audioEl.removeAttribute('src');
-      audioEl.load();
-    }
-  },
-  seekTo(seconds) {
-    if (audioEl && Number.isFinite(Number(seconds))) {
-      audioEl.currentTime = Math.max(0, Number(seconds));
-    }
-  },
-  mute() {
-    if (audioEl) audioEl.muted = true;
-  },
-  unMute() {
-    if (audioEl) audioEl.muted = false;
-  },
-  setVolume(vol) {
-    if (audioEl) {
-      const v = Math.max(0, Math.min(100, Number(vol ?? 70)));
-      audioEl.volume = v / 100;
-      if (v > 0) audioEl.muted = false;
-    }
-  },
-  loadVideoById(cleanId, start) {
-    if (!audioEl) return;
-    const songTitle = store.state.now?.title || '';
-    const streamUrl = `/api/audio?id=${encodeURIComponent(cleanId)}&title=${encodeURIComponent(songTitle)}&stream=1`;
-    const targetTime = Number.isFinite(Number(start)) ? Math.max(0, Number(start)) : 0;
-
-    if (audioEl.src !== streamUrl && !audioEl.src.endsWith(streamUrl)) {
-      audioEl.pause();
-      audioEl.src = streamUrl;
-      audioEl.load();
-    }
-    if (targetTime > 0) {
-      if (audioEl.readyState >= 1) {
-        try { audioEl.currentTime = targetTime; } catch {}
-      } else {
-        audioEl.addEventListener('loadedmetadata', () => {
-          try { audioEl.currentTime = targetTime; } catch {}
-        }, { once: true });
-      }
-    }
-    const p = audioEl.play();
-    if (p && typeof p.catch === 'function') {
-      p.catch((err) => {
-        console.warn('[alive widget] Autoplay pendente de interação:', err?.message);
-      });
-    }
-  },
-  cueVideoById(cleanId, start) {
-    if (!audioEl) return;
-    const songTitle = store.state.now?.title || '';
-    const streamUrl = `/api/audio?id=${encodeURIComponent(cleanId)}&title=${encodeURIComponent(songTitle)}&stream=1`;
-    const targetTime = Number.isFinite(Number(start)) ? Math.max(0, Number(start)) : 0;
-    if (audioEl.src !== streamUrl && !audioEl.src.endsWith(streamUrl)) {
-      audioEl.src = streamUrl;
-      audioEl.load();
-    }
-    if (targetTime > 0) {
-      if (audioEl.readyState >= 1) {
-        try { audioEl.currentTime = targetTime; } catch {}
-      } else {
-        audioEl.addEventListener('loadedmetadata', () => {
-          try { audioEl.currentTime = targetTime; } catch {}
-        }, { once: true });
-      }
-    }
-  }
-};
+let player = null;
 let ytReady = false;
 let curId = null;
 let curStartedAt = 0;
@@ -327,9 +238,38 @@ function render(s) {
   lastQueueLen = s.queue.length;
 }
 
-// -------------------------------------------------------- player de áudio nativo (YTDL puro)
+// -------------------------------------------------------- player do YouTube
 function loadYTApi() {
-  return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    if (window.YT && window.YT.Player) return resolve(window.YT);
+    let resolved = false;
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      if (resolved) return;
+      resolved = true;
+      if (typeof prev === 'function') prev();
+      resolve(window.YT);
+    };
+    const timer = setTimeout(() => {
+      if (!resolved) {
+        if (window.YT && window.YT.Player) {
+          resolved = true;
+          return resolve(window.YT);
+        }
+        console.warn('[alive widget] Timeout carregando API do YouTube, tentando novamente...');
+        const retryTag = document.createElement('script');
+        retryTag.src = 'https://www.youtube.com/iframe_api?retry=' + Date.now();
+        document.head.appendChild(retryTag);
+      }
+    }, 12000);
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    tag.onerror = () => {
+      clearTimeout(timer);
+      reject(new Error('falha ao carregar API do YouTube'));
+    };
+    document.head.appendChild(tag);
+  });
 }
 
 let isTransitioning = false;
@@ -633,47 +573,41 @@ const YT_STATE = { ENDED: 0, PLAYING: 1, PAUSED: 2, BUFFERING: 3, CUED: 5, UNSTA
 
 async function initPlayer() {
   try {
-    audioEl = document.getElementById('aliveAudio');
-    if (!audioEl) {
-      audioEl = document.createElement('audio');
-      audioEl.id = 'aliveAudio';
-      audioEl.preload = 'auto';
-      audioEl.playsInline = true;
-      document.body.appendChild(audioEl);
-    }
+    const YT = await loadYTApi();
+    const isPaused = !!store.state.now?.paused;
+    const safeOrigin = getSafeOrigin();
 
-    audioEl.addEventListener('play', () => {
-      onPlayerStateChange({ data: YT_STATE.PLAYING });
+    player = new YT.Player('yt', {
+      host: 'https://www.youtube-nocookie.com',
+      width: '100%',
+      height: '100%',
+      playerVars: {
+        autoplay: isPaused ? 0 : 1,
+        controls: 0,
+        disablekb: 1,
+        fs: 0,
+        rel: 0,
+        playsinline: 1,
+        enablejsapi: 1,
+        modestbranding: 1,
+        iv_load_policy: 3,
+        origin: safeOrigin || (typeof location !== 'undefined' ? location.origin : undefined),
+        widget_referrer: (typeof location !== 'undefined' ? location.href : undefined),
+      },
+      events: {
+        onReady: () => {
+          ytReady = true;
+          applyConfig(store.state);
+          loadCurrent(store.state);
+          checkAutoplay();
+        },
+        onStateChange: onPlayerStateChange,
+        onError: onPlayerError,
+      },
     });
-
-    audioEl.addEventListener('pause', () => {
-      onPlayerStateChange({ data: YT_STATE.PAUSED });
-    });
-
-    audioEl.addEventListener('ended', () => {
-      onPlayerStateChange({ data: YT_STATE.ENDED });
-    });
-
-    audioEl.addEventListener('error', () => {
-      console.warn('[alive widget] Erro no fluxo de áudio:', audioEl.error?.message || audioEl.error?.code);
-      onPlayerError({ data: 5 });
-    });
-
-    ytReady = true;
-    applyConfig(store.state);
-    loadCurrent(store.state);
-    checkAutoplay();
-
-    const unlockAudio = () => {
-      if (audioEl && store.state.now && !store.state.now.paused && audioEl.paused) {
-        audioEl.play().catch(() => {});
-      }
-    };
-    window.addEventListener('click', unlockAudio, { passive: true });
-    window.addEventListener('touchstart', unlockAudio, { passive: true });
   } catch (e) {
     console.error('[alive widget] initPlayer:', e);
-    showToast('Erro ao inicializar áudio nativo: ' + e.message);
+    showToast('Erro ao carregar player: ' + e.message);
   }
 }
 
