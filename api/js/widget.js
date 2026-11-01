@@ -279,80 +279,11 @@ const failedVideoIds = new Set();
 
 function getSafeOrigin() {
   try {
-    if (typeof location !== 'undefined' && location.origin && location.origin !== 'null' && !location.origin.startsWith('file:')) {
+    if (typeof location !== 'undefined' && location.origin && location.origin !== 'null' && (location.origin.startsWith('http://') || location.origin.startsWith('https://'))) {
       return location.origin;
     }
   } catch {}
   return undefined;
-}
-
-function recreatePlayer(videoId, startSeconds = 0) {
-  try {
-    player?.destroy?.();
-  } catch {}
-  player = null;
-  ytReady = false;
-
-  isTransitioning = true;
-  clearTimeout(isTransitioningTimer);
-  isTransitioningTimer = setTimeout(() => { isTransitioning = false; }, 4000);
-
-  const stage = document.querySelector('.stage');
-  if (stage) {
-    stage.innerHTML = '<div id="yt"></div>';
-  }
-
-  const isPaused = !!store.state.now?.paused;
-  const w = store.state.config.widget || {};
-  const playAudio = params.has('audio')
-    ? params.get('audio') !== '0'
-    : (params.has('playAudio') ? params.get('playAudio') !== '0' : (w.playAudio !== 0));
-
-  const safeOrigin = getSafeOrigin();
-  const safeStart = Number.isFinite(Number(startSeconds)) ? Math.max(0, Math.floor(Number(startSeconds))) : 0;
-
-  try {
-    player = new window.YT.Player('yt', {
-      width: '100%',
-      height: '100%',
-      videoId: videoId || undefined,
-      playerVars: {
-        autoplay: isPaused ? 0 : 1,
-        start: safeStart,
-        controls: 0,
-        disablekb: 1,
-        fs: 0,
-        rel: 0,
-        playsinline: 1,
-        enablejsapi: 1,
-        modestbranding: 1,
-        iv_load_policy: 3,
-        widget_referrer: (typeof location !== 'undefined' && location.href) ? location.href : undefined,
-        ...(safeOrigin ? { origin: safeOrigin } : {}),
-      },
-      events: {
-        onReady: (ev) => {
-          ytReady = true;
-          if (!playAudio) {
-            try { ev.target.mute(); } catch {}
-          } else {
-            try {
-              ev.target.unMute();
-              ev.target.setVolume(Math.round(store.state.volume || 70));
-            } catch {}
-          }
-          if (!isPaused && videoId) {
-            try { ev.target.playVideo(); } catch {}
-          }
-          checkAutoplay();
-        },
-        onStateChange: onPlayerStateChange,
-        onError,
-      },
-    });
-  } catch (err) {
-    console.error('[alive widget] erro ao recriar player:', err);
-  }
 }
 
 function loadCurrent(s) {
@@ -360,6 +291,7 @@ function loadCurrent(s) {
   if (!now || !now.id) {
     curId = null;
     curStartedAt = 0;
+    startChecked = false;
     try { player?.stopVideo?.(); } catch { /* ignora */ }
     return;
   }
@@ -370,24 +302,16 @@ function loadCurrent(s) {
   curStartedAt = nowStartedAt;
   startChecked = false;
   stallCount = 0;
+  stallAtEndCount = 0;
   lastStallPos = -1;
   wasPaused = !!now.paused;
   durationShown = now.duration || 0;
   const start = Math.max(0, Math.round(now.position || 0));
 
+  if (!ytReady || !player) return;
+
   const cleanId = String(now.id || '').trim();
   const safeStart = Number.isFinite(Number(start)) ? Math.max(0, Math.floor(Number(start))) : 0;
-
-  if (!ytReady || !player) {
-    if (window.YT && window.YT.Player) {
-      recreatePlayer(cleanId, safeStart);
-    }
-    return;
-  }
-
-  isTransitioning = true;
-  clearTimeout(isTransitioningTimer);
-  isTransitioningTimer = setTimeout(() => { isTransitioning = false; }, 3500);
 
   try {
     if (now.paused) {
@@ -412,46 +336,20 @@ function loadCurrent(s) {
       try { player.playVideo?.(); } catch {}
     }
   } catch (e) {
-    console.warn('[alive widget] loadVideoById falhou, recriando player do zero:', e);
-    recreatePlayer(cleanId, safeStart);
+    console.warn('[alive widget] loadVideoById erro:', e);
   }
 }
 
 function onPlayerStateChange(ev) {
   const st = ev?.data;
-  if (st === YT_STATE.ENDED) {
-    if (isTransitioning || retryingAlt) {
-      console.log('[alive widget] Ignorando ENDED transitório durante carregamento');
-      return;
-    }
 
-    const cur = Number(player?.getCurrentTime?.() || 0);
-    const playerDur = Number(player?.getDuration?.() || 0);
-    const expectedDur = Number(playerDur || durationShown || store.state.now?.duration || 0);
-
-    // Se o vídeo NUNCA começou a tocar e nada foi carregado (loadedFraction=0), é evento fantasma do vídeo anterior
-    const loadedFraction = Number(player?.getVideoLoadedFraction?.() || 0);
-    if (!startChecked && cur < 3 && loadedFraction === 0) {
-      console.log('[alive widget] Ignorando ENDED fantasma (cur=0, loadedFraction=0)');
-      return;
-    }
-
-    // Se o vídeo encerrou prematuramente nos primeiros segundos (< 3s) ou antes do fim esperado:
-    const endedPrematurely = (expectedDur > 10 && cur < expectedDur - 6) || cur < 3;
-    if (endedPrematurely) {
-      console.warn(`[alive widget] Vídeo terminou prematuramente (cur=${Math.round(cur)}s, dur=${Math.round(expectedDur)}s, started=${startChecked}). Buscando alternativa liberada...`);
-      tryFindAlternative(store.state.now, () => skipBrokenVideo('reprodução bloqueada'));
-      return;
-    }
-
-    // A música realmente tocou até o final: avança para a próxima música da fila
-    store.update((s) => { advanceQueue(s); });
-    store.flush();
-    return;
-  }
+  // 1. Faixa tocando ativamente (PLAYING)
   if (st === YT_STATE.PLAYING) {
-    isTransitioning = false;
-    retryingAlt = false;
+    startChecked = true;
+    wasPaused = false;
+    document.body.classList.remove('paused');
+    if (els.kicker) els.kicker.textContent = 'TOCANDO AGORA';
+
     if (store.state.now?.paused) {
       try { player.pauseVideo?.(); } catch {}
       wasPaused = true;
@@ -459,38 +357,82 @@ function onPlayerStateChange(ev) {
       if (els.kicker) els.kicker.textContent = 'PAUSADO';
       return;
     }
-    startChecked = true;
-    wasPaused = false;
-    document.body.classList.remove('paused');
-    if (els.kicker) els.kicker.textContent = 'TOCANDO AGORA';
+
     const d = player.getDuration?.() || 0;
     if (d > 0 && store.state.now?.id === curId && Math.abs((store.state.now.duration || 0) - d) > 1) {
       store.update((s) => { if (s.now?.id === curId) s.now.duration = Math.round(d); }, { remote: false });
     }
+    return;
   }
+
+  // 2. Faixa pausada (PAUSED)
   if (st === YT_STATE.PAUSED) {
     wasPaused = true;
     document.body.classList.add('paused');
     if (els.kicker) els.kicker.textContent = 'PAUSADO';
     writePosition(true);
+    return;
   }
+
+  // 3. Checagem de autoplay se estiver CUED ou UNSTARTED
   if (st === YT_STATE.CUED || st === YT_STATE.UNSTARTED) {
     checkAutoplay();
+    return;
+  }
+
+  // 4. Faixa finalizada (ENDED)
+  if (st === YT_STATE.ENDED) {
+    const cur = Number(player?.getCurrentTime?.() || 0);
+    const dur = Number(player?.getDuration?.() || durationShown || store.state.now?.duration || 0);
+
+    // REGRA DE OURO ANTI-SKIP:
+    // A fila SÓ avança se a música começou de fato (startChecked === true)
+    // E o tempo atual chegou ao fim esperado da música (cur >= dur - 4s ou >= 85%).
+    // Qualquer outro ENDED (aos 0s, transições ou phantom de troca de faixa) é estritamente ignorado.
+    const finishedNaturally = startChecked && cur >= 5 && (
+      (dur > 0 && cur >= dur - 4) ||
+      (dur > 10 && cur >= dur * 0.85)
+    );
+
+    if (finishedNaturally) {
+      console.log(`[alive widget] Faixa finalizada com sucesso (${Math.round(cur)}s/${Math.round(dur)}s). Avançando fila...`);
+      startChecked = false;
+      store.update((s) => { advanceQueue(s); });
+      store.flush();
+      return;
+    }
+
+    console.log(`[alive widget] ENDED transitório descartado (cur=${Math.round(cur)}s, dur=${Math.round(dur)}s, started=${startChecked})`);
+    return;
   }
 }
 
-async function tryFindAlternative(currentNow, onFail) {
-  if (retryingAlt) return;
-  if (!currentNow) {
-    if (typeof onFail === 'function') onFail();
-    return;
-  }
-  retryingAlt = true;
-  if (currentNow.id) failedVideoIds.add(currentNow.id);
+let resolvingError = false;
+const failedVideoIds = new Set();
+
+async function onPlayerError(ev) {
+  const code = ev?.data;
+  console.warn('[alive widget] YouTube onError:', code);
+  const current = store.state.now;
+  if (!current || !current.id || resolvingError) return;
+
+  resolvingError = true;
+  failedVideoIds.add(current.id);
+
+  const msgMap = {
+    2: 'Parâmetro inválido',
+    5: 'Erro no player HTML5',
+    100: 'Vídeo indisponível/privado',
+    101: 'Restrito para embed pelo YouTube',
+    150: 'Restrito para embed pelo YouTube',
+    153: 'Restrito para embed pelo YouTube',
+  };
+  const desc = msgMap[code] || `Erro ${code}`;
+
+  showToast(`Aviso: ${desc}. Buscando versão com áudio liberado...`);
 
   try {
-    showToast('Buscando versão com áudio liberado...');
-    const cleanTitle = (currentNow.title || '')
+    const cleanTitle = (current.title || '')
       .replace(/\(Official.*?\)/gi, '')
       .replace(/\[Official.*?\]/gi, '')
       .replace(/ft\..*$/gi, '')
@@ -498,8 +440,9 @@ async function tryFindAlternative(currentNow, onFail) {
       .trim();
     const query = `${cleanTitle} audio`;
     const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=10`).then((r) => r.json()).catch(() => null);
+
     if (res && res.items && res.items.length) {
-      const alt = res.items.find((it) => it.id !== currentNow.id && !failedVideoIds.has(it.id));
+      const alt = res.items.find((it) => it.id !== current.id && !failedVideoIds.has(it.id));
       if (alt) {
         showToast(`Tocando versão liberada: ${alt.title}`);
         curId = alt.id;
@@ -507,9 +450,6 @@ async function tryFindAlternative(currentNow, onFail) {
         startChecked = false;
         stallCount = 0;
         stallAtEndCount = 0;
-
-        // Limpa o player que sofreu erro e recria do zero para garantir reprodução imediata
-        recreatePlayer(alt.id, 0);
 
         store.update((st) => {
           if (st.now) {
@@ -524,48 +464,40 @@ async function tryFindAlternative(currentNow, onFail) {
           }
         });
         store.flush();
+
+        try {
+          player?.loadVideoById({ videoId: alt.id, startSeconds: 0 });
+          applyVolume(store.state.volume);
+          player?.unMute?.();
+          player?.playVideo?.();
+        } catch (e) {
+          console.warn('[alive widget] loadVideoById pós-erro falhou:', e);
+        }
+
+        setTimeout(() => { resolvingError = false; }, 3000);
         return;
       }
     }
-    if (typeof onFail === 'function') onFail();
+
+    // Se nenhuma alternativa for encontrada, pula a faixa com segurança após aviso visível de 2.5s
+    showToast(`Faixa indisponível: ${current.title}. Pulando para a próxima...`);
+    setTimeout(() => {
+      store.update((st) => {
+        pushLog(st, 'skip', `Vídeo com erro (${desc}) pulado: ${current.title || current.id}`);
+        advanceQueue(st);
+      });
+      store.flush();
+      resolvingError = false;
+    }, 2500);
+
   } catch (err) {
-    console.warn('[alive] erro ao buscar alternativa:', err);
-    if (typeof onFail === 'function') onFail();
-  } finally {
-    setTimeout(() => { retryingAlt = false; }, 4000);
+    console.warn('[alive widget] erro no tratamento de fallback:', err);
+    setTimeout(() => {
+      store.update((st) => { advanceQueue(st); });
+      store.flush();
+      resolvingError = false;
+    }, 2500);
   }
-}
-
-function skipBrokenVideo(desc) {
-  const current = store.state.now;
-  if (!current) return;
-  showToast(`Aviso: ${desc}. Pulando para a próxima...`);
-  store.update((st) => {
-    pushLog(st, 'skip', `Vídeo com erro (${desc}) pulado: ${current.title || current.id}`);
-    advanceQueue(st);
-  });
-  store.flush();
-}
-
-function onError(ev) {
-  const code = ev?.data;
-  console.warn('[alive widget] erro do vídeo YouTube:', code);
-  const s = store.state;
-  if (!s.now) return;
-
-  const msgMap = {
-    2: 'Parâmetro inválido',
-    5: 'Erro no player HTML5',
-    100: 'Vídeo privado/apagado',
-    101: 'Restrito para embed pelo YouTube',
-    150: 'Restrito para embed pelo YouTube',
-    153: 'Restrito para embed pelo YouTube',
-  };
-  const desc = msgMap[code] || `Erro ${code}`;
-
-  // Se o YouTube bloquear o vídeo (101/150/153/100/2/5):
-  // Busca e toca a versão liberada recriando o player. Se falhar em encontrar alternativa, avança a fila!
-  tryFindAlternative(s.now, () => skipBrokenVideo(desc));
 }
 
 function checkAutoplay() {
@@ -581,13 +513,39 @@ const YT_STATE = { ENDED: 0, PLAYING: 1, PAUSED: 2, BUFFERING: 3, CUED: 5, UNSTA
 
 async function initPlayer() {
   try {
-    await loadYTApi();
-    const nowId = store.state.now?.id;
-    const nowPos = store.state.now?.position || 0;
-    recreatePlayer(nowId || '', nowPos);
+    const YT = await loadYTApi();
+    const isPaused = !!store.state.now?.paused;
+    const safeOrigin = getSafeOrigin();
+
+    player = new YT.Player('yt', {
+      width: '100%',
+      height: '100%',
+      playerVars: {
+        autoplay: isPaused ? 0 : 1,
+        controls: 0,
+        disablekb: 1,
+        fs: 0,
+        rel: 0,
+        playsinline: 1,
+        enablejsapi: 1,
+        modestbranding: 1,
+        iv_load_policy: 3,
+        ...(safeOrigin ? { origin: safeOrigin } : {}),
+      },
+      events: {
+        onReady: () => {
+          ytReady = true;
+          applyConfig(store.state);
+          loadCurrent(store.state);
+          checkAutoplay();
+        },
+        onStateChange: onPlayerStateChange,
+        onError: onPlayerError,
+      },
+    });
   } catch (e) {
-    console.error('[alive widget]', e);
-    showToast('Erro: ' + e.message);
+    console.error('[alive widget] initPlayer:', e);
+    showToast('Erro ao carregar player: ' + e.message);
   }
 }
 
@@ -645,11 +603,12 @@ function tick() {
   dur = Number.isFinite(dur) ? Math.max(0, dur) : 0;
 
   // Watchdog de término de vídeo: se o player atingiu o final (cur >= dur - 0.5) mas o evento ENDED não disparou no OBS
-  if (!now.paused && ytReady && player && dur > 5 && cur >= dur - 0.5) {
+  if (!now.paused && ytReady && player && dur > 5 && cur >= dur - 0.5 && startChecked) {
     stallAtEndCount++;
-    if (stallAtEndCount >= 5) { // 2.5 segundos parado no final
+    if (stallAtEndCount >= 6) { // 3 segundos parado no final
       stallAtEndCount = 0;
       console.log('[alive widget] Final do vídeo alcançado no tick (cur=' + Math.round(cur) + 's, dur=' + Math.round(dur) + 's). Avançando fila...');
+      startChecked = false;
       store.update((s) => { advanceQueue(s); });
       store.flush();
       return;
@@ -658,15 +617,15 @@ function tick() {
     stallAtEndCount = 0;
   }
 
-  // Watchdog contra congelamento no OBS: se o player estiver despausado mas travado no mesmo segundo por > 25s
-  if (!now.paused && ytReady && player) {
+  // Watchdog contra congelamento no OBS: se o player estiver despausado mas travado no mesmo segundo por > 35s
+  if (!now.paused && ytReady && player && startChecked) {
     const roundedCur = Math.floor(cur);
     if (roundedCur === lastStallPos) {
       stallCount++;
-      if (stallCount >= 50) { // 50 ticks * 500ms = 25 segundos travado
+      if (stallCount >= 70) { // 70 ticks * 500ms = 35 segundos travado
         stallCount = 0;
         console.warn('[alive widget] Watchdog: vídeo travado no player. Buscando alternativa ou avançando...');
-        tryFindAlternative(now, () => skipBrokenVideo('travamento de reprodução'));
+        onPlayerError({ data: 5 });
       }
     } else {
       stallCount = 0;

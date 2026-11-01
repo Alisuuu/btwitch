@@ -217,7 +217,7 @@ function recreatePanelPlayer(videoId, startSeconds = 0) {
   if (box) {
     box.innerHTML = '<div id="panelYt"></div>';
   }
-  const safeOrigin = (typeof location !== 'undefined' && location.origin && location.origin !== 'null' && !location.origin.startsWith('file:')) ? location.origin : undefined;
+  const safeOrigin = (typeof location !== 'undefined' && location.origin && location.origin !== 'null' && (location.origin.startsWith('http://') || location.origin.startsWith('https://'))) ? location.origin : undefined;
   const safeStart = Number.isFinite(Number(startSeconds)) ? Math.max(0, Math.floor(Number(startSeconds))) : 0;
   try {
     panelPlayer = new window.YT.Player('panelYt', {
@@ -233,7 +233,6 @@ function recreatePanelPlayer(videoId, startSeconds = 0) {
         rel: 0,
         playsinline: 1,
         enablejsapi: 1,
-        widget_referrer: (typeof location !== 'undefined' && location.href) ? location.href : undefined,
         ...(safeOrigin ? { origin: safeOrigin } : {}),
       },
       events: {
