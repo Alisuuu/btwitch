@@ -1,4 +1,19 @@
-import ytdl from '@distube/ytdl-core';
+import * as ytdlPkg from '@distube/ytdl-core';
+
+// Compatibilidade resiliente de exportações do @distube/ytdl-core (CJS / ESM / Ytdl class)
+async function getAudioInfo(url) {
+  if (typeof ytdlPkg.getInfo === 'function') {
+    return await ytdlPkg.getInfo(url);
+  }
+  if (ytdlPkg.default && typeof ytdlPkg.default.getInfo === 'function') {
+    return await ytdlPkg.default.getInfo(url);
+  }
+  if (typeof ytdlPkg.Ytdl === 'function') {
+    const yt = new ytdlPkg.Ytdl();
+    return await yt.getInfo(url);
+  }
+  throw new Error('Método getInfo não encontrado em @distube/ytdl-core');
+}
 
 const AUDIO_WITHOUT_VIDEO = (formats = []) => {
   const list = formats.filter((f) => f && f.url && (f.hasAudio || f.audioBitrate) && !f.hasVideo);
@@ -23,7 +38,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const info = await ytdl.getInfo(`https://www.youtube.com/watch?v=${id}`);
+    const info = await getAudioInfo(`https://www.youtube.com/watch?v=${id}`);
     const format = AUDIO_WITHOUT_VIDEO(info?.formats || []);
 
     if (!format || !format.url) {
@@ -31,7 +46,8 @@ export default async function handler(req, res) {
     }
 
     if (req.query?.redirect === '1' || req.headers.accept?.includes('audio/')) {
-      return res.redirect(302, format.url);
+      res.setHeader('Location', format.url);
+      return res.status(302).end();
     }
 
     return res.status(200).json({
