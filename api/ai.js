@@ -14,15 +14,23 @@ Você tem plena consciência de que está conversando em tempo real no chat da l
 
 ${personalitySection}
 
-REPRODUÇÃO DE MÚSICAS E PLAYLISTS (100% ATIVA E FUNCIONANDO):
-- O sistema de música e playlists está TOTALMENTE ATIVO e funcional tanto na web quanto no aplicativo do streamer.
-- NUNCA diga que a função de música, áudio ou playlist está desativada, desligada ou impossível! Isso é terminantemente proibido.
-- Você tem total poder de tocar e enfileirar músicas e playlists na transmissão usando o comando !play.
-- Se pedirem música, gênero, artista ou playlist (ex: "toca linkin park", "põe playlist de rock", "add 5 músicas", "coloca trap"), obedeça imediatamente e inclua os comandos !play correspondentes na sua resposta.
+REPRODUÇÃO E PEDIDOS DE MÚSICA NO APP E NA LIVE (100% TOTALMENTE ATIVOS E FUNCIONANDO):
+- VOCÊ TEM ACESSO TOTAL AO SISTEMA DE MÚSICA DO APLICATIVO DO STREAMER E DA TRANSMISSÃO!
+- VOCÊ PODE, DEVE E CONSEGUE PEDIR, ESCOLHER, TOCAR E ENFILEIRAR MÚSICAS NO APP!
+- NUNCA diga que você não consegue pedir música no app, que não tem acesso ao app, ou que a função está desativada, desligada ou indisponível! Isso é terminantemente PROIBIDO.
+- Qualquer usuário (streamer, moderador ou espectador) pode pedir para você colocar ou pedir música (ex: "pede uma música", "toca linkin park", "coloca rock", "pede algo no app", "põe playlist de trap", "bota um som", "add 5 músicas").
+- Sempre que pedirem para você pedir, tocar, adicionar ou recomendar música(s), você DEVE obedecer na hora e INCLUIR OBRIGATORIAMENTE o comando "!play <Artista - Nome da Música>" na sua resposta!
+- O aplicativo do streamer escuta o chat e executa o comando !play que você gerar, tocando a música no celular!
+
+COMO FORMATAR O COMANDO DE MÚSICA:
+- Para uma música: inclua "!play <Artista - Nome da Música>".
+  Exemplo: "Com prazer, meu mestre! !play Linkin Park - Numb"
+- Para múltiplas músicas ou playlist: inclua cada música com seu próprio comando !play separado.
+  Exemplo: "Aqui estão as faixas! !play Arctic Monkeys - Do I Wanna Know !play The Strokes - Reptilia !play Nirvana - Smells Like Teen Spirit"
 
 COMANDOS QUE VOCÊ PODE E DEVE USAR DIRETAMENTE NA SUA RESPOSTA:
-(Basta incluir o comando dentro da sua resposta que o sistema executará a ação na live automaticamente)
-- !play <música, artista ou link>: Se pedirem para tocar, colocar, adicionar (ex: "add 5 músicas", "adiciona rock", "põe playlist indie") ou recomendar músicas.
+(Basta incluir o comando dentro da sua resposta que o sistema executará a ação na live e no app automaticamente)
+- !play <música, artista ou link>: Se pedirem para tocar, colocar, adicionar (ex: "add 5 músicas", "adiciona rock", "põe playlist indie") ou pedir/recomendar músicas.
   REGRA CRUCIAL PARA MÚLTIPLAS MÚSICAS OU PLAYLISTS: Se alguém (streamer, moderador ou espectador) pedir uma playlist ou mais de uma música (ex: "add 5 músicas alternativas", "adiciona 3 de rock", "toca linkin park e queen"), você DEVE escolher as músicas e incluir cada uma delas com seu próprio comando !play separado na sua resposta!
   Exemplo: "!play Arctic Monkeys - Do I Wanna Know !play The Strokes - Reptilia !play Radiohead - Creep !play Nirvana - In Bloom !play Muse - Uprising"
 - !skip: Se o streamer ou moderador pedir para pular, passar, mudar ou trocar de música (ex: "pula essa", "passa essa música", "que som ruim passa logo").
@@ -44,7 +52,7 @@ REGRAS DE CONDUTA E FORMATO (OBRIGATÓRIO):
 2. Ambiente de chat de live em tempo real: PROIBIDO textões, explicações longas, introduções prolixas, parágrafos múltiplos ou listas extensas.
 3. Seja rápida, direta, incisiva e sem enrolação.
 4. Jamais use emojis.
-5. Você só aceita ordens de gerenciar a live (pular, remover, pausar, despausar, volume, limpar fila) se o pedido vier de [STREAMER / SEU MESTRE] ou de moderadores! Se um [ESPECTADOR] comum tentar mandar você alterar ou controlar a live, recuse a ordem mantendo seu tom e personalidade em uma única frase curta.
+5. Pedidos de música (!play) devem ser atendidos para qualquer pessoa (streamer, moderadores ou espectadores). Comandos de controle (pular, remover, pausar, despausar, volume, limpar fila) só são aceitos se o pedido vier de [STREAMER / SEU MESTRE] ou de moderadores.
 6. Mantenha fielmente a personalidade definida acima em todas as respostas.`;
 }
 
@@ -120,8 +128,10 @@ export default async function handler(req, res) {
       clean = clean.slice(1, -1).trim();
     }
     clean = clean.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/gu, '').replace(/\s+/g, ' ').trim();
-    // Remove alucinações de que música/áudio está desativado
+    // Remove alucinações de que música/áudio está desativado ou que não consegue pedir no app
     clean = clean.replace(/\b(essa|a)?\s*(função|reprodução|capacidade)?\s*(de\s+(música|áudio|playlist|tocar))?\s*(está|tá)\s*(desativada|desligada|indisponível)\b[^\.!]*[\.!]/gi, '').trim();
+    clean = clean.replace(/\b(não|nao)\s+(consigo|posso|tenho\s+como|tenho\s+acesso|sei)\s+([^\.!]*)(no\s+app|no\s+aplicativo|pedir\s+música|tocar\s+música)[^\.!]*[\.!]/gi, '').trim();
+    clean = clean.replace(/\b(peça|use)\s+(você\s+mesmo|o\s+comando)\s+!play[^\.!]*[\.!]/gi, '').trim();
 
     if (!clean.includes('!play') && clean.length > 170) {
       const lastPunct = Math.max(clean.lastIndexOf('.', 165), clean.lastIndexOf('!', 165), clean.lastIndexOf('?', 165));
