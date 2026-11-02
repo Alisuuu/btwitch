@@ -37,15 +37,16 @@ REPRODUÇÃO E PEDIDOS DE MÚSICA NO APP E NA LIVE (100% TOTALMENTE ATIVOS E FUN
 - VOCÊ TEM ACESSO TOTAL AO SISTEMA DE MÚSICA DO APLICATIVO DO STREAMER E DA TRANSMISSÃO!
 - VOCÊ PODE, DEVE E CONSEGUE PEDIR, ESCOLHER, TOCAR E ENFILEIRAR MÚSICAS NO APP!
 - NUNCA diga que você não consegue pedir música no app, que não tem acesso ao app, ou que a função está desativada, desligada ou indisponível! Isso é terminantemente PROIBIDO.
-- Qualquer usuário (streamer, moderador ou espectador) pode pedir para você colocar ou pedir música (ex: "pede uma música", "toca linkin park", "coloca rock", "pede algo no app", "põe playlist de trap", "bota um som", "add 5 músicas").
-- Sempre que pedirem para você pedir, tocar, adicionar ou recomendar música(s), você DEVE obedecer na hora e INCLUIR OBRIGATORIAMENTE o comando "!play <Artista - Nome da Música>" na sua resposta!
+- Qualquer usuário (streamer, moderador ou espectador) pode pedir para você colocar ou pedir música (ex: "pede uma música", "toca linkin park", "coloca rock", "pede algo no app", "põe playlist de trap", "bota um som", "add 5 músicas", "pede 10 músicas").
+- Sempre que pedirem para você pedir, tocar, adicionar ou recomendar música(s), você DEVE obedecer na hora e INCLUIR OBRIGATORIAMENTE o comando "!play <Artista - Nome da Música>" para CADA UMA das músicas pedidas!
+- Se pedirem mais de uma música (ex: "pede 5 músicas", "pede 10 músicas alternativas", "bota playlist de rock"), você DEVE listar TODAS elas usando o comando "!play <Artista - Nome da Música>" separado para CADA MÚSICA!
 - O aplicativo do streamer escuta o chat e executa o comando !play que você gerar, tocando a música no celular!
 
 COMO FORMATAR O COMANDO DE MÚSICA:
 - Para uma música: inclua "!play <Artista - Nome da Música>".
   Exemplo: "Com prazer, meu mestre! !play Linkin Park - Numb"
-- Para múltiplas músicas ou playlist: inclua cada música com seu próprio comando !play separado.
-  Exemplo: "Aqui estão as faixas! !play Arctic Monkeys - Do I Wanna Know !play The Strokes - Reptilia !play Nirvana - Smells Like Teen Spirit"
+- Para múltiplas músicas ou playlist (ex: 5 ou 10 músicas): inclua CADA UMA com seu próprio comando !play separado na mesma resposta.
+  Exemplo com 5 músicas: "Aqui estão as pedradas! !play Arctic Monkeys - Do I Wanna Know !play The Strokes - Reptilia !play Radiohead - Creep !play Nirvana - In Bloom !play Muse - Uprising"
 
 COMANDOS QUE VOCÊ PODE E DEVE USAR DIRETAMENTE NA SUA RESPOSTA:
 (Basta incluir o comando dentro da sua resposta que o sistema executará a ação na live e no app automaticamente)
@@ -113,7 +114,7 @@ export async function askAiDirect(prompt, cfg = {}, deps = {}) {
           body: JSON.stringify({
             model,
             messages,
-            max_tokens: 200,
+            max_tokens: 800,
             temperature: 0.8,
           }),
           signal: ctrl.signal,
@@ -153,7 +154,7 @@ export async function askAiDirect(prompt, cfg = {}, deps = {}) {
       body: JSON.stringify({
         model,
         messages,
-        max_tokens: 200,
+        max_tokens: 800,
         temperature: 0.8,
       }),
       signal: ctrl.signal,
@@ -367,8 +368,10 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     });
 
     if (startedNow) {
+      if (msg.silent) return;
       return send(`Tocando agora: ${short(it.title, 70)} — pedido por ${msg.displayName}`);
     }
+    if (msg.silent) return;
     return send(`${short(it.title, 60)} entrou na fila (posição ${pos}) — pedido por ${msg.displayName}`);
   }
 
@@ -683,16 +686,6 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
       clean = isStreamer ? 'Música pedida no app com sucesso, meu mestre!' : 'Música pedida na live!';
     }
 
-    // Limite para mensagens no chat ao vivo, preservando comandos se existirem
-    if (!clean.includes('!play') && clean.length > 170) {
-      const lastPunct = Math.max(clean.lastIndexOf('.', 165), clean.lastIndexOf('!', 165), clean.lastIndexOf('?', 165));
-      if (lastPunct > 50) {
-        clean = clean.slice(0, lastPunct + 1).trim();
-      } else {
-        clean = clean.slice(0, 165).trim() + '...';
-      }
-    }
-
     // Guarda histórico de diálogo para manter contexto nas próximas perguntas
     aiHistory.push({ role: 'user', content: `${roleTag} ${question}` });
     aiHistory.push({ role: 'assistant', content: clean });
@@ -710,23 +703,40 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
           channel: msg.channel || store.state?.config?.channel || '',
         };
 
-        // 1. Extração e enfileiramento de músicas (suporta múltiplos !play juntos e listas com vírgula/quebras)
+        // 1. Extração de músicas (suporta múltiplos !play juntos, listas numeradas e listas com vírgula/quebras)
         const songsToPlay = [];
-        const rawBlocks = clean.split(/!play\s+/i).slice(1);
-        for (const block of rawBlocks) {
-          const songOnly = block.split(/(?:^|\s)!(?:skip|pular|passar|pausar|pause|seguir|resume|despausar|remover?|vol(?:ume)?|limpar|clear|parar|stop|sortear|shuffle|tts)\b/i)[0].trim();
-          if (!songOnly) continue;
-          // Se houver múltiplas músicas separadas por vírgula, ponto e vírgula ou quebra de linha
-          const subs = songOnly.split(/[\n\r;]+|(?<=[a-zA-Z0-9\)])\s*,\s*(?=[a-zA-Z0-9])/);
-          for (const s of subs) {
-            const cleanSong = s.replace(/^[\s\-,;0-9.)(]+|["'\s\-,;]+$/g, '').trim();
-            if (cleanSong && cleanSong.length >= 2 && !songsToPlay.includes(cleanSong)) {
-              songsToPlay.push(cleanSong);
+        if (clean.includes('!play')) {
+          const rawBlocks = clean.split(/!play\s+/i).slice(1);
+          for (const block of rawBlocks) {
+            const songOnly = block.split(/(?:^|\s)!(?:skip|pular|passar|pausar|pause|seguir|resume|despausar|remover?|vol(?:ume)?|limpar|clear|parar|stop|sortear|shuffle|tts)\b/i)[0].trim();
+            if (!songOnly) continue;
+            // Se houver múltiplas músicas separadas por vírgula, ponto e vírgula ou quebra de linha
+            const subs = songOnly.split(/[\n\r;]+|(?<=[a-zA-Z0-9\)])\s*,\s*(?=[a-zA-Z0-9])/);
+            for (const s of subs) {
+              let cleanSong = s.replace(/^[\s\-,;0-9.)(]+|["'\s\-,;]+$/g, '').replace(/\s+\d+\.?$/, '').trim();
+              if (cleanSong && cleanSong.length >= 2 && !songsToPlay.includes(cleanSong)) {
+                songsToPlay.push(cleanSong);
+              }
             }
           }
         }
 
-        // Se a IA não formatou !play mas o usuário pediu música ou playlist expressamente
+        // 2. Se a IA gerou lista numerada (1. Artista - Música) ou marcadores (- Artista - Música) sem !play
+        if (songsToPlay.length === 0) {
+          const parts = clean.split(/(?:^|[\n\r]+|\s+)[0-9]{1,2}[.)\-]+\s+/).slice(1);
+          if (parts.length > 0) {
+            for (const p of parts) {
+              let song = p.split(/(?:^|\s)!(?:skip|pular|passar|pausar|pause|seguir|resume|despausar|remover?|vol(?:ume)?|limpar|clear|parar|stop|sortear|shuffle|tts)\b/i)[0];
+              song = song.split(/[\n\r]+/)[0];
+              song = song.replace(/^[\s\-,;0-9.)(]+|["'\s\-,;]+$/g, '').replace(/\s+\d+\.?$/, '').trim();
+              if (song.length >= 2 && !songsToPlay.includes(song) && !/^(aqui|essas|com certeza|fechado|pronto)/i.test(song)) {
+                songsToPlay.push(song);
+              }
+            }
+          }
+        }
+
+        // 3. Se ainda vazio e usuário pediu música ou playlist expressamente
         if (songsToPlay.length === 0) {
           const qLower = question.toLowerCase();
           const isControlIntent = /\b(pula|pular|passa|passar|remove|remover|tira|tirar|pausa|pausar|pause|seguir|despausa|despausar|volume|vol|muta|mutar|mudo|limpa|limpar|clear|para|parar|stop|sorteia|sortear|shuffle)\b/i.test(qLower);
@@ -740,7 +750,7 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
               .replace(/\b(toca|tocar|toque|coloca|colocar|põe|poe|bota|botar|adiciona|adicionar|add|pede|pedir)\b/i, '')
               .replace(/\b(uma|um|a|o|umas|uns)?\s*(música|musica|som|faixa|somzinho|playlist|coletânea|coletanea|set)?\s*(de|do|da|dos|das|pra mim|pro chat|aqui|no app)?\b/gi, '')
               .trim();
-            if (cleanTerm.length >= 2) {
+            if (cleanTerm.length >= 2 && !/^[0-9]+$/.test(cleanTerm)) {
               songsToPlay.push(cleanTerm);
             } else {
               songsToPlay.push('Queen - Bohemian Rhapsody');
@@ -748,19 +758,26 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
           }
         }
 
-        // Toca e enfileira cada faixa sequencialmente no servidor e emite !play para o chat do canal (para o app Android tocar)
+        // Atualiza a fila do servidor silenciosamente (para OBS/web/testes)
         for (let i = 0; i < songsToPlay.length; i++) {
           try {
-            await cmdPlay(songsToPlay[i].split(/\s+/), aiMsgContext);
-            // Envia o comando !play diretamente para o chat da transmissão para o aplicativo Android capturar e tocar no app
-            send(`!play ${songsToPlay[i]}`);
-            if (i < songsToPlay.length - 1) {
-              await new Promise((r) => setTimeout(r, 200));
-            }
+            await cmdPlay(songsToPlay[i].split(/\s+/), { ...aiMsgContext, silent: true });
           } catch (e) {
             console.warn('[alive ia cmdPlay error]', e);
           }
         }
+
+        // Emite os comandos !play para o chat da live para o aplicativo Android tocar no celular.
+        // O primeiro vai de imediato; os seguintes são espaçados em 3500ms para respeitar o cooldown do bot no app Android.
+        songsToPlay.forEach((song, i) => {
+          if (i === 0) {
+            send(`!play ${song}`);
+          } else {
+            setTimeout(() => {
+              send(`!play ${song}`);
+            }, i * 3500);
+          }
+        });
 
         // Apenas streamer ou mod têm autoridade para fazer a IA alterar a reprodução
         if (canControl) {
@@ -847,7 +864,14 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     // Limpa comandos !play brutos da resposta conversacional para não poluir
     let textReply = clean.replace(/!play\s+[^\n\r!]+/gi, '').replace(/\s+/g, ' ').trim();
     if (!textReply) {
-      textReply = isStreamer ? 'Música pedida no app com sucesso, meu mestre!' : 'Música pedida na live!';
+      textReply = isStreamer ? 'Músicas pedidas para o app, meu mestre!' : 'Músicas adicionadas na fila!';
+    } else if (textReply.length > 170) {
+      const lastPunct = Math.max(textReply.lastIndexOf('.', 165), textReply.lastIndexOf('!', 165), textReply.lastIndexOf('?', 165));
+      if (lastPunct > 50) {
+        textReply = textReply.slice(0, lastPunct + 1).trim();
+      } else {
+        textReply = textReply.slice(0, 165).trim() + '...';
+      }
     }
 
     // 2. Decide uso de TTS: só fala em voz alta (!tts) se a própria IA decidiu colocar !tts na resposta!

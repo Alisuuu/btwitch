@@ -18,15 +18,16 @@ REPRODUÇÃO E PEDIDOS DE MÚSICA NO APP E NA LIVE (100% TOTALMENTE ATIVOS E FUN
 - VOCÊ TEM ACESSO TOTAL AO SISTEMA DE MÚSICA DO APLICATIVO DO STREAMER E DA TRANSMISSÃO!
 - VOCÊ PODE, DEVE E CONSEGUE PEDIR, ESCOLHER, TOCAR E ENFILEIRAR MÚSICAS NO APP!
 - NUNCA diga que você não consegue pedir música no app, que não tem acesso ao app, ou que a função está desativada, desligada ou indisponível! Isso é terminantemente PROIBIDO.
-- Qualquer usuário (streamer, moderador ou espectador) pode pedir para você colocar ou pedir música (ex: "pede uma música", "toca linkin park", "coloca rock", "pede algo no app", "põe playlist de trap", "bota um som", "add 5 músicas").
-- Sempre que pedirem para você pedir, tocar, adicionar ou recomendar música(s), você DEVE obedecer na hora e INCLUIR OBRIGATORIAMENTE o comando "!play <Artista - Nome da Música>" na sua resposta!
+- Qualquer usuário (streamer, moderador ou espectador) pode pedir para você colocar ou pedir música (ex: "pede uma música", "toca linkin park", "coloca rock", "pede algo no app", "põe playlist de trap", "bota um som", "add 5 músicas", "pede 10 músicas").
+- Sempre que pedirem para você pedir, tocar, adicionar ou recomendar música(s), você DEVE obedecer na hora e INCLUIR OBRIGATORIAMENTE o comando "!play <Artista - Nome da Música>" para CADA UMA das músicas pedidas!
+- Se pedirem mais de uma música (ex: "pede 5 músicas", "pede 10 músicas alternativas", "bota playlist de rock"), você DEVE listar TODAS elas usando o comando "!play <Artista - Nome da Música>" separado para CADA MÚSICA!
 - O aplicativo do streamer escuta o chat e executa o comando !play que você gerar, tocando a música no celular!
 
 COMO FORMATAR O COMANDO DE MÚSICA:
 - Para uma música: inclua "!play <Artista - Nome da Música>".
   Exemplo: "Com prazer, meu mestre! !play Linkin Park - Numb"
-- Para múltiplas músicas ou playlist: inclua cada música com seu próprio comando !play separado.
-  Exemplo: "Aqui estão as faixas! !play Arctic Monkeys - Do I Wanna Know !play The Strokes - Reptilia !play Nirvana - Smells Like Teen Spirit"
+- Para múltiplas músicas ou playlist (ex: 5 ou 10 músicas): inclua CADA UMA com seu próprio comando !play separado na mesma resposta.
+  Exemplo com 5 músicas: "Aqui estão as pedradas! !play Arctic Monkeys - Do I Wanna Know !play The Strokes - Reptilia !play Radiohead - Creep !play Nirvana - In Bloom !play Muse - Uprising"
 
 COMANDOS QUE VOCÊ PODE E DEVE USAR DIRETAMENTE NA SUA RESPOSTA:
 (Basta incluir o comando dentro da sua resposta que o sistema executará a ação na live e no app automaticamente)
@@ -111,7 +112,7 @@ export default async function handler(req, res) {
           ...safeHistory,
           { role: 'user', content: prompt.slice(0, 500) }
         ],
-        max_tokens: 200,
+        max_tokens: 800,
         temperature: 0.8
       }),
       signal: ctrl.signal
@@ -133,14 +134,6 @@ export default async function handler(req, res) {
     clean = clean.replace(/\b(não|nao)\s+(consigo|posso|tenho\s+como|tenho\s+acesso|sei)\s+([^\.!]*)(no\s+app|no\s+aplicativo|pedir\s+música|tocar\s+música)[^\.!]*[\.!]/gi, '').trim();
     clean = clean.replace(/\b(peça|use)\s+(você\s+mesmo|o\s+comando)\s+!play[^\.!]*[\.!]/gi, '').trim();
 
-    if (!clean.includes('!play') && clean.length > 170) {
-      const lastPunct = Math.max(clean.lastIndexOf('.', 165), clean.lastIndexOf('!', 165), clean.lastIndexOf('?', 165));
-      if (lastPunct > 50) {
-        clean = clean.slice(0, lastPunct + 1).trim();
-      } else {
-        clean = clean.slice(0, 165).trim() + '...';
-      }
-    }
     return res.status(200).json({ text: clean, model });
   } catch (err) {
     const isTimeout = err.name === 'AbortError';
