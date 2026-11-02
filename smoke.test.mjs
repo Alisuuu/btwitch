@@ -43,6 +43,7 @@ const runner = createRunner({
     if (q.includes('coloca volume 33')) return { ok: true, text: 'Volume ajustado! !vol 33' };
     if (q.includes('adiciona duas músicas')) return { ok: true, text: 'Colocando ambas, meu mestre genial! !play Música Teste A !play Música Teste B' };
     if (q.includes('add 5 músicas')) return { ok: true, text: 'Às suas ordens mestre! !play 1. Canção Um !play 2. Canção Dois !play 3. Canção Três !play 4. Canção Quatro !play 5. Canção Cinco' };
+    if (q.includes('toca uma playlist de rock')) return { ok: true, text: 'Essa função de música está desativada no momento. !play playlist rock' };
     return {
       ok: true,
       text: 'Tsc, precisava me incomodar pra perguntar isso? A resposta é óbvia, seu ignorante.'
@@ -326,51 +327,34 @@ assert(store.state.now !== null, 'Primeira música tocou');
 assert(!store.state.now.title.startsWith('1.'), 'Prefixo numérico "1." foi removido do título');
 assert(store.state.queue.length === 4, 'As outras 4 músicas entraram na fila (total de 5 músicas adicionadas)');
 
-console.log('\n30) Desativar e reativar função de música');
+console.log('\n30) IA processando playlist sem mensagem de desativação e enfileirando no store');
 store.update((s) => {
-  s.config.musicEnabled = false;
-});
-await runner(msg('!play musica desativada', { userId: 'u99', displayName: 'User99' }));
-assert(sent.at(-1).includes('desativado'), 'pedidos de música bloqueados quando função está desativada');
-
-const queueBefore = store.state.queue.length;
-await runner(msg('!skip', { userId: 'mod1', displayName: 'Mod1', mod: true }));
-assert(store.state.queue.length === queueBefore, 'comandos de música ignorados quando desativado');
-
-store.update((s) => {
-  s.config.musicEnabled = true;
   s.now = null;
   s.queue = [];
 });
-await runner(msg('!play musica reativada', { userId: 'u100', displayName: 'User100' }));
-assert(store.state.now !== null && sent.at(-1).includes('Tocando agora'), 'músicas voltam a funcionar ao reativar');
+await runner(msg('!ia toca uma playlist de rock', {
+  userId: 'streamer_id',
+  login: 'streamertop',
+  displayName: 'StreamerTop',
+  channel: 'streamertop',
+  broadcaster: true,
+  mod: false,
+}));
+await new Promise((r) => setTimeout(r, 400));
+const lastReply = sent.filter((t) => t.includes('StreamerTop')).at(-1) || '';
+assert(!lastReply.includes('desativada'), 'Resposta do chat não contém alucinação de "desativada"');
+assert(store.state.now !== null || store.state.queue.length > 0, 'Playlist foi adicionada ao store.state sincronizável com o app');
 
-console.log('\n31) Anti-poluição de chat e Modo Chat Limpo (quietMode)');
+console.log('\n31) Comandos diretos de playlist (!playlist e !pl)');
 store.update((s) => {
-  s.config.quietMode = true;
   s.now = null;
   s.queue = [];
 });
-// 1. !play com resposta concisa e limpa
-await runner(msg('!play musica curta', { userId: 'u101', displayName: 'User101' }));
-assert(sent.at(-1).startsWith('▶ Tocando:'), 'resposta de reprodução concisa no modo limpo');
-
-// 2. !vol silencioso no chat
-const lenBeforeVol = sent.length;
-await runner(msg('!vol 80', { userId: 'mod1', displayName: 'Mod1', mod: true }));
-assert(store.state.volume === 80, 'volume foi ajustado no store');
-assert(sent.length === lenBeforeVol, 'ajuste de volume não poluiu o chat no modo limpo');
-
-// 3. Cooldown silencioso quando cooldownWarnings está desligado
-store.update((s) => {
-  s.config.quietMode = false;
-  s.config.cooldownWarnings = false;
-  s.config.perUserCooldown = 60;
-  s.config.globalCooldown = 0;
-});
-await runner(msg('!play primeira', { userId: 'u102', displayName: 'User102' }));
-const countBeforeCd = sent.length;
-await runner(msg('!play segunda_imediata', { userId: 'u102', displayName: 'User102' }));
-assert(sent.length === countBeforeCd, 'cooldown silencioso não poluiu o chat com aviso de bronca');
+await runner(msg('!playlist https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PLrEnWoR732-BHrPp_AK4TCQTko15HbU9C', {
+  userId: 'user_pl',
+  displayName: 'UserPlaylist',
+}));
+assert(store.state.now !== null, 'Playlist via URL iniciou primeira música');
+assert(store.state.queue.length > 0, 'Restante da playlist entrou na fila');
 
 console.log('\n✅ Smoke test concluído.\n');

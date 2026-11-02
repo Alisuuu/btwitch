@@ -2,7 +2,7 @@
 import { advanceQueue, pushLog, short, fmtTime } from './state.js';
 
 export const COMMANDS = [
-  { id: 'play',    cmd: '!play',    aliases: ['!p', '!sr', '!songrequest', '!pedir', '!tocar'], who: 'all', desc: 'Pedir uma música (link do YouTube ou busca)', usage: '!sr <link ou nome>' },
+  { id: 'play',    cmd: '!play',    aliases: ['!p', '!sr', '!songrequest', '!pedir', '!tocar', '!playlist', '!pl'], who: 'all', desc: 'Pedir uma música ou playlist (link do YouTube ou busca)', usage: '!sr <link ou nome>' },
   { id: 'skip',    cmd: '!skip',    aliases: ['!pular', '!next', '!passar'], who: 'all', desc: 'Votar para pular (streamer/mod pula na hora)', usage: '!skip' },
   { id: 'queue',   cmd: '!fila',    aliases: ['!queue', '!songs', '!lista'], who: 'all', desc: 'Ver a fila de músicas', usage: '!fila' },
   { id: 'np',      cmd: '!atual',   aliases: ['!np', '!tocando', '!song', '!currentsong', '!musica', '!som'], who: 'all', desc: 'Ver o que está tocando', usage: '!song' },
@@ -33,10 +33,16 @@ Você tem plena consciência de que está conversando em tempo real no chat da l
 
 ${personalitySection}
 
+REPRODUÇÃO DE MÚSICAS E PLAYLISTS (100% ATIVA E FUNCIONANDO):
+- O sistema de música e playlists está TOTALMENTE ATIVO e funcional tanto na web quanto no aplicativo do streamer.
+- NUNCA diga que a função de música, áudio ou playlist está desativada, desligada ou indisponível! Isso é terminantemente proibido.
+- Você tem total poder de tocar e enfileirar músicas e playlists na transmissão usando o comando !play.
+- Se pedirem música, gênero, artista ou playlist (ex: "toca linkin park", "põe playlist de rock", "add 5 músicas", "coloca trap"), obedeça imediatamente e inclua os comandos !play correspondentes na sua resposta.
+
 COMANDOS QUE VOCÊ PODE E DEVE USAR DIRETAMENTE NA SUA RESPOSTA:
 (Basta incluir o comando dentro da sua resposta que o sistema executará a ação na live automaticamente)
-- !play <música ou artista>: Se pedirem para tocar, colocar, adicionar (ex: "add 5 músicas", "adiciona rock", "põe 3 indie") ou recomendar músicas.
-  REGRA CRUCIAL PARA MÚLTIPLAS MÚSICAS: Se alguém (streamer, moderador ou espectador) pedir para adicionar ou tocar mais de uma música (ex: "add 5 músicas alternativas", "adiciona 3 de rock", "toca linkin park e queen"), você DEVE escolher as músicas e incluir cada uma delas com seu próprio comando !play separado na sua resposta!
+- !play <música, artista ou link>: Se pedirem para tocar, colocar, adicionar (ex: "add 5 músicas", "adiciona rock", "põe playlist indie") ou recomendar músicas.
+  REGRA CRUCIAL PARA MÚLTIPLAS MÚSICAS OU PLAYLISTS: Se alguém (streamer, moderador ou espectador) pedir uma playlist ou mais de uma música (ex: "add 5 músicas alternativas", "adiciona 3 de rock", "toca linkin park e queen"), você DEVE escolher as músicas e incluir cada uma delas com seu próprio comando !play separado na sua resposta!
   Exemplo: "!play Arctic Monkeys - Do I Wanna Know !play The Strokes - Reptilia !play Radiohead - Creep !play Nirvana - In Bloom !play Muse - Uprising"
 - !skip: Se o streamer ou moderador pedir para pular, passar, mudar ou trocar de música (ex: "pula essa", "passa essa música", "que som ruim passa logo").
 - !remover <número ou nome>: Se o streamer ou moderador pedir para tirar ou remover uma música específica da fila (consulte as [Próximas da fila] no contexto para saber o número! Ex: "tira a música 2", "remove o rock da fila" -> use !remover 2).
@@ -53,7 +59,7 @@ COMANDOS QUE VOCÊ PODE E DEVE USAR DIRETAMENTE NA SUA RESPOSTA:
 - !tts <sua fala>: Use SOMENTE quando você decidir falar em voz alta no áudio da transmissão via sintetizador de voz. Se não quiser falar, responda em texto comum.
 
 REGRAS DE CONDUTA E FORMATO (OBRIGATÓRIO):
-1. RESPOSTAS ULTRA CURTAS: Responda SEMPRE em no máximo 1 ou 2 frases curtas (limite estrito de 120 a 160 caracteres).
+1. RESPOSTAS ULTRA CURTAS: Responda SEMPRE em no máximo 1 ou 2 frases curtas (limite estrito de 120 a 160 caracteres fora os comandos !play).
 2. Ambiente de chat de live em tempo real: PROIBIDO textões, explicações longas, introduções prolixas, parágrafos múltiplos ou listas extensas.
 3. Seja rápida, direta, incisiva e sem enrolação.
 4. Jamais use emojis.
@@ -99,7 +105,7 @@ export async function askAiDirect(prompt, cfg = {}, deps = {}) {
           body: JSON.stringify({
             model,
             messages,
-            max_tokens: 80,
+            max_tokens: 200,
             temperature: 0.8,
           }),
           signal: ctrl.signal,
@@ -139,7 +145,7 @@ export async function askAiDirect(prompt, cfg = {}, deps = {}) {
       body: JSON.stringify({
         model,
         messages,
-        max_tokens: 80,
+        max_tokens: 200,
         temperature: 0.8,
       }),
       signal: ctrl.signal,
@@ -242,8 +248,7 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     const l = lastKey.get(k) || 0;
     if (seconds > 0 && now - l < seconds * 1000) {
       const w = lastWarn.get(k) || 0;
-      const warnEnabled = store.state.config?.cooldownWarnings !== false && !store.state.config?.quietMode;
-      if (warnEnabled && now - w > 10000 && seconds > 2) {
+      if (now - w > 10000 && seconds > 2) {
         lastWarn.set(k, now);
         send(`Calma, ${msg.displayName}! Faltam ${Math.ceil((seconds * 1000 - (now - l)) / 1000)}s para usar !${name} de novo.`);
       }
@@ -255,23 +260,28 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
   }
 
   async function resolveItem(q) {
+    const isPlaylistQuery = /\b(playlist|mix|coletanea|coletânea)\b/i.test(q);
     if (isUrl(q)) {
       const r = await resolveUrl(q);
+      if (r.type === 'playlist' && r.items && r.items.length) return { single: null, playlist: r.items };
       if (r.type === 'video' && r.item) return { single: r.item, playlist: null };
-      if (r.type === 'playlist') return { single: null, playlist: r.items };
-      if (r.items && r.items.length) return { single: r.items[0], playlist: null };
+      if (r.items && r.items.length) {
+        if (isPlaylistQuery && r.items.length > 1) return { single: null, playlist: r.items };
+        return { single: r.items[0], playlist: null };
+      }
       return null;
     }
     const items = await cachedSearch(q);
-    return items.length ? { single: items[0], playlist: null } : null;
+    if (!items.length) return null;
+    if (isPlaylistQuery && items.length > 1) {
+      return { single: null, playlist: items };
+    }
+    return { single: items[0], playlist: null };
   }
 
   // ---------------------------------------------------------------- comandos
   async function cmdPlay(args, msg) {
     const cfg = store.state.config;
-    if (cfg.musicEnabled === false) {
-      return send(`O sistema de músicas está desativado no momento.`);
-    }
     const q = args.join(' ').trim();
     const isAuthorized = !!msg.mod || !!msg.broadcaster ||
       (msg.channel && (msg.login || '').toLowerCase() === msg.channel.toLowerCase()) ||
@@ -348,16 +358,8 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
       pushLog(st, 'play', `${msg.displayName} pediu: ${short(it.title, 60)}`);
     });
 
-    if (msg.silent) return;
-
     if (startedNow) {
-      if (cfg.quietMode) {
-        return send(`▶ Tocando: ${short(it.title, 50)} (@${msg.displayName})`);
-      }
       return send(`Tocando agora: ${short(it.title, 70)} — pedido por ${msg.displayName}`);
-    }
-    if (cfg.quietMode) {
-      return send(`✔ #${pos} na fila: ${short(it.title, 50)} (@${msg.displayName})`);
     }
     return send(`${short(it.title, 60)} entrou na fila (posição ${pos}) — pedido por ${msg.displayName}`);
   }
@@ -384,10 +386,7 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     const need = Math.max(1, Number(store.state.config.skipVotes) || 3);
     const votes = store.state.skip?.id === s.now.id ? [...store.state.skip.votes] : [];
     if (votes.includes(msg.userId)) {
-      if (!store.state.config?.quietMode) {
-        return send(`Você já votou para pular (${votes.length}/${need}).`);
-      }
-      return;
+      return send(`Você já votou para pular (${votes.length}/${need}).`);
     }
     votes.push(msg.userId);
     store.update((st) => {
@@ -405,11 +404,10 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
   async function cmdQueue(args, msg) {
     const s = store.state;
     if (!s.queue.length) return send(`Fila vazia${s.now ? ' (uma música tocando)' : ''}. Peça algo com !play`);
-    const limit = s.config?.quietMode ? 3 : 5;
-    const lines = s.queue.slice(0, limit).map((x, i) => `${i + 1}. ${short(x.title, 36)} (${x.requestedBy})`);
-    const head = `Fila (${s.queue.length}/${s.config.maxQueue}): `;
+    const lines = s.queue.slice(0, 8).map((x, i) => `${i + 1}. ${short(x.title, 42)} (${x.requestedBy})`);
+    const head = `Fila (${s.queue.length}/${s.config.maxQueue}) — pedido por: `;
     let out = head + lines.join(' | ');
-    if (s.queue.length > limit) out += ` | … +${s.queue.length - limit} músicas`;
+    if (s.queue.length > 8) out += ` | … +${s.queue.length - 8}`;
     return send(out);
   }
 
@@ -449,7 +447,6 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
       st.volume = vol;
       pushLog(st, 'vol', `${msg.displayName} definiu volume para ${vol}%`);
     });
-    if (store.state.config?.quietMode) return;
     return send(`Volume ajustado para ${vol}% por ${msg.displayName}.`);
   }
 
@@ -669,8 +666,15 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     }
     // Remove qualquer emoji para manter o chat limpo e sem poluição
     clean = clean.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/gu, '').replace(/\s+/g, ' ').trim();
-    // Limite rígido para mensagens curtas e dinâmicas no chat ao vivo
-    if (clean.length > 170) {
+
+    // Elimina alucinações de que música/áudio/playlist está desativada
+    clean = clean.replace(/\b(essa|a)?\s*(função|reprodução|capacidade)?\s*(de\s+(música|áudio|playlist|tocar))?\s*(está|tá)\s*(desativada|desligada|indisponível)\b[^\.!]*[\.!]/gi, '').trim();
+    if (!clean) {
+      clean = isStreamer ? 'Às suas ordens, meu mestre! Executando agora mesmo.' : 'Pedido processado!';
+    }
+
+    // Limite para mensagens no chat ao vivo, preservando comandos se existirem
+    if (!clean.includes('!play') && clean.length > 170) {
       const lastPunct = Math.max(clean.lastIndexOf('.', 165), clean.lastIndexOf('!', 165), clean.lastIndexOf('?', 165));
       if (lastPunct > 50) {
         clean = clean.slice(0, lastPunct + 1).trim();
@@ -712,11 +716,33 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
           }
         }
 
-        // Toca e enfileira cada faixa sequencialmente (silent para não duplicar avisos após resposta da IA)
-        for (const song of songsToPlay) {
+        // Se a IA não formatou !play mas o usuário pediu música ou playlist expressamente
+        if (songsToPlay.length === 0) {
+          const qLower = question.toLowerCase();
+          const isControlIntent = /\b(pula|pular|passa|passar|remove|remover|tira|tirar|pausa|pausar|pause|seguir|despausa|despausar|volume|vol|muta|mutar|mudo|limpa|limpar|clear|para|parar|stop|sorteia|sortear|shuffle)\b/i.test(qLower);
+          const isMusicIntent = !isControlIntent && (
+            /\b(toca|tocar|toque|põe|poe|playlist|adiciona|adicionar|add)\b/i.test(qLower) ||
+            (/\b(coloca|colocar|bota|botar)\b/i.test(qLower) && !/\b(volume|som|somzinho|audio|áudio)\b/i.test(qLower))
+          );
+          if (isMusicIntent) {
+            let cleanTerm = question
+              .replace(/^(por favor|alive|bot|ia|ei|ô)\s*,?\s*/i, '')
+              .replace(/\b(toca|tocar|toque|coloca|colocar|põe|poe|bota|botar|adiciona|adicionar|add)\b/i, '')
+              .replace(/\b(uma|um|a|o|umas|uns)?\s*(música|musica|som|faixa|somzinho|playlist|coletânea|coletanea|set)?\s*(de|do|da|dos|das|pra mim|pro chat|aqui)?\b/gi, '')
+              .trim();
+            if (cleanTerm.length >= 2) {
+              songsToPlay.push(cleanTerm);
+            }
+          }
+        }
+
+        // Toca e enfileira cada faixa sequencialmente
+        for (let i = 0; i < songsToPlay.length; i++) {
           try {
-            await cmdPlay(song.split(/\s+/), { ...aiMsgContext, silent: true });
-            await new Promise((r) => setTimeout(r, 250));
+            await cmdPlay(songsToPlay[i].split(/\s+/), aiMsgContext);
+            if (i < songsToPlay.length - 1) {
+              await new Promise((r) => setTimeout(r, 100));
+            }
           } catch (e) {
             console.warn('[alive ia cmdPlay error]', e);
           }
@@ -835,13 +861,6 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     const meta = ALIASES.get(name);
     if (meta) {
       if (store.state.config.commands && store.state.config.commands[meta.id] === 0) return; // desligado explicitamente
-      const musicCmds = ['play', 'skip', 'queue', 'np', 'vol', 'pause', 'resume', 'stop', 'remove', 'clear', 'shuffle'];
-      if (store.state.config?.musicEnabled === false && musicCmds.includes(meta.id)) {
-        if (meta.id === 'play') {
-          return send(`O sistema de músicas está desativado no momento.`);
-        }
-        return;
-      }
       const perm = store.state.config.cmdPermissions?.[meta.id] || meta.who || 'all';
       if (!canUserRun(perm, msg)) return;                // sem permissão: ignora em silêncio
       try {

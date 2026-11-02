@@ -13,16 +13,16 @@ export default async function handler(req, res) {
   const listId = extractListId(raw);
 
   try {
-    // Link de vídeo (mesmo que tenha playlist junto) vira 1 música.
+    // Playlist (seja URL de playlist pura ou vídeo com &list=) -> carrega as músicas da playlist.
+    if (listId) {
+      const items = await playlistVideos(listId, max);
+      if (items && items.length) return res.status(200).json({ type: 'playlist', items });
+    }
+
+    // Link de vídeo avulso -> 1 música.
     if (videoId) {
       const item = await videoMeta(videoId);
       return res.status(200).json({ type: 'video', item, items: [item] });
-    }
-
-    // Playlist -> várias músicas.
-    if (listId) {
-      const items = await playlistVideos(listId, max);
-      if (items.length) return res.status(200).json({ type: 'playlist', items });
     }
 
     // Qualquer outra coisa -> busca no YouTube.
