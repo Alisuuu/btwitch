@@ -363,6 +363,16 @@ async function initPanelPlayer() {
 }
 
 async function syncPanelPlayer(s) {
+  const musicEnabled = (s.config?.musicEnabled !== false);
+  if (!musicEnabled) {
+    if (curPlayingId) {
+      curPlayingId = null;
+      curPlayingStartedAt = 0;
+    }
+    try { panelPlayer?.pauseVideo?.(); } catch { /* */ }
+    return;
+  }
+
   const now = s.now;
   if (!now || !now.id) {
     if (curPlayingId) {
@@ -1301,15 +1311,34 @@ if (typeof document !== 'undefined') {
 let posCache = { id: null, pos: 0, at: 0 };
 
 function renderNow(s) {
+  const musicEnabled = (s.config?.musicEnabled !== false);
   const now = s.now;
   const card = $('#nowCard');
-  card.classList.toggle('paused', !!now?.paused);
+  card.classList.toggle('paused', !musicEnabled || !!now?.paused);
 
   const pauseBtn = $('#btnPause');
   if (pauseBtn) {
-    pauseBtn.innerHTML = now?.paused
+    pauseBtn.innerHTML = (!musicEnabled || now?.paused)
       ? icon('play', { size: 18 })
       : icon('pause', { size: 18 });
+  }
+
+  if (!musicEnabled) {
+    $('#nowKicker').textContent = 'MÚSICAS DESATIVADAS';
+    if (!now) {
+      $('#nowThumb').removeAttribute('src');
+      $('#nowTitle').textContent = 'Função desativada';
+      $('#nowSub').textContent = 'Ative a função de música na aba Widget para voltar a tocar';
+      $('#nowFill').style.width = '0%';
+      $('#nowCur').textContent = '0:00';
+      $('#nowDur').textContent = '0:00';
+    } else {
+      const thumb = now.thumb || thumbFor(now.id);
+      if ($('#nowThumb').getAttribute('src') !== thumb) $('#nowThumb').src = thumb;
+      $('#nowTitle').textContent = now.title;
+      $('#nowSub').textContent = 'Reprodução e pedidos pausados temporariamente pelo painel';
+    }
+    return;
   }
 
   if (!now) {
@@ -2178,11 +2207,20 @@ function bindWidgetForm() {
     store.update((s) => {
       s.config = s.config || {};
       const current = (s.config.musicEnabled !== false);
-      s.config.musicEnabled = !current;
-      pushLog(s, 'config', `Função de música ${!current ? 'ativada' : 'desativada'} no painel do widget`);
+      const next = !current;
+      s.config.musicEnabled = next;
+      if (!next && s.now && !s.now.paused) {
+        s.now.paused = true;
+      }
+      pushLog(s, 'config', `Função de música ${next ? 'ativada' : 'desativada'} no painel do widget`);
     });
+    if (store.state.config?.musicEnabled === false) {
+      try { panelPlayer?.pauseVideo?.(); } catch {}
+    }
     store.flush();
     syncWidgetForm(store.state);
+    syncPanelPlayer(store.state);
+    renderNow(store.state);
   });
 
   $('#wMusicEnabled')?.addEventListener('change', (e) => {
@@ -2190,10 +2228,18 @@ function bindWidgetForm() {
     store.update((s) => {
       s.config = s.config || {};
       s.config.musicEnabled = val;
+      if (!val && s.now && !s.now.paused) {
+        s.now.paused = true;
+      }
       pushLog(s, 'config', `Função de música ${val ? 'ativada' : 'desativada'} no painel do widget`);
     });
+    if (!val) {
+      try { panelPlayer?.pauseVideo?.(); } catch {}
+    }
     store.flush();
     syncWidgetForm(store.state);
+    syncPanelPlayer(store.state);
+    renderNow(store.state);
   });
 
   // 1. Seletor gráfico de formato / layout

@@ -357,4 +357,22 @@ await runner(msg('!playlist https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PLr
 assert(store.state.now !== null, 'Playlist via URL iniciou primeira música');
 assert(store.state.queue.length > 0, 'Restante da playlist entrou na fila');
 
+console.log('\n32) Desativar função de música (musicEnabled = false): comandos de música bloqueados e aviso enviado');
+store.update((s) => {
+  s.config.musicEnabled = false;
+  s.now = null;
+  s.queue = [];
+});
+await runner(msg('!play musica teste', { userId: 'u_disabled_1', displayName: 'UserDis1' }));
+assert(sent.at(-1).includes('desativado'), 'Avisou que o sistema de música está desativado');
+assert(store.state.now === null, 'Música não tocou quando desativado');
+
+await runner(msg('!skip', { userId: 'mod1', displayName: 'Mod1', mod: true }));
+
+store.update((s) => {
+  s.config.musicEnabled = true;
+});
+await runner(msg('!play musica teste', { userId: 'u_disabled_2', displayName: 'UserDis2' }));
+assert(store.state.now !== null, 'Música volta a tocar após reativar');
+
 console.log('\n✅ Smoke test concluído.\n');
