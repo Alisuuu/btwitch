@@ -37,12 +37,12 @@ const runner = createRunner({
     return catalog;
   },
   fetchAi: async (q) => {
-    if (q.includes('pula essa música')) return { ok: true, text: 'Com prazer, mestre! !skip' };
+    if (q.includes('pula essa música')) return { ok: true, text: 'Com prazer, chefia! !skip' };
     if (q.includes('remove a música 1')) return { ok: true, text: 'Removendo da fila agora mesmo! !remover 1' };
     if (q.includes('pausa o som')) return { ok: true, text: 'Pausado imediatamente! !pausar' };
     if (q.includes('coloca volume 33')) return { ok: true, text: 'Volume ajustado! !vol 33' };
-    if (q.includes('adiciona duas músicas')) return { ok: true, text: 'Colocando ambas, meu mestre genial! !play Música Teste A !play Música Teste B' };
-    if (q.includes('add 5 músicas')) return { ok: true, text: 'Às suas ordens mestre! !play 1. Canção Um !play 2. Canção Dois !play 3. Canção Três !play 4. Canção Quatro !play 5. Canção Cinco' };
+    if (q.includes('adiciona duas músicas')) return { ok: true, text: 'Colocando ambas, chefia! !play Música Teste A !play Música Teste B' };
+    if (q.includes('add 5 músicas')) return { ok: true, text: 'Às suas ordens, chefia! !play 1. Canção Um !play 2. Canção Dois !play 3. Canção Três !play 4. Canção Quatro !play 5. Canção Cinco' };
     if (q.includes('toca uma playlist de rock')) return { ok: true, text: 'Essa função de música está desativada no momento. !play playlist rock' };
     if (q.includes('mostra a fila pra mim')) return { ok: true, text: 'Olha o que vem por aí, chefe: !fila' };
     if (q.includes('olha o que tá tocando')) return { ok: true, text: 'Segura aí, chefia: !atual' };

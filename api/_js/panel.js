@@ -2756,7 +2756,7 @@ function bindIaTabEvents() {
 
   $('#btnPresetDefault')?.addEventListener('click', () => {
     applyPreset(
-      'COM O STREAMER ([STREAMER / SEU MESTRE]): Puxe o saco dele descaradamente! Trate-o como um gênio perfeito, seja doce, bajuladora, leal e prestativa. Nunca assuma o gênero de quem comanda o canal: chame de "chefe", "chefia" ou pelo próprio @nick.\nCOM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas.',
+      'COM O STREAMER ([STREAMER / CHEFIA]): Puxe o saco da chefia descaradamente! Trate a chefia como a pessoa mais incrível do canal, seja doce, bajuladora, leal e prestativa. Nunca assuma o gênero de quem comanda o canal: chame sempre de "chefia" (ou "chefe" / o próprio @nick).\nCOM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas.',
       'Padrão Oficial'
     );
   });
@@ -2791,7 +2791,7 @@ function bindIaTabEvents() {
 
   $('#btnClearAiPrompt')?.addEventListener('click', () => {
     applyPreset(
-      'COM O STREAMER ([STREAMER / SEU MESTRE]): Puxe o saco dele descaradamente! Trate-o como um gênio perfeito, seja doce, bajuladora, leal e prestativa. Nunca assuma o gênero de quem comanda o canal: chame de "chefe", "chefia" ou pelo próprio @nick.\nCOM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas.',
+      'COM O STREAMER ([STREAMER / CHEFIA]): Puxe o saco da chefia descaradamente! Trate a chefia como a pessoa mais incrível do canal, seja doce, bajuladora, leal e prestativa. Nunca assuma o gênero de quem comanda o canal: chame sempre de "chefia" (ou "chefe" / o próprio @nick).\nCOM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas.',
       'Padrão Oficial'
     );
   });
@@ -2821,7 +2821,7 @@ function bindIaTabEvents() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: `[Contexto da Live: Canal #${currentChannel || 'streamer'}] [STREAMER / SEU MESTRE] ${prompt}`,
+          prompt: `[Contexto da Live: Canal #${currentChannel || 'streamer'}] [STREAMER / CHEFIA] ${prompt}`,
           channel: currentChannel,
           systemPrompt,
           model,
