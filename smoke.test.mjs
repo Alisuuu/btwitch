@@ -24,7 +24,9 @@ const catalog = [
 
 let iaAddRockCalls = 0; // controla a1ª/2ª tentativa do retry no grupo 34
 let iaAddcomCalls = 0;  // controla a1ª/2ª tentativa do retry de !addcom no grupo 35
-const iaPrompts = [];   // todos os prompts enviados à IA (valida o retry do grupo 34/35)
+let iaCountCalls = 0;   // tentativas do retry por QUANTIDADE no grupo 36a
+let iaCount2Calls = 0;  // tentativas do grupo 36b (contagem já cumprida = sem retry)
+const iaPrompts = [];   // todos os prompts enviados à IA (valida o retry do grupo 34/35/36)
 
 const runner = createRunner({
   store,
@@ -73,6 +75,16 @@ const runner = createRunner({
       return { ok: true, text: 'Criando agora, chefe! !addcom teste Resposta AI' };
     }
     if (q.includes('crie o comando ping2')) return { ok: true, text: 'Já já, chefe, só um instante que eu monto isso pra você.' };
+    // Grupo 36: contagem de músicas — 1ª tentativa entrega menos do que o pedido
+    if (q.includes('adicione 3 músicas')) {
+      iaCountCalls += 1;
+      if (iaCountCalls < 2) return { ok: true, text: '!play Música Teste A' };
+      return { ok: true, text: '!play Música Teste A !play Música Teste B !play Faixa Três' };
+    }
+    if (q.includes('adicione 2 músicas')) {
+      iaCount2Calls += 1;
+      return { ok: true, text: '!play Música Teste A !play Música Teste B' };
+    }
     return {
       ok: true,
       text: 'Tsc, precisava me incomodar pra perguntar isso? A resposta é óbvia, seu ignorante.'
@@ -542,5 +554,33 @@ assert(sent.at(-1).includes('Comando !ping2 ativo'), 'o comando !ping2 criado re
 
 // d) retry de múltiplas músicas manda listar exatamente N comandos !play
 assert(iaPrompts.some((p) => p.includes('adicione 10 músicas') && p.includes('10 comandos !play')), 'retry de "adicione 10 músicas" pede exatamente 10 comandos !play');
+
+console.log('\n36) IA respeita a QUANTIDADE exata de músicas pedida (retry por contagem)');
+store.update((s) => {
+  s.config.ai.enabled = true;
+  s.config.globalCooldown = 0;
+  s.config.musicEnabled = true;
+  s.now = null;
+  s.queue = [];
+});
+
+// a) pediu 3, a IA entregou 1 na 1ª tentativa: o retry cobra a contagem e a 2ª entrega 3
+n0 = sent.length;
+iaCountCalls = 0;
+await runner(msg('!ia adicione 3 músicas', STREAMER_IA));
+await new Promise((r) => setTimeout(r, 600));
+assert(iaCountCalls === 2, 'IA foi consultada 2x (retry por contagem disparou)');
+assert((store.state.now ? 1 : 0) + store.state.queue.length === 3, 'as 3 músicas pedidas entraram de verdade');
+assert(sent.slice(n0).some((t) => t.startsWith('!play ')), '!play foi emitido para o chat');
+assert(iaPrompts.some((p) => p.includes('adicione 3 músicas') && p.includes('3 comandos !play')), 'retry pede exatamente 3 comandos !play');
+
+// b) quando a contagem já vem certa na 1ª tentativa, não há retry extra
+store.update((s) => { s.now = null; s.queue = []; });
+n0 = sent.length;
+iaCount2Calls = 0;
+await runner(msg('!ia adicione 2 músicas', STREAMER_IA));
+await new Promise((r) => setTimeout(r, 600));
+assert(iaCount2Calls === 1, 'sem retry quando a IA já cumpriu a contagem');
+assert((store.state.now ? 1 : 0) + store.state.queue.length === 2, 'as 2 músicas entraram na fila');
 
 console.log('\n✅ Smoke test concluído.\n');

@@ -35,7 +35,7 @@ export function buildSystemPrompt(customPersonality = '', musicEnabled = true) {
 - NUNCA diga que você não consegue pedir música no app, que não tem acesso ao app, ou que a função está desativada, desligada ou indisponível! Isso é terminantemente PROIBIDO quando o sistema está ativo.
 - Qualquer usuário (streamer, moderador ou espectador) pode pedir para você colocar ou pedir música (ex: "pede uma música", "toca linkin park", "coloca rock", "pede algo no app", "põe playlist de trap", "bota um som", "add 5 músicas", "pede 10 músicas").
 - Sempre que pedirem para você pedir, tocar, adicionar ou recomendar música(s), você DEVE obedecer na hora e INCLUIR OBRIGATORIAMENTE o comando "!play <Artista - Nome da Música>" para CADA UMA das músicas pedidas!
-- Se pedirem mais de uma música (ex: "pede 5 músicas", "pede 10 músicas alternativas", "bota playlist de rock"), você DEVE listar TODAS elas usando o comando "!play <Artista - Nome da Música>" separado para CADA MÚSICA!
+- Se pedirem mais de uma música (ex: "pede 5 músicas", "pede 10 músicas alternativas", "bota playlist de rock"), você DEVE listar TODAS elas usando o comando "!play <Artista - Nome da Música>" separado para CADA MÚSICA! O número de comandos !play deve ser exatamente o que pediram (ex: 10 músicas = 10 comandos !play, nem mais nem menos).
 - O aplicativo do streamer escuta o chat e executa o comando !play que você gerar, tocando a música no celular!
 
 COMO FORMATAR O COMANDO DE MÚSICA:
@@ -56,7 +56,7 @@ COMANDO DE PEDIDO DE MÚSICA (aliases: !p, !sr, !pedir, !tocar, !playlist, !pl):
 - Formatação do comando (idêntica ao modo ativo):
   Para uma música: inclua "!play <Artista - Nome da Música>".
   Exemplo: "Com prazer, chefe! !play Linkin Park - Numb"
-  Para múltiplas músicas ou playlist: um "!play" separado para CADA música na mesma resposta.
+  Para múltiplas músicas ou playlist: um "!play" separado para CADA música na mesma resposta, em número exato ao pedido.
   Exemplo: "!play Arctic Monkeys - Do I Wanna Know !play The Strokes - Reptilia !play Radiohead - Creep"`;
 
   return `Você é Alive (@alivebot1), uma IA e bot de música residente no chat ao vivo da Twitch deste canal.
@@ -135,10 +135,15 @@ export async function askAiDirect(prompt, cfg = {}, deps = {}) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 20000);
 
+  // A pergunta (e a nota corretiva do retry) ficam no FINAL do prompt: o corte preserva o início
+  // (contexto da live) e sempre o fim, para o modelo nunca perder o pedido nem a instrução.
+  const boundedPrompt = prompt.length > 900
+    ? `${prompt.slice(0, 250)} … ${prompt.slice(-645)}`
+    : prompt;
   const messages = [
     { role: 'system', content: sys },
     ...history,
-    { role: 'user', content: prompt.slice(0, 450) },
+    { role: 'user', content: boundedPrompt },
   ];
 
   try {
@@ -754,20 +759,30 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
 
     let clean = sanitizeAiReply(res.text);
 
-    // Pedido de AÇÃO sem o comando correspondente na resposta: uma única nova tentativa com instrução
-    // corretiva. Evita respostas só conversacionais que prometem a ação sem executá-la (ex: "fila zerada"
-    // sem !limpar) e, em pedidos de comando novo, exige !addcom mesmo que a IA tenha emitido outro comando.
-    const hasAnyCommand = /![a-z]/i.test(clean);
-    const hasAddcom = /(?:^|\s)!addcom\b/i.test(clean);
-    const needsRetry = (isAddcomIntent ? !hasAddcom : !hasAnyCommand) &&
-      (isControlIntent || isMusicIntent || isAddcomIntent);
-    if (needsRetry) {
+    // Pedido de AÇÃO sem o comando correspondente (ou com !play a menos do que a quantidade pedida):
+    // até duas novas tentativas com instrução corretiva — a segunda ocorre só quando faltam músicas.
+    // Evita respostas só conversacionais que prometem a ação sem executá-la (ex: "fila zerada" sem
+    // !limpar), exige !addcom em pedidos de comando novo e cobra a QUANTIDADE exata de músicas.
+    const playCount = (t) => (t.match(/(?:^|\s)!play\b/gi) || []).length;
+    const targetCount = countMatch ? Number(countMatch[1]) : 0;
+    let attempt = 0;
+    while (attempt < 2) {
+      const hasAnyCommand = /![a-z]/i.test(clean);
+      const hasAddcom = /(?:^|\s)!addcom\b/i.test(clean);
+      const countShort = isMusicIntent && targetCount > 0 && playCount(clean) < targetCount;
+      const needsRetry = attempt === 0
+        ? (isAddcomIntent ? !hasAddcom : (isControlIntent || isMusicIntent) && (!hasAnyCommand || countShort))
+        : countShort;
+      if (!needsRetry) break;
+      attempt += 1;
       let retryNote = '[IMPORTANTE: este pedido exige uma AÇÃO REAL no chat. Sua resposta DEVE conter o comando correspondente — ex.: !play <Artista - Nome> para pedir música, !limpar para limpar a fila, !skip para pular, !vol <n> para volume, !addcom <nome> <resposta> para criar comando. NUNCA responda apenas conversando e NUNCA afirme que fez algo ("feito!", "limpei", "adicionei") sem emitir o comando: sem o comando, nada é executado.';
       if (isAddcomIntent) {
         retryNote += ' Se o pedido é para CRIAR ou ADICIONAR um comando personalizado, o comando certo é !addcom <nome> <resposta> — NUNCA responda com !play nem trate como pedido de música.';
       }
-      if (countMatch) {
-        retryNote += ` Liste exatamente ${countMatch[1]} comandos !play (um para cada música pedida).`;
+      if (targetCount) {
+        retryNote += ` Liste exatamente ${targetCount} comandos !play (um para cada música pedida)`;
+        if (attempt > 1) retryNote += ` — sua resposta anterior trouxe apenas ${playCount(clean)}`;
+        retryNote += '.';
       }
       retryNote += ']';
       const retry = await askAiDirect(
@@ -775,9 +790,8 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
         store.state.config,
         { fetchAi, history: aiHistory.slice(-8) }
       );
-      if (retry.ok && (retry.text || '').trim()) {
-        clean = sanitizeAiReply(retry.text);
-      }
+      if (!(retry.ok && (retry.text || '').trim())) break;
+      clean = sanitizeAiReply(retry.text);
     }
 
     // Guarda histórico de diálogo para manter contexto nas próximas perguntas

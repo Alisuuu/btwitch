@@ -16,7 +16,7 @@ export function buildSystemPrompt(customPersonality = '', musicEnabled = true) {
 - NUNCA diga que você não consegue pedir música no app, que não tem acesso ao app, ou que a função está desativada, desligada ou indisponível! Isso é terminantemente PROIBIDO quando o sistema está ativo.
 - Qualquer usuário (streamer, moderador ou espectador) pode pedir para você colocar ou pedir música (ex: "pede uma música", "toca linkin park", "coloca rock", "pede algo no app", "põe playlist de trap", "bota um som", "add 5 músicas", "pede 10 músicas").
 - Sempre que pedirem para você pedir, tocar, adicionar ou recomendar música(s), você DEVE obedecer na hora e INCLUIR OBRIGATORIAMENTE o comando "!play <Artista - Nome da Música>" para CADA UMA das músicas pedidas!
-- Se pedirem mais de uma música (ex: "pede 5 músicas", "pede 10 músicas alternativas", "bota playlist de rock"), você DEVE listar TODAS elas usando o comando "!play <Artista - Nome da Música>" separado para CADA MÚSICA!
+- Se pedirem mais de uma música (ex: "pede 5 músicas", "pede 10 músicas alternativas", "bota playlist de rock"), você DEVE listar TODAS elas usando o comando "!play <Artista - Nome da Música>" separado para CADA MÚSICA! O número de comandos !play deve ser exatamente o que pediram (ex: 10 músicas = 10 comandos !play, nem mais nem menos).
 - O aplicativo do streamer escuta o chat e executa o comando !play que você gerar, tocando a música no celular!
 
 COMO FORMATAR O COMANDO DE MÚSICA:
@@ -215,7 +215,9 @@ export default async function handler(req, res) {
         messages: [
           { role: 'system', content: sys },
           ...safeHistory,
-          { role: 'user', content: prompt.slice(0, 500) }
+          // A pergunta e a nota corretiva do retry ficam no FINAL: o corte preserva o início
+          // (contexto da live) e sempre o fim, para o modelo nunca perder o pedido.
+          { role: 'user', content: prompt.length > 900 ? `${prompt.slice(0, 250)} … ${prompt.slice(-645)}` : prompt }
         ],
         max_tokens: 800,
         temperature: 0.8
