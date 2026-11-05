@@ -654,8 +654,9 @@ main {
 /* ------------------------------------------------------- studio cockpit */
 .studio-cockpit {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
+  min-width: 0;
 }
 @media (min-width: 1180px) {
   .studio-cockpit {
@@ -676,6 +677,9 @@ main {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-width: 0;
+}
+.studio-sidebar {
   min-width: 0;
 }
 
@@ -2040,16 +2044,85 @@ label.check {
 
   /* Fila & Histórico */
   .studio-cockpit {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 14px;
     width: 100%;
+    min-width: 0;
+  }
+  .studio-main,
+  .studio-sidebar {
+    min-width: 0;
+    max-width: 100%;
   }
   .box {
     padding: 14px;
     width: 100%;
+    min-width: 0;
     box-sizing: border-box;
     overflow-x: hidden;
   }
+
+  /* Cards da fila/últimas tocadas: nunca estourar a largura no celular.
+     O título encolhe com ellipsis e os botões da direita ficam sempre visíveis. */
+  .queue {
+    max-height: none;
+    padding-right: 0;
+    min-width: 0;
+  }
+  .queue li {
+    min-width: 0;
+    width: 100%;
+    gap: 8px;
+    padding: 8px 10px;
+    flex-wrap: wrap;
+  }
+  .q-pos {
+    width: 18px;
+    flex: 0 0 18px;
+    font-size: 11px;
+  }
+  .q-thumb {
+    width: 44px;
+    height: 30px;
+    flex: 0 0 44px;
+  }
+  .q-main {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .q-title {
+    font-size: 12.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .q-sub {
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .q-acts {
+    flex: 0 0 auto;
+    margin-left: auto;
+    gap: 4px;
+    flex-wrap: nowrap;
+  }
+  .q-acts button {
+    flex: 0 0 auto;
+    padding: 5px 7px;
+    min-width: 30px;
+  }
+  .queue-head {
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+  }
+  .queue-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
   .queue-item {
     padding: 10px;
     gap: 10px;
