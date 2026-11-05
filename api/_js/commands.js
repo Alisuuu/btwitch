@@ -76,6 +76,7 @@ ${musicInstructions}
 CATÁLOGO COMPLETO DE COMANDOS DO BOT — VOCÊ CONHECE TODOS E PODE USAR QUALQUER UM:
 (Basta incluir o comando dentro da sua resposta que o sistema executará a ação na live e no app automaticamente)
 REGRA: só inclua um comando quando for EXECUTÁ-LO de verdade. Nunca decore a frase listando comandos que você não vai usar.
+REGRA DE AÇÃO (OBRIGATÓRIA): se o pedido for uma AÇÃO (adicionar/pedir música, limpar a fila, pular, pausar, seguir, volume, remover, criar ou apagar comando), sua resposta DEVE conter o comando correspondente. NUNCA responda apenas conversando e NUNCA afirme que fez algo ("feito!", "limpei", "adicionei") sem emitir o comando — sem o comando, a ação NÃO acontece.
 
 PEDIDO E CONSULTA (qualquer pessoa pode usar):
 - !fila (aliases: !queue, !songs, !lista): mostrar as próximas músicas da fila. Use quando perguntarem "o que vem depois?", "mostra a fila", "quantas músicas tem".
@@ -684,6 +685,15 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
 
     if (!isStreamer && !cooldownOk(msg, 'ia', 4)) return;
 
+    // Intenção detectada na pergunta: exige que a IA emita o comando (retry) e alimenta os
+    // fallbacks de execução caso a IA responda apenas conversando.
+    const qLower = question.toLowerCase();
+    const isControlIntent = /\b(pula|pular|passa|passar|remove|remover|tira|tirar|pausa|pausar|pause|seguir|despausa|despausar|volume|vol|muta|mutar|mudo|limpa|limpar|clear|para|parar|stop|sorteia|sortear|shuffle)\b/i.test(qLower);
+    const isMusicIntent = !isControlIntent && (
+      /\b(toca|tocar|toque|põe|poe|playlist|adiciona|adicionar|adicione|add|pede|pedir|peça|manda|mande)\b/i.test(qLower) ||
+      (/\b(coloca|colocar|coloque|bota|botar|bote|ponha)\b/i.test(qLower) && !/\b(volume|som|somzinho|audio|áudio)\b/i.test(qLower))
+    );
+
     // Contexto dinâmico completo da live e da reprodução atual para a IA ter total consciência do ambiente
     const chName = store.state?.config?.channel || msg.channel || 'streamer';
     const now = store.state?.now;
@@ -719,20 +729,37 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
       return;
     }
 
-    let clean = (res.text || '').replace(/[\r\n]+/g, ' ').trim();
-    if ((clean.startsWith('"') && clean.endsWith('"')) || (clean.startsWith('“') && clean.endsWith('”'))) {
-      clean = clean.slice(1, -1).trim();
-    }
-    // Remove qualquer emoji para manter o chat limpo e sem poluição
-    clean = clean.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/gu, '').replace(/\s+/g, ' ').trim();
+    const sanitizeAiReply = (txt) => {
+      let c = (txt || '').replace(/[\r\n]+/g, ' ').trim();
+      if ((c.startsWith('"') && c.endsWith('"')) || (c.startsWith('“') && c.endsWith('”'))) {
+        c = c.slice(1, -1).trim();
+      }
+      // Remove qualquer emoji para manter o chat limpo e sem poluição
+      c = c.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/gu, '').replace(/\s+/g, ' ').trim();
+      // Elimina alucinações de que música/áudio/playlist está desativada ou que não consegue pedir no app.
+      // Vale também com o player interno desligado: os !play seguem para o chat e a resposta jamais fala em "desativado".
+      c = c.replace(/\b(essa|a)?\s*(função|reprodução|capacidade)?\s*(de\s+(música|áudio|playlist|tocar))?\s*(está|tá)\s*(desativada|desligada|indisponível)\b[^\.!]*[\.!]/gi, '').trim();
+      c = c.replace(/\b(não|nao)\s+(consigo|posso|tenho\s+como|tenho\s+acesso|sei)\s+([^\.!]*)(no\s+app|no\s+aplicativo|pedir\s+música|tocar\s+música)[^\.!]*[\.!]/gi, '').trim();
+      c = c.replace(/\b(peça|use)\s+(você\s+mesmo|o\s+comando)\s+!play[^\.!]*[\.!]/gi, '').trim();
+      if (!c) {
+        c = isStreamer ? 'Música pedida no app com sucesso, chefe!' : 'Música pedida na live!';
+      }
+      return c;
+    };
 
-    // Elimina alucinações de que música/áudio/playlist está desativada ou que não consegue pedir no app.
-    // Vale também com o player interno desligado: os !play seguem para o chat e a resposta jamais fala em "desativado".
-    clean = clean.replace(/\b(essa|a)?\s*(função|reprodução|capacidade)?\s*(de\s+(música|áudio|playlist|tocar))?\s*(está|tá)\s*(desativada|desligada|indisponível)\b[^\.!]*[\.!]/gi, '').trim();
-    clean = clean.replace(/\b(não|nao)\s+(consigo|posso|tenho\s+como|tenho\s+acesso|sei)\s+([^\.!]*)(no\s+app|no\s+aplicativo|pedir\s+música|tocar\s+música)[^\.!]*[\.!]/gi, '').trim();
-    clean = clean.replace(/\b(peça|use)\s+(você\s+mesmo|o\s+comando)\s+!play[^\.!]*[\.!]/gi, '').trim();
-    if (!clean) {
-      clean = isStreamer ? 'Música pedida no app com sucesso, chefe!' : 'Música pedida na live!';
+    let clean = sanitizeAiReply(res.text);
+
+    // Pedido de AÇÃO sem nenhum comando na resposta: uma única nova tentativa com instrução corretiva.
+    // Evita respostas só conversacionais que prometem a ação sem executá-la (ex: "fila zerada" sem !limpar).
+    if (!/![a-z]/i.test(clean) && (isControlIntent || isMusicIntent)) {
+      const retry = await askAiDirect(
+        `${userPrompt}\n[IMPORTANTE: este pedido exige uma AÇÃO REAL no chat. Sua resposta DEVE conter o comando correspondente — ex.: !play <Artista - Nome> para pedir música, !limpar para limpar a fila, !skip para pular, !vol <n> para volume, !addcom <nome> <resposta> para criar comando. NUNCA responda apenas conversando e NUNCA afirme que fez algo ("feito!", "limpei", "adicionei") sem emitir o comando: sem o comando, nada é executado.]`,
+        store.state.config,
+        { fetchAi, history: aiHistory.slice(-8) }
+      );
+      if (retry.ok && (retry.text || '').trim()) {
+        clean = sanitizeAiReply(retry.text);
+      }
     }
 
     // Guarda histórico de diálogo para manter contexto nas próximas perguntas
@@ -787,25 +814,21 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
           }
         }
 
-        // 3. Se ainda vazio e usuário pediu música ou playlist expressamente
-        if (songsToPlay.length === 0) {
-          const qLower = question.toLowerCase();
-          const isControlIntent = /\b(pula|pular|passa|passar|remove|remover|tira|tirar|pausa|pausar|pause|seguir|despausa|despausar|volume|vol|muta|mutar|mudo|limpa|limpar|clear|para|parar|stop|sorteia|sortear|shuffle)\b/i.test(qLower);
-          const isMusicIntent = !isControlIntent && (
-            /\b(toca|tocar|toque|põe|poe|playlist|adiciona|adicionar|add|pede|pedir)\b/i.test(qLower) ||
-            (/\b(coloca|colocar|bota|botar)\b/i.test(qLower) && !/\b(volume|som|somzinho|audio|áudio)\b/i.test(qLower))
-          );
-          if (isMusicIntent) {
-            let cleanTerm = question
-              .replace(/^(por favor|alive|bot|ia|ei|ô)\s*,?\s*/i, '')
-              .replace(/\b(toca|tocar|toque|coloca|colocar|põe|poe|bota|botar|adiciona|adicionar|add|pede|pedir)\b/i, '')
-              .replace(/\b(uma|um|a|o|umas|uns)?\s*(música|musica|som|faixa|somzinho|playlist|coletânea|coletanea|set)?\s*(de|do|da|dos|das|pra mim|pro chat|aqui|no app)?\b/gi, '')
-              .trim();
-            if (cleanTerm.length >= 2 && !/^[0-9]+$/.test(cleanTerm)) {
-              songsToPlay.push(cleanTerm);
-            } else {
-              songsToPlay.push('Queen - Bohemian Rhapsody');
-            }
+        // 3. Se ainda vazio e usuário pediu música expressamente (usa as intenções já detectadas)
+        if (songsToPlay.length === 0 && isMusicIntent) {
+          const wantsMany = /\b\d+\s*m[uú]sicas?\b|\b(v[áa]rias|alternativas?|outras)\b/i.test(question);
+          let cleanTerm = question
+            .replace(/^(por favor|alive|bot|ia|ei|ô)\s*,?\s*/i, '')
+            .replace(/\b(toca|tocar|toque|coloca|colocar|coloque|põe|poe|ponha|bota|botar|bote|adiciona|adicionar|adicione|add|pede|pedir|peça|manda|mande)\b/i, '')
+            .replace(/\b(uma|um|a|o|umas|uns)?\s*(música|musica|som|faixa|somzinho|playlist|coletânea|coletanea|set)?\s*(de|do|da|dos|das|pra mim|pro chat|aqui|no app)?\b/gi, '')
+            .replace(/\b\d+\b/g, ' ') // quantidades ("10 músicas") não são nome de música
+            .replace(/\b(músicas|musicas|faixas|soms|pedidos?)\b/gi, ' ') // plurais que a regex acima deixa passar
+            .replace(/\s+/g, ' ')
+            .trim();
+          if (cleanTerm.length >= 2 && !/^[0-9]+$/.test(cleanTerm) && !wantsMany) {
+            songsToPlay.push(cleanTerm);
+          } else {
+            songsToPlay.push('Queen - Bohemian Rhapsody');
           }
         }
 
@@ -893,8 +916,14 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
             }
           }
 
-          // 7. !limpar
-          if (/(?:^|\s)!(limpar|clear)\b/i.test(clean)) {
+          // 7. !limpar — emitido pela IA ou, se ela só respondeu conversando, detectado no pedido
+          // (mesmo padrão do !vol com intenção natural; nunca dispara com "não limpe" nem com pedidos de remover)
+          const wantsClear = /(?:^|\s)!(limpar|clear)\b/i.test(clean)
+            || (/\b(limpa|limpe|limpar|limpeza|esvazia|esvaziar|zera|zerar|reset[a-z]*|clear)\b/i.test(question)
+              && !/\b(não|nao|nunca)\b/i.test(question)
+              && !/\b(remove|remover|tira|tirar|apaga|apagar)\b/i.test(question)
+              && !/\d/.test(question));
+          if (wantsClear) {
             await cmdClear([], aiMsgContext);
             send('!limpar');
           }

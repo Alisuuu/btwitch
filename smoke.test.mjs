@@ -22,6 +22,8 @@ const catalog = [
   { id: 'eeee5555555', title: 'Música Teste E', channel: 'Canal E', thumb: '', duration: 180 },
 ];
 
+let iaAddRockCalls = 0; // controla a1ª/2ª tentativa do retry no grupo 34
+
 const runner = createRunner({
   store,
   send: (t) => sent.push(t),
@@ -52,6 +54,14 @@ const runner = createRunner({
     if (q.includes('apaga o comando salve')) return { ok: true, text: 'Apagando, chefe: !delcom salve' };
     if (q.includes('toca uma música')) return { ok: true, text: 'Fechado, chefia! !play Música Teste A' };
     if (q.includes('cria o comando teste')) return { ok: true, text: 'Criando agora, chefe! !addcom teste Resposta Teste' };
+    // Grupo 34: IAs propositalmente não cooperativas (só conversam, sem comandos)
+    if (q.includes('limpe a fila agora')) return { ok: true, text: 'Feito, chefia! A fila tá zerada.' };
+    if (q.includes('adicione 10 músicas')) return { ok: true, text: 'A fila tá lotada de jazz, chefia. Quer que eu limpe isso aí ou vai deixar o chat cochilar?' };
+    if (q.includes('adicione rock novo')) {
+      iaAddRockCalls += 1;
+      if (iaAddRockCalls < 2) return { ok: true, text: 'Deixa comigo, chefe! Que tal um clássico?' };
+      return { ok: true, text: 'Fechado, chefia! !play Música Teste B' };
+    }
     return {
       ok: true,
       text: 'Tsc, precisava me incomodar pra perguntar isso? A resposta é óbvia, seu ignorante.'
@@ -448,5 +458,43 @@ await runner(msg('!ia apaga o comando salve', STREAMER_IA));
 await new Promise((r) => setTimeout(r, 200));
 assert(!store.state.config.custom.salve, 'IA apagou comando personalizado via !delcom');
 assert(!replyOf(n0).includes('!delcom'), 'comando !delcom foi removido da resposta conversacional');
+
+console.log('\n34) IA conversa sem emitir comando: retry + fallbacks executam a ação de verdade');
+store.update((s) => {
+  s.config.ai.enabled = true;
+  s.config.globalCooldown = 0;
+  s.now = { id: 'm_now34', title: 'Música Na Fila', duration: 100, position: 0, paused: false, requestedBy: 'Fã' };
+  s.queue = [{ id: 'm_q34', title: 'Jazz Chato', duration: 100, position: 0, paused: false, requestedBy: 'Fã' }];
+});
+
+// a) "limpe" com IA que só conversa: o fallback limpa a fila de verdade
+n0 = sent.length;
+await runner(msg('!ia limpe a fila agora', STREAMER_IA));
+await new Promise((r) => setTimeout(r, 500));
+assert(store.state.queue.length === 0, 'Fila realmente limpa mesmo com a IA respondendo só conversa');
+assert(sent.slice(n0).some((t) => t.includes('Fila limpa por StreamerTop')), 'cmdClear executou de verdade ("Fila limpa por ..." foi ao chat)');
+
+// b) pedido de música em que a IA esqueceu o !play na 1ª tentativa: o retry emite o comando
+n0 = sent.length;
+await runner(msg('!ia adicione rock novo', STREAMER_IA));
+await new Promise((r) => setTimeout(r, 500));
+assert(iaAddRockCalls === 2, 'IA foi consultada 2x (retry corretivo disparou)');
+assert(sent.slice(n0).some((t) => t.startsWith('!play Música Teste B')), '!play foi emitido para o chat na segunda tentativa');
+assert(store.state.queue.some((x) => x.id === 'bbbb2222222'), 'Música entrou na fila interna');
+
+// c) IA falha nas 2 tentativas ("adicione 10 músicas"): o fallback ainda emite !play
+n0 = sent.length;
+await runner(msg('!ia adicione 10 músicas', STREAMER_IA));
+await new Promise((r) => setTimeout(r, 500));
+assert(sent.slice(n0).some((t) => t.startsWith('!play ')), 'Fallback emitiu !play para o chat mesmo sem cooperar da IA');
+assert(!sent.slice(n0).some((t) => /desativad/i.test(t)), 'Nenhuma resposta fala em música desativada');
+
+// d) "não limpe" não pode limpar por engano
+store.update((s) => { s.queue = [{ id: 'm_keep', title: 'Pra Ficar', duration: 90, position: 0, paused: false, requestedBy: 'Fã' }]; });
+n0 = sent.length;
+await runner(msg('!ia não limpe a fila', STREAMER_IA));
+await new Promise((r) => setTimeout(r, 500));
+assert(store.state.queue.length === 1, '"não limpe" não limpou a fila');
+assert(!sent.slice(n0).some((t) => t.includes('Fila limpa por')), 'Nenhuma limpeza executada com negação');
 
 console.log('\n✅ Smoke test concluído.\n');

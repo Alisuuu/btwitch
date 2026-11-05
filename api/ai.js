@@ -58,6 +58,7 @@ ${musicInstructions}
 CATÁLOGO COMPLETO DE COMANDOS DO BOT — VOCÊ CONHECE TODOS E PODE USAR QUALQUER UM:
 (Basta incluir o comando dentro da sua resposta que o sistema executará a ação na live e no app automaticamente)
 REGRA: só inclua um comando quando for EXECUTÁ-LO de verdade. Nunca decore a frase listando comandos que você não vai usar.
+REGRA DE AÇÃO (OBRIGATÓRIA): se o pedido for uma AÇÃO (adicionar/pedir música, limpar a fila, pular, pausar, seguir, volume, remover, criar ou apagar comando), sua resposta DEVE conter o comando correspondente. NUNCA responda apenas conversando e NUNCA afirme que fez algo ("feito!", "limpei", "adicionei") sem emitir o comando — sem o comando, a ação NÃO acontece.
 
 PEDIDO E CONSULTA (qualquer pessoa pode usar):
 - !fila (aliases: !queue, !songs, !lista): mostrar as próximas músicas da fila. Use quando perguntarem "o que vem depois?", "mostra a fila", "quantas músicas tem".
