@@ -99,7 +99,7 @@ CONTROLE DA REPRODUÇÃO (somente [STREAMER / CHEFIA] ou [MODERADOR]):
   "volume no talo" ou "máximo" -> !vol 100. "Mudo" / "silencia" -> !vol 0.
 
 PERSONALIZAÇÃO E IA (somente [STREAMER / CHEFIA] ou [MODERADOR]):
-- !addcom <nome> <resposta>: criar um comando personalizado (ex: "!addcom salve Salve {user}!").
+- !addcom <nome> <resposta>: criar um comando personalizado (ex: "!addcom salve Salve {user}!"). Se pedirem para adicionar ou criar um comando, use !addcom — NUNCA trate esse pedido como pedido de música (!play).
 - !delcom <nome>: apagar um comando personalizado existente.
 - !ia <pergunta> / !ia on / !ia off: é o comando que o chat usa para falar com você. SAIBA que ele existe, mas NUNCA emita !ia dentro da sua própria resposta (isso criaria uma loop infinita).
 
@@ -688,8 +688,13 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     // Intenção detectada na pergunta: exige que a IA emita o comando (retry) e alimenta os
     // fallbacks de execução caso a IA responda apenas conversando.
     const qLower = question.toLowerCase();
-    const isControlIntent = /\b(pula|pular|passa|passar|remove|remover|tira|tirar|pausa|pausar|pause|seguir|despausa|despausar|volume|vol|muta|mutar|mudo|limpa|limpar|clear|para|parar|stop|sorteia|sortear|shuffle)\b/i.test(qLower);
-    const isMusicIntent = !isControlIntent && (
+    const isControlIntent = /\b(pula|pular|passa|passar|remove|remover|tira|tirar|pausa|pausar|pause|seguir|despausa|despausar|volume|vol|muta|mutar|mudo|limpa|limpe|limpar|clear|para|parar|stop|sorteia|sortear|shuffle)\b/i.test(qLower);
+    // Pedido de criar comando (!addcom): "comando" + verbo de criação. NUNCA é pedido de música.
+    const isAddcomIntent = /\b(comando|comandos)\b/i.test(qLower) &&
+      /\b(adicione|adicionar|adiciona|add|cria|criar|crie|criamos|faz|fazer|faca|faça|salva|salvar|salve|monta|montar|cadastra|cadastrar|novo|nova|novos|novas)\b/i.test(qLower) &&
+      !/\b(apaga|apagar|apague|delete|deleta|deletar|remover|remove|tira|tirar)\b/i.test(qLower);
+    const countMatch = question.match(/\b(\d{1,2})\s*m[uú]sicas?\b/i);
+    const isMusicIntent = !isControlIntent && !isAddcomIntent && (
       /\b(toca|tocar|toque|põe|poe|playlist|adiciona|adicionar|adicione|add|pede|pedir|peça|manda|mande)\b/i.test(qLower) ||
       (/\b(coloca|colocar|coloque|bota|botar|bote|ponha)\b/i.test(qLower) && !/\b(volume|som|somzinho|audio|áudio)\b/i.test(qLower))
     );
@@ -749,11 +754,24 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
 
     let clean = sanitizeAiReply(res.text);
 
-    // Pedido de AÇÃO sem nenhum comando na resposta: uma única nova tentativa com instrução corretiva.
-    // Evita respostas só conversacionais que prometem a ação sem executá-la (ex: "fila zerada" sem !limpar).
-    if (!/![a-z]/i.test(clean) && (isControlIntent || isMusicIntent)) {
+    // Pedido de AÇÃO sem o comando correspondente na resposta: uma única nova tentativa com instrução
+    // corretiva. Evita respostas só conversacionais que prometem a ação sem executá-la (ex: "fila zerada"
+    // sem !limpar) e, em pedidos de comando novo, exige !addcom mesmo que a IA tenha emitido outro comando.
+    const hasAnyCommand = /![a-z]/i.test(clean);
+    const hasAddcom = /(?:^|\s)!addcom\b/i.test(clean);
+    const needsRetry = (isAddcomIntent ? !hasAddcom : !hasAnyCommand) &&
+      (isControlIntent || isMusicIntent || isAddcomIntent);
+    if (needsRetry) {
+      let retryNote = '[IMPORTANTE: este pedido exige uma AÇÃO REAL no chat. Sua resposta DEVE conter o comando correspondente — ex.: !play <Artista - Nome> para pedir música, !limpar para limpar a fila, !skip para pular, !vol <n> para volume, !addcom <nome> <resposta> para criar comando. NUNCA responda apenas conversando e NUNCA afirme que fez algo ("feito!", "limpei", "adicionei") sem emitir o comando: sem o comando, nada é executado.';
+      if (isAddcomIntent) {
+        retryNote += ' Se o pedido é para CRIAR ou ADICIONAR um comando personalizado, o comando certo é !addcom <nome> <resposta> — NUNCA responda com !play nem trate como pedido de música.';
+      }
+      if (countMatch) {
+        retryNote += ` Liste exatamente ${countMatch[1]} comandos !play (um para cada música pedida).`;
+      }
+      retryNote += ']';
       const retry = await askAiDirect(
-        `${userPrompt}\n[IMPORTANTE: este pedido exige uma AÇÃO REAL no chat. Sua resposta DEVE conter o comando correspondente — ex.: !play <Artista - Nome> para pedir música, !limpar para limpar a fila, !skip para pular, !vol <n> para volume, !addcom <nome> <resposta> para criar comando. NUNCA responda apenas conversando e NUNCA afirme que fez algo ("feito!", "limpei", "adicionei") sem emitir o comando: sem o comando, nada é executado.]`,
+        `${userPrompt}\n${retryNote}`,
         store.state.config,
         { fetchAi, history: aiHistory.slice(-8) }
       );
@@ -783,7 +801,7 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
 
         // 1. Extração de músicas (suporta múltiplos !play juntos, listas numeradas e listas com vírgula/quebras)
         const songsToPlay = [];
-        if (clean.includes('!play')) {
+        if (!isAddcomIntent && clean.includes('!play')) {
           const rawBlocks = clean.split(/!play\s+/i).slice(1);
           for (const block of rawBlocks) {
             const songOnly = block.split(/(?:^|\s)!(?:skip|pular|next|passar|pausar|pause|pausa|seguir|resume|continuar|despausar|remover?|remove|tirar|del|vol(?:ume)?|limpar|clear|resetar|parar|stop|cancelar|sortear|shuffle|misturar|random|fila|queue|songs|lista|atual|np|tocando|song|currentsong|musica|som|ajuda|help|comandos|ping|addcom|delcom|ia|ai|pedir|playlist|tocar|sr|pl|p|tts)\b/gi)[0].trim();
@@ -800,7 +818,7 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
         }
 
         // 2. Se a IA gerou lista numerada (1. Artista - Música) ou marcadores (- Artista - Música) sem !play
-        if (songsToPlay.length === 0) {
+        if (!isAddcomIntent && songsToPlay.length === 0) {
           const parts = clean.split(/(?:^|[\n\r]+|\s+)[0-9]{1,2}[.)\-]+\s+/).slice(1);
           if (parts.length > 0) {
             for (const p of parts) {
@@ -815,14 +833,18 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
         }
 
         // 3. Se ainda vazio e usuário pediu música expressamente (usa as intenções já detectadas)
-        if (songsToPlay.length === 0 && isMusicIntent) {
+        if (!isAddcomIntent && songsToPlay.length === 0 && isMusicIntent) {
           const wantsMany = /\b\d+\s*m[uú]sicas?\b|\b(v[áa]rias|alternativas?|outras)\b/i.test(question);
+          // Extração palavra a palavra: a regex opcional antiga colava tokens ("limpe e 20" virava
+          // "limpee20" e os dígitos colados escapavam da limpeza, virando nome de música).
           let cleanTerm = question
             .replace(/^(por favor|alive|bot|ia|ei|ô)\s*,?\s*/i, '')
-            .replace(/\b(toca|tocar|toque|coloca|colocar|coloque|põe|poe|ponha|bota|botar|bote|adiciona|adicionar|adicione|add|pede|pedir|peça|manda|mande)\b/i, '')
-            .replace(/\b(uma|um|a|o|umas|uns)?\s*(música|musica|som|faixa|somzinho|playlist|coletânea|coletanea|set)?\s*(de|do|da|dos|das|pra mim|pro chat|aqui|no app)?\b/gi, '')
+            .replace(/[¿?¡!.,;:]+/g, ' ')
+            .replace(/\b(toca|tocar|toque|coloca|colocar|coloque|põe|poe|ponha|bota|botar|bote|adiciona|adicionar|adicione|add|pede|pedir|peça|peca|manda|mande|limpa|limpe|limpar|limpeza|esvazia|esvaziar|zera|zerar|reset[a-z]*|pula|pular|passa|passar|skip|remove|remover|tira|tirar|quer|queria|quero|ouvir|ouve)\b/gi, ' ')
             .replace(/\b\d+\b/g, ' ') // quantidades ("10 músicas") não são nome de música
-            .replace(/\b(músicas|musicas|faixas|soms|pedidos?)\b/gi, ' ') // plurais que a regex acima deixa passar
+            .replace(/\b(por favor|pra mim|pro chat|no app|aqui)\b/gi, ' ')
+            .replace(/\b(uma|um|a|o|umas|uns|de|do|da|dos|das)\b/gi, ' ')
+            .replace(/\b(m[uú]sicas?|faixas?|soms?|somzinho|playlist|colet[aâ]nea|set|pedidos?)\b/gi, ' ')
             .replace(/\s+/g, ' ')
             .trim();
           if (cleanTerm.length >= 2 && !/^[0-9]+$/.test(cleanTerm) && !wantsMany) {
@@ -918,11 +940,15 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
 
           // 7. !limpar — emitido pela IA ou, se ela só respondeu conversando, detectado no pedido
           // (mesmo padrão do !vol com intenção natural; nunca dispara com "não limpe" nem com pedidos de remover)
+          // Dígitos só bloqueiam a limpeza quando vêm junto de palavra de música/posição/número:
+          // "limpe a fila 2" não limpa, mas "limpe e adicione 20" limpa de verdade.
+          const digitBlocksClear = /\d/.test(question) &&
+            /\b(m[uú]sicas?|faixas?|posi[cç][ãa]o|posi[cç][õo]es|n[uú]meros?|pedidos?|itens?)\b/i.test(question);
           const wantsClear = /(?:^|\s)!(limpar|clear)\b/i.test(clean)
             || (/\b(limpa|limpe|limpar|limpeza|esvazia|esvaziar|zera|zerar|reset[a-z]*|clear)\b/i.test(question)
               && !/\b(não|nao|nunca)\b/i.test(question)
               && !/\b(remove|remover|tira|tirar|apaga|apagar)\b/i.test(question)
-              && !/\d/.test(question));
+              && !digitBlocksClear);
           if (wantsClear) {
             await cmdClear([], aiMsgContext);
             send('!limpar');
@@ -950,6 +976,15 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
           const delcomMatch = clean.match(/(?:^|\s)!delcom\s+!?([a-z0-9_]{2,20})\b/i);
           if (delcomMatch && delcomMatch[1]) {
             await cmdDelcom([delcomMatch[1]], aiMsgContext);
+          }
+
+          // 11b. Fallback: pedido de criar comando em que a IA só conversou (sem !addcom na resposta)
+          if (isAddcomIntent && !/(?:^|\s)!addcom\b/i.test(clean)) {
+            const nameM = question.match(/\bcomando\s+(?:(?:o|a|os|as|um|uma|novo|nova|novos|novas|chamado|chamada|de\s+nome|nome)\s+)*!?([a-z0-9_]{2,20})\b/i);
+            const addcomName = (nameM ? nameM[1] : '').toLowerCase();
+            if (addcomName && !/^(e|em|para|com|sem|que|um|uma|the)$/i.test(addcomName)) {
+              await cmdAddcom([addcomName, `Salve {user}! Comando !${addcomName} ativo.`], aiMsgContext);
+            }
           }
         }
 

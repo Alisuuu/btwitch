@@ -23,6 +23,8 @@ const catalog = [
 ];
 
 let iaAddRockCalls = 0; // controla a1ª/2ª tentativa do retry no grupo 34
+let iaAddcomCalls = 0;  // controla a1ª/2ª tentativa do retry de !addcom no grupo 35
+const iaPrompts = [];   // todos os prompts enviados à IA (valida o retry do grupo 34/35)
 
 const runner = createRunner({
   store,
@@ -39,6 +41,7 @@ const runner = createRunner({
     return catalog;
   },
   fetchAi: async (q) => {
+    iaPrompts.push(q);
     if (q.includes('pula essa música')) return { ok: true, text: 'Com prazer, chefia! !skip' };
     if (q.includes('remove a música 1')) return { ok: true, text: 'Removendo da fila agora mesmo! !remover 1' };
     if (q.includes('pausa o som')) return { ok: true, text: 'Pausado imediatamente! !pausar' };
@@ -62,6 +65,14 @@ const runner = createRunner({
       if (iaAddRockCalls < 2) return { ok: true, text: 'Deixa comigo, chefe! Que tal um clássico?' };
       return { ok: true, text: 'Fechado, chefia! !play Música Teste B' };
     }
+    // Grupo 35: pedidos mistos (limpar + adicionar) e pedidos de comando novo
+    if (q.includes('limpe e adicione 20')) return { ok: true, text: 'Feito, chefia! Tá tudo zerado e cheio de música nova.' };
+    if (q.includes('adicione um comando teste')) {
+      iaAddcomCalls += 1;
+      if (iaAddcomCalls < 2) return { ok: true, text: 'Deixa comigo criar isso, chefe!' };
+      return { ok: true, text: 'Criando agora, chefe! !addcom teste Resposta AI' };
+    }
+    if (q.includes('crie o comando ping2')) return { ok: true, text: 'Já já, chefe, só um instante que eu monto isso pra você.' };
     return {
       ok: true,
       text: 'Tsc, precisava me incomodar pra perguntar isso? A resposta é óbvia, seu ignorante.'
@@ -496,5 +507,40 @@ await runner(msg('!ia não limpe a fila', STREAMER_IA));
 await new Promise((r) => setTimeout(r, 500));
 assert(store.state.queue.length === 1, '"não limpe" não limpou a fila');
 assert(!sent.slice(n0).some((t) => t.includes('Fila limpa por')), 'Nenhuma limpeza executada com negação');
+
+console.log('\n35) IA: pedidos mistos, contagem exata e criação de comando sem cooperar');
+store.update((s) => {
+  s.config.ai.enabled = true;
+  s.config.globalCooldown = 0;
+  s.queue = [{ id: 'm_q35', title: 'Pra Limpar', duration: 90, position: 0, paused: false, requestedBy: 'Fã' }];
+});
+
+// a) "limpe e adicione 20": limpa de verdade e NÃO emite !play com termo lixo colado
+n0 = sent.length;
+await runner(msg('!ia limpe e adicione 20', STREAMER_IA));
+await new Promise((r) => setTimeout(r, 500));
+assert(store.state.queue.length === 0, '"limpe e adicione 20" limpou a fila');
+assert(sent.slice(n0).some((t) => t.includes('Fila limpa por StreamerTop')), 'cmdClear executou de verdade ("Fila limpa por ..." foi ao chat)');
+assert(!sent.slice(n0).some((t) => /^!play\b/i.test(t)), 'nenhum !play com termo lixo foi emitido');
+
+// b) pedido de comando novo em que a IA responde !play na 1ª tentativa: o retry exige !addcom
+iaAddcomCalls = 0;
+n0 = sent.length;
+await runner(msg('!ia adicione um comando teste', STREAMER_IA));
+await new Promise((r) => setTimeout(r, 500));
+assert(iaAddcomCalls === 2, 'IA foi consultada 2x (retry de !addcom disparou)');
+assert(store.state.config.custom.teste?.text === 'Resposta AI', 'IA criou o comando !teste via !addcom na 2ª tentativa');
+assert(!sent.slice(n0).some((t) => t.includes('!play comandoteste')), 'nenhum !play comandoteste foi ao chat');
+
+// c) IA nunca emite !addcom: fallback cria o comando a partir do nome pedido
+n0 = sent.length;
+await runner(msg('!ia crie o comando ping2', STREAMER_IA));
+await new Promise((r) => setTimeout(r, 500));
+assert(store.state.config.custom.ping2?.text.includes('Comando !ping2 ativo'), 'fallback criou !ping2 mesmo com a IA só conversando');
+await runner(msg('!ping2', { userId: 'u35', displayName: 'User35' }));
+assert(sent.at(-1).includes('Comando !ping2 ativo'), 'o comando !ping2 criado responde no chat');
+
+// d) retry de múltiplas músicas manda listar exatamente N comandos !play
+assert(iaPrompts.some((p) => p.includes('adicione 10 músicas') && p.includes('10 comandos !play')), 'retry de "adicione 10 músicas" pede exatamente 10 comandos !play');
 
 console.log('\n✅ Smoke test concluído.\n');

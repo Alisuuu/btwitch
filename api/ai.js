@@ -81,7 +81,7 @@ CONTROLE DA REPRODUÇÃO (somente [STREAMER / CHEFIA] ou [MODERADOR]):
   "volume no talo" ou "máximo" -> !vol 100. "Mudo" / "silencia" -> !vol 0.
 
 PERSONALIZAÇÃO E IA (somente [STREAMER / CHEFIA] ou [MODERADOR]):
-- !addcom <nome> <resposta>: criar um comando personalizado (ex: "!addcom salve Salve {user}!").
+- !addcom <nome> <resposta>: criar um comando personalizado (ex: "!addcom salve Salve {user}!"). Se pedirem para adicionar ou criar um comando, use !addcom — NUNCA trate esse pedido como pedido de música (!play).
 - !delcom <nome>: apagar um comando personalizado existente.
 - !ia <pergunta> / !ia on / !ia off: é o comando que o chat usa para falar com você. SAIBA que ele existe, mas NUNCA emita !ia dentro da sua própria resposta (isso criaria uma loop infinita).
 
