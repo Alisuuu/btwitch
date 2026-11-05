@@ -1029,25 +1029,38 @@
         </div>
       </div>
 
-      <!-- Parâmetros de Conexão (Groq / OpenAI) -->
+      <!-- Parâmetros de Conexão (Groq / OpenAI / OpenRouter / Gemini / DeepSeek) -->
       <div class="box">
         <h2>
           <span data-icon="cpu" data-size="16"></span>
           Provedor &amp; Conexão de IA
         </h2>
-        <p class="hint">Por padrão, o Alive Bot utiliza a infraestrutura de ultra-baixa latência da Groq. Você também pode conectar sua própria chave e escolher o modelo de linguagem.</p>
+        <p class="hint">Escolha o provedor, cole a sua própria chave e o Alive Bot usa essa chave em todos os pedidos da IA. Padrão: Groq (ultra-baixa latência).</p>
 
         <div class="form-grid" style="margin-top: 12px;">
-          <label>URL Base da API
-            <input type="text" id="cfgAiBaseUrl" placeholder="https://api.groq.com/openai/v1" autocomplete="off" spellcheck="false">
+          <label>Provedor de IA
+            <select id="cfgAiProvider">
+              <option value="groq">Groq (padrão, ultra rápido)</option>
+              <option value="openai">OpenAI (ChatGPT)</option>
+              <option value="openrouter">OpenRouter (vários modelos)</option>
+              <option value="gemini">Google Gemini</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="custom">URL personalizada</option>
+            </select>
           </label>
           <label>Modelo LLM
-            <input type="text" id="cfgAiModel" placeholder="qwen/qwen3.8-27b" autocomplete="off" spellcheck="false">
+            <input type="text" id="cfgAiModel" list="aiModelList" placeholder="qwen/qwen3.8-27b" autocomplete="off" spellcheck="false">
           </label>
-          <label style="grid-column: 1 / -1;">Chave de API Própria (Opcional)
-            <input type="password" id="cfgAiApiKey" placeholder="Deixe em branco para usar a chave padrão do servidor" autocomplete="off" spellcheck="false">
+          <label style="grid-column: 1 / -1;">URL Base da API
+            <input type="text" id="cfgAiBaseUrl" placeholder="https://api.groq.com/openai/v1" autocomplete="off" spellcheck="false">
+          </label>
+          <label style="grid-column: 1 / -1;">Chave de API do Provedor (sua chave)
+            <input type="password" id="cfgAiApiKey" placeholder="gsk_... | sk-... | sk-or-v1-... | AIza..." autocomplete="off" spellcheck="false">
           </label>
         </div>
+
+        <datalist id="aiModelList"></datalist>
+        <div id="aiProviderHint" style="margin-top: 10px; font-size: 11.5px; color: var(--muted); line-height: 1.55;"></div>
 
         <div style="margin-top: 12px; display: flex; justify-content: flex-end;">
           <button class="btn secondary" id="btnSaveAiAdvanced" type="button">

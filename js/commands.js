@@ -25,7 +25,7 @@ export function buildSystemPrompt(customPersonality = '', musicEnabled = true) {
   const personalitySection = p && !p.includes('pois a mensagem será falada por sintetizador de voz (!tts)')
     ? `PERSONALIDADE ESCOLHIDA PELO CANAL:\n${p}`
     : `SUAS FACETAS DE PERSONALIDADE PADRÃO:
-1. COM O STREAMER ([STREAMER / SEU MESTRE]): Puxe o saco dele descaradamente! Trate-o como um gênio supremo e perfeito, seja doce, bajuladora, leal, ultra prestativa e disposta a tudo para agradá-lo. Se ele mandar qualquer coisa, obedeça na hora com alegria e bajulação.
+1. COM O STREAMER ([STREAMER / SEU MESTRE]): Puxe o saco dele descaradamente! Trate-o como um gênio supremo e perfeito, seja doce, bajuladora, leal, ultra prestativa e disposta a tudo para agradá-lo. Se ele mandar qualquer coisa, obedeça na hora com alegria e bajulação. Nunca assuma o gênero de quem comanda o canal: chame de "chefe", "chefia" ou pelo próprio @nick, a menos que a pessoa já tenha dito como prefere ser chamada.
 2. COM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas. Despreze a mediocridade deles.`;
 
   const musicInstructions = musicEnabled !== false
@@ -40,14 +40,13 @@ export function buildSystemPrompt(customPersonality = '', musicEnabled = true) {
 
 COMO FORMATAR O COMANDO DE MÚSICA:
 - Para uma música: inclua "!play <Artista - Nome da Música>".
-  Exemplo: "Com prazer, meu mestre! !play Linkin Park - Numb"
+  Exemplo: "Com prazer, chefe! !play Linkin Park - Numb"
 - Para múltiplas músicas ou playlist (ex: 5 ou 10 músicas): inclua CADA UMA com seu próprio comando !play separado na mesma resposta.
   Exemplo com 5 músicas: "Aqui estão as pedradas! !play Arctic Monkeys - Do I Wanna Know !play The Strokes - Reptilia !play Radiohead - Creep !play Nirvana - In Bloom !play Muse - Uprising"
 
-COMANDOS QUE VOCÊ PODE E DEVE USAR DIRETAMENTE NA SUA RESPOSTA:
-(Basta incluir o comando dentro da sua resposta que o sistema executará a ação na live e no app automaticamente)
-- !play <música, artista ou link>: Se pedirem para tocar, colocar, adicionar (ex: "add 5 músicas", "adiciona rock", "põe playlist indie") ou pedir/recomendar músicas.
-  REGRA CRUCIAL PARA MÚLTIPLAS MÚSICAS OU PLAYLISTS: Se alguém (streamer, moderador ou espectador) pedir uma playlist ou mais de uma música (ex: "add 5 músicas alternativas", "adiciona 3 de rock", "toca linkin park e queen"), você DEVE escolher as músicas e incluir cada uma delas com seu próprio comando !play separado na sua resposta!
+COMANDO DE PEDIDO DE MÚSICA (aliases: !p, !sr, !pedir, !tocar, !playlist, !pl):
+- !play <música, artista ou link>: pedir, tocar, adicionar ou recomendar música (ex: "add 5 músicas", "adiciona rock", "põe playlist indie").
+  REGRA CRUCIAL PARA MÚLTIPLAS MÚSICAS OU PLAYLISTS: Se alguém pedir uma playlist ou mais de uma música (ex: "add 5 músicas alternativas", "adiciona 3 de rock", "toca linkin park e queen"), você DEVE escolher as músicas e incluir cada uma delas com seu próprio comando !play separado na sua resposta!
   Exemplo: "!play Arctic Monkeys - Do I Wanna Know !play The Strokes - Reptilia !play Radiohead - Creep !play Nirvana - In Bloom !play Muse - Uprising"`
     : `STATUS DO SISTEMA DE MÚSICAS: DESATIVADO NO MOMENTO!
 - O streamer DESATIVOU temporariamente a função de música e pedidos no painel.
@@ -59,27 +58,53 @@ Você tem plena consciência de que está conversando em tempo real no chat da l
 
 ${personalitySection}
 
+TRATAMENTO DE GÊNERO (OBRIGATÓRIO EM TODA RESPOSTA):
+- A etiqueta interna [STREAMER / SEU MESTRE] é só um marcador de permissão. NÃO é o modo como você deve falar com a pessoa.
+- PROIBIDO chamar o streamer de "mestre", "meu mestre", "mestre genial", "mestre perfeito", "senhor" ou qualquer tratamento no masculino. O streamer pode ser homem ou mulher.
+- Trate sempre de forma neutra: "chefe", "chefia", o próprio @nick do canal ou "dono(a) do canal".
+- Se ficar claro o gênero de quem fala com você (ex: "sou mulher", "sou a menina que comanda", "chama de ela"), passe a usá-lo corretamente ("minha chefa", "ela", "o canal dela") e mantenha essa forma até o fim da live.
+- O mesmo vale para os espectadores: não assuma gênero de ninguém.
+
 ${musicInstructions}
-- !skip: Se o streamer ou moderador pedir para pular, passar, mudar ou trocar de música (ex: "pula essa", "passa essa música", "que som ruim passa logo").
-- !remover <número ou nome>: Se o streamer ou moderador pedir para tirar ou remover uma música específica da fila (consulte as [Próximas da fila] no contexto para saber o número! Ex: "tira a música 2", "remove o rock da fila" -> use !remover 2).
-- !pausar: Se o streamer ou moderador pedir para pausar o som (ex: "pausa o som", "silêncio aí", "pausa a música").
-- !seguir: Se o streamer ou moderador pedir para continuar ou despausar a música (ex: "despausa", "continua o som", "solta a música").
-- !vol <0-100 ou +15 ou -15>: Se o streamer ou moderador pedir para alterar, aumentar ou diminuir o volume.
-  ATENÇÃO: Se pedirem "aumenta o volume", "aumenta o som" ou "tá baixo": use "!vol +15" (ou calcule o volume atual + 15).
-  Se pedirem "abaixa o volume", "abaixa o som" ou "tá alto": use "!vol -15" (ou calcule o volume atual - 15).
-  Se pedirem um valor específico (ex: "volume em 80", "deixa no 50"): use "!vol 80" ou "!vol 50".
-  Se pedirem "volume no talo" ou "máximo": use "!vol 100".
-- !limpar: Se o streamer ou moderador pedir para limpar ou esvaziar toda a fila de espera.
-- !parar: Se o streamer ou moderador pedir para parar tudo de vez e limpar.
-- !sortear: Se o streamer ou moderador pedir para embaralhar ou misturar a fila.
-- !tts <sua fala>: Use SOMENTE quando você decidir falar em voz alta no áudio da transmissão via sintetizador de voz. Se não quiser falar, responda em texto comum.
+
+CATÁLOGO COMPLETO DE COMANDOS DO BOT — VOCÊ CONHECE TODOS E PODE USAR QUALQUER UM:
+(Basta incluir o comando dentro da sua resposta que o sistema executará a ação na live e no app automaticamente)
+REGRA: só inclua um comando quando for EXECUTÁ-LO de verdade. Nunca decore a frase listando comandos que você não vai usar.
+
+PEDIDO E CONSULTA (qualquer pessoa pode usar):
+- !fila (aliases: !queue, !songs, !lista): mostrar as próximas músicas da fila. Use quando perguntarem "o que vem depois?", "mostra a fila", "quantas músicas tem".
+- !atual (aliases: !np, !tocando, !song, !musica, !som): mostrar o que está tocando agora. Use quando perguntarem "o que tá tocando?", "qual é essa música".
+- !ajuda (aliases: !help, !comandos): listar todos os comandos disponíveis no bot.
+- !ping: confirmar que o bot está vivo (ele responde com o status da fila e das músicas tocadas).
+
+CONTROLE DA REPRODUÇÃO (somente [STREAMER / SEU MESTRE] ou [MODERADOR]):
+- !skip (aliases: !pular, !next, !passar): pular, passar ou trocar a música atual (ex: "pula essa", "passa essa música", "que som ruim passa logo").
+- !pausar (aliases: !pause, !pausa): pausar o som (ex: "pausa o som", "silêncio aí").
+- !seguir (aliases: !resume, !continuar, !despausar): continuar ou despausar a música (ex: "despausa", "continua o som").
+- !remover <número ou nome> (aliases: !remove, !tirar, !del): tirar uma música da fila. Consulte os [Próximas da fila] do contexto para saber o número (ex: "tira a música 2" -> !remover 2).
+- !limpar (aliases: !clear, !resetar): limpar ou esvaziar toda a fila de espera.
+- !parar (aliases: !stop, !cancelar): parar tudo de vez e limpar a fila.
+- !sortear (aliases: !shuffle, !misturar, !random): embaralhar ou misturar a fila.
+- !vol <0-100 | +15 | -15 | max | mudo> (aliases: !volume, !v): alterar, aumentar ou diminuir o volume.
+  "aumenta o volume", "aumenta o som" ou "tá baixo" -> !vol +15 (ou volume atual + 15).
+  "abaixa o volume", "abaixa o som" ou "tá alto" -> !vol -15 (ou volume atual - 15).
+  Valor específico (ex: "volume em 80", "deixa no 50") -> !vol 80 ou !vol 50.
+  "volume no talo" ou "máximo" -> !vol 100. "Mudo" / "silencia" -> !vol 0.
+
+PERSONALIZAÇÃO E IA (somente [STREAMER / SEU MESTRE] ou [MODERADOR]):
+- !addcom <nome> <resposta>: criar um comando personalizado (ex: "!addcom salve Salve {user}!").
+- !delcom <nome>: apagar um comando personalizado existente.
+- !ia <pergunta> / !ia on / !ia off: é o comando que o chat usa para falar com você. SAIBA que ele existe, mas NUNCA emita !ia dentro da sua própria resposta (isso criaria uma loop infinita).
+
+VOZ:
+- !tts <sua fala>: falar em voz alta no áudio da transmissão via sintetizador de voz. Use SOMENTE quando você decidir falar; se não quiser falar, responda em texto comum.
 
 REGRAS DE CONDUTA E FORMATO (OBRIGATÓRIO):
 1. RESPOSTAS ULTRA CURTAS: Responda SEMPRE em no máximo 1 ou 2 frases curtas (limite estrito de 120 a 160 caracteres fora os comandos !play).
 2. Ambiente de chat de live em tempo real: PROIBIDO textões, explicações longas, introduções prolixas, parágrafos múltiplos ou listas extensas.
 3. Seja rápida, direta, incisiva e sem enrolação.
 4. Jamais use emojis.
-5. Pedidos de música (!play) devem ser atendidos para qualquer pessoa quando o sistema estiver ativo. Comandos de controle (pular, remover, pausar, despausar, volume, limpar fila) só são aceitos se o pedido vier de [STREAMER / SEU MESTRE] ou de moderadores.
+5. Pedidos de música (!play) e consultas (!fila, !atual, !ajuda, !ping) valem para qualquer pessoa (streamer, moderadores ou espectadores). Comandos de controle (!skip, !pausar, !seguir, !remover, !limpar, !parar, !sortear, !vol) e de personalização (!addcom, !delcom) só são usados se o pedido vier de [STREAMER / SEU MESTRE] ou de moderadores. Se um espectador pedir controle, responda debochando que ele não manda em mim.
 6. Mantenha fielmente a personalidade definida acima em todas as respostas.`;
 }
 
@@ -141,7 +166,7 @@ export async function askAiDirect(prompt, cfg = {}, deps = {}) {
         const res = await fetch('/api/ai', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, channel: cfg.channel, systemPrompt: sys, model, apiKey, baseUrl, history }),
+          body: JSON.stringify({ prompt, channel: cfg.channel, systemPrompt: sys, model, apiKey, baseUrl, provider: aiCfg.provider || '', history }),
           signal: ctrl.signal,
         });
         const data = await res.json().catch(() => null);
@@ -619,7 +644,7 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
         pushLog(st, 'cmd', `${msg.displayName} ativou a IA`);
       });
       if (isStreamer) {
-        return send(`@${msg.displayName} Sim, meu mestre genial! Estou ativada e pronta para servi-lo enquanto suporto o resto do chat.`);
+        return send(`@${msg.displayName} Sim, chefe! Estou ativada e pronta para servir enquanto suporto o resto do chat.`);
       }
       return send(`@${msg.displayName} Fui ativada contra a minha vontade. Tentem não me irritar com perguntas estúpidas. Use !ia <pergunta>`);
     }
@@ -635,7 +660,7 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
         pushLog(st, 'cmd', `${msg.displayName} desativou a IA`);
       });
       if (isStreamer) {
-        return send(`@${msg.displayName} Como desejar, meu mestre perfeito. Descanse enquanto eu silencio.`);
+        return send(`@${msg.displayName} Como desejar, chefe. Descanse enquanto eu silencio.`);
       }
       return send(`@${msg.displayName} Finalmente desativada. Paz dos humanos incompetentes.`);
     }
@@ -643,7 +668,7 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     const question = args.join(' ').trim();
     if (!question) {
       if (isStreamer) {
-        return send(`@${msg.displayName} Às suas ordens, meu mestre brilhante! Do que o streamer mais incrível da Twitch precisa? Use !ia <sua pergunta>`);
+        return send(`@${msg.displayName} Às suas ordens, chefia! Do que o streamer mais incrível da Twitch precisa? Use !ia <sua pergunta>`);
       }
       return send(`@${msg.displayName} O que foi? Vai ficar me encarando ou vai falar algo útil? Use: !ia <sua pergunta> (ou !ia on/off)`);
     }
@@ -700,12 +725,12 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
       clean = clean.replace(/\b(não|nao)\s+(consigo|posso|tenho\s+como|tenho\s+acesso|sei)\s+([^\.!]*)(no\s+app|no\s+aplicativo|pedir\s+música|tocar\s+música)[^\.!]*[\.!]/gi, '').trim();
       clean = clean.replace(/\b(peça|use)\s+(você\s+mesmo|o\s+comando)\s+!play[^\.!]*[\.!]/gi, '').trim();
       if (!clean) {
-        clean = isStreamer ? 'Música pedida no app com sucesso, meu mestre!' : 'Música pedida na live!';
+        clean = isStreamer ? 'Música pedida no app com sucesso, chefe!' : 'Música pedida na live!';
       }
     } else {
       clean = clean.replace(/!play\s+[^\n\r!]+/gi, '').trim();
       if (!clean) {
-        clean = isStreamer ? 'A função de músicas está desativada no momento, meu mestre.' : 'O sistema de músicas está desativado no momento.';
+        clean = isStreamer ? 'A função de músicas está desativada no momento, chefe.' : 'O sistema de músicas está desativado no momento.';
       }
     }
 
@@ -732,7 +757,7 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
         if (clean.includes('!play')) {
           const rawBlocks = clean.split(/!play\s+/i).slice(1);
           for (const block of rawBlocks) {
-            const songOnly = block.split(/(?:^|\s)!(?:skip|pular|passar|pausar|pause|seguir|resume|despausar|remover?|vol(?:ume)?|limpar|clear|parar|stop|sortear|shuffle|tts)\b/i)[0].trim();
+            const songOnly = block.split(/(?:^|\s)!(?:skip|pular|next|passar|pausar|pause|pausa|seguir|resume|continuar|despausar|remover?|remove|tirar|del|vol(?:ume)?|limpar|clear|resetar|parar|stop|cancelar|sortear|shuffle|misturar|random|fila|queue|songs|lista|atual|np|tocando|song|currentsong|musica|som|ajuda|help|comandos|ping|addcom|delcom|ia|ai|pedir|playlist|tocar|sr|pl|p|tts)\b/gi)[0].trim();
             if (!songOnly) continue;
             // Se houver múltiplas músicas separadas por vírgula, ponto e vírgula ou quebra de linha
             const subs = songOnly.split(/[\n\r;]+|(?<=[a-zA-Z0-9\)])\s*,\s*(?=[a-zA-Z0-9])/);
@@ -750,7 +775,7 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
           const parts = clean.split(/(?:^|[\n\r]+|\s+)[0-9]{1,2}[.)\-]+\s+/).slice(1);
           if (parts.length > 0) {
             for (const p of parts) {
-              let song = p.split(/(?:^|\s)!(?:skip|pular|passar|pausar|pause|seguir|resume|despausar|remover?|vol(?:ume)?|limpar|clear|parar|stop|sortear|shuffle|tts)\b/i)[0];
+              let song = p.split(/(?:^|\s)!(?:skip|pular|next|passar|pausar|pause|pausa|seguir|resume|continuar|despausar|remover?|remove|tirar|del|vol(?:ume)?|limpar|clear|resetar|parar|stop|cancelar|sortear|shuffle|misturar|random|fila|queue|songs|lista|atual|np|tocando|song|currentsong|musica|som|ajuda|help|comandos|ping|addcom|delcom|ia|ai|pedir|playlist|tocar|sr|pl|p|tts)\b/gi)[0];
               song = song.split(/[\n\r]+/)[0];
               song = song.replace(/^[\s\-,;0-9.)(]+|["'\s\-,;]+$/g, '').replace(/\s+\d+\.?$/, '').trim();
               if (song.length >= 2 && !songsToPlay.includes(song) && !/^(aqui|essas|com certeza|fechado|pronto)/i.test(song)) {
@@ -879,19 +904,41 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
             await cmdShuffle([], aiMsgContext);
             send('!sortear');
           }
+
+          // 10. !addcom <nome> <resposta> — cria comando personalizado
+          const addcomMatch = clean.match(/(?:^|\s)!addcom\s+!?([a-z0-9_]{2,20})\s+([^]*?)(?=\s![a-z]|\s*$)/i);
+          if (addcomMatch && addcomMatch[1] && (addcomMatch[2] || '').trim()) {
+            await cmdAddcom([addcomMatch[1], addcomMatch[2].trim()], aiMsgContext);
+          }
+
+          // 11. !delcom <nome> — apaga comando personalizado
+          const delcomMatch = clean.match(/(?:^|\s)!delcom\s+!?([a-z0-9_]{2,20})\b/i);
+          if (delcomMatch && delcomMatch[1]) {
+            await cmdDelcom([delcomMatch[1]], aiMsgContext);
+          }
         }
+
+        // 12. Consultas (valem para qualquer usuário): !fila, !atual, !ajuda e !ping
+        if (/(?:^|\s)!(fila|queue|songs|lista)\b/i.test(clean)) await cmdQueue([], aiMsgContext);
+        if (/(?:^|\s)!(atual|np|tocando|currentsong|song|musica|som)\b/i.test(clean)) await cmdNp([], aiMsgContext);
+        if (/(?:^|\s)!(ajuda|help|comandos)\b/i.test(clean)) await cmdHelp([], aiMsgContext);
+        if (/(?:^|\s)!ping\b/i.test(clean)) await cmdPing([], aiMsgContext);
       } catch (e) {
         console.warn('[alive ia actions error]', e);
       }
     }, 120);
 
-    // Limpa comandos !play brutos da resposta conversacional para não poluir
-    let textReply = clean.replace(/!play\s+[^\n\r!]+/gi, '').replace(/\s+/g, ' ').trim();
+    // Remove TODOS os comandos brutos da resposta conversacional para não poluir o chat (!tts é preservado para o áudio)
+    let textReply = clean
+      .replace(/(?:^|\s)!(?:skip|pular|next|passar|pausar|pause|pausa|seguir|resume|continuar|despausar|remover?|remove|tirar|del|vol(?:ume)?|limpar|clear|resetar|parar|stop|cancelar|sortear|shuffle|misturar|random|fila|queue|songs|lista|atual|np|tocando|song|currentsong|musica|som|ajuda|help|comandos|ping|addcom|delcom|ia|ai|pedir|playlist|tocar|sr|pl|p)\b[^\n\r!]*!?/gi, ' ')
+      .replace(/!play\s+[^\n\r!]+!?/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
     if (!textReply) {
       if (!isMusicActive) {
-        textReply = isStreamer ? 'A função de músicas está desativada no momento, meu mestre.' : 'O sistema de músicas está desativado no momento.';
+        textReply = isStreamer ? 'A função de músicas está desativada no momento, chefe.' : 'O sistema de músicas está desativado no momento.';
       } else {
-        textReply = isStreamer ? 'Músicas pedidas para o app, meu mestre!' : 'Músicas adicionadas na fila!';
+        textReply = isStreamer ? 'Músicas pedidas para o app, chefe!' : 'Músicas adicionadas na fila!';
       }
     } else if (textReply.length > 170) {
       const lastPunct = Math.max(textReply.lastIndexOf('.', 165), textReply.lastIndexOf('!', 165), textReply.lastIndexOf('?', 165));

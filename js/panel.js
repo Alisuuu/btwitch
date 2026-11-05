@@ -2507,6 +2507,7 @@ function saveConfig() {
     if ($('#cfgPoll')) s.config.pollInterval = Math.max(2, Number($('#cfgPoll').value) || 5);
     if (!s.config.ai) s.config.ai = {};
     if ($('#cfgAiEnabled')) s.config.ai.enabled = $('#cfgAiEnabled').checked;
+    if ($('#cfgAiProvider')) s.config.ai.provider = $('#cfgAiProvider').value;
     if ($('#cfgAiBaseUrl')) s.config.ai.baseUrl = $('#cfgAiBaseUrl').value.trim();
     if ($('#cfgAiModel')) s.config.ai.model = $('#cfgAiModel').value.trim();
     if ($('#cfgAiApiKey')) s.config.ai.apiKey = $('#cfgAiApiKey').value.trim();
@@ -2519,6 +2520,99 @@ function saveConfig() {
 
 // ------------------------------------------------------------------- aba ia
 let isEditingAiPrompt = false;
+
+// Provedores de IA compatíveis com a API da OpenAI (baseUrl + modelos + origem da chave)
+const AI_PROVIDERS = {
+  groq: {
+    label: 'Groq',
+    baseUrl: 'https://api.groq.com/openai/v1',
+    models: ['qwen/qwen3.8-27b', 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'openai/gpt-oss-120b', 'mixtral-8x7b-32768'],
+    keyHint: 'Grátis em console.groq.com/keys (chave começa com gsk_).',
+  },
+  openai: {
+    label: 'OpenAI',
+    baseUrl: 'https://api.openai.com/v1',
+    models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini', 'gpt-4.1', 'o4-mini'],
+    keyHint: 'Crie em platform.openai.com/api-keys (chave começa com sk-).',
+  },
+  openrouter: {
+    label: 'OpenRouter',
+    baseUrl: 'https://openrouter.ai/api/v1',
+    models: ['openai/gpt-4o-mini', 'anthropic/claude-3.5-sonnet', 'meta-llama/llama-3.3-70b-instruct', 'google/gemini-2.0-flash-001', 'deepseek/deepseek-chat'],
+    keyHint: 'Crie em openrouter.ai/keys (chave começa com sk-or-v1-).',
+  },
+  gemini: {
+    label: 'Google Gemini',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/v1',
+    models: ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'],
+    keyHint: 'Grátis em aistudio.google.com/apikey (chave começa com AIza).',
+  },
+  deepseek: {
+    label: 'DeepSeek',
+    baseUrl: 'https://api.deepseek.com/v1',
+    models: ['deepseek-chat', 'deepseek-reasoner'],
+    keyHint: 'Crie em platform.deepseek.com (chave começa com sk-).',
+  },
+  custom: {
+    label: 'Personalizado',
+    baseUrl: '',
+    models: [],
+    keyHint: 'Informe uma URL base compatível com a API da OpenAI e a chave correspondente.',
+  },
+};
+
+function inferAiProvider(baseUrl) {
+  const u = String(baseUrl || '').toLowerCase();
+  if (!u) return 'groq';
+  if (u.includes('groq')) return 'groq';
+  if (u.includes('openrouter')) return 'openrouter';
+  if (u.includes('generativelanguage') || u.includes('gemini')) return 'gemini';
+  if (u.includes('deepseek')) return 'deepseek';
+  if (u.includes('openai.com')) return 'openai';
+  return 'custom';
+}
+
+function aiKeyPresent() {
+  return !!($('#cfgAiApiKey')?.value || '').trim() || !!((store.state?.config?.ai || {}).apiKey || '').trim();
+}
+
+// Atualiza o <datalist> de modelos e o aviso do provedor. applyDefaults preenche URL e modelo.
+function updateAiProviderUi({ applyDefaults = false } = {}) {
+  const sel = $('#cfgAiProvider');
+  const key = (sel && sel.value) || inferAiProvider($('#cfgAiBaseUrl')?.value || store.state?.config?.ai?.baseUrl || '');
+  const p = AI_PROVIDERS[key] || AI_PROVIDERS.custom;
+
+  const list = $('#aiModelList');
+  if (list) {
+    list.innerHTML = '';
+    for (const m of p.models) {
+      const o = document.createElement('option');
+      o.value = m;
+      list.appendChild(o);
+    }
+  }
+
+  const hint = $('#aiProviderHint');
+  if (hint) {
+    const status = aiKeyPresent()
+      ? '<span style="color:#4ade80;">chave detectada</span>'
+      : '<span style="color:#fbbf24;">sem chave: será usada a chave padrão do servidor</span>';
+    hint.innerHTML = `<strong style="color:var(--text)">${p.label}</strong> — ${p.keyHint} · ${status}`;
+  }
+
+  if (applyDefaults) {
+    const urlInput = $('#cfgAiBaseUrl');
+    const modelInput = $('#cfgAiModel');
+    if (urlInput && p.baseUrl && urlInput.value.trim() !== p.baseUrl) {
+      urlInput.value = p.baseUrl;
+    }
+    if (modelInput && p.models.length) {
+      const prev = modelInput.value.trim();
+      const isKnownDefault = Object.values(AI_PROVIDERS).some((x) => x.models.includes(prev));
+      if (!prev || isKnownDefault) modelInput.value = p.models[0];
+    }
+  }
+}
 
 function updateAiStatusBadge(enabled) {
   const badge = $('#aiStatusBadge');
@@ -2554,6 +2648,11 @@ function syncIaTab(s) {
   }
   updateAiStatusBadge(isEnabled);
 
+  const provSel = $('#cfgAiProvider');
+  if (provSel && document.activeElement !== provSel) {
+    provSel.value = ai.provider || inferAiProvider(ai.baseUrl);
+  }
+
   if ($('#cfgAiBaseUrl') && document.activeElement !== $('#cfgAiBaseUrl')) {
     $('#cfgAiBaseUrl').value = ai.baseUrl || 'https://api.groq.com/openai/v1';
   }
@@ -2563,6 +2662,7 @@ function syncIaTab(s) {
   if ($('#cfgAiApiKey') && document.activeElement !== $('#cfgAiApiKey')) {
     $('#cfgAiApiKey').value = ai.apiKey || '';
   }
+  updateAiProviderUi();
 
   const ta = $('#cfgAiSystem');
   if (ta && !isEditingAiPrompt && document.activeElement !== ta) {
@@ -2577,16 +2677,18 @@ function saveAiSettings({ showToast = true } = {}) {
   const model = ($('#cfgAiModel')?.value || 'qwen/qwen3.8-27b').trim();
   const apiKey = ($('#cfgAiApiKey')?.value || '').trim();
   const systemPrompt = ($('#cfgAiSystem')?.value || '').trim();
+  const provider = $('#cfgAiProvider')?.value || inferAiProvider(baseUrl);
 
   store.update((s) => {
     if (!s.config) s.config = {};
     if (!s.config.ai) s.config.ai = {};
     s.config.ai.enabled = enabled;
+    s.config.ai.provider = provider;
     s.config.ai.baseUrl = baseUrl;
     s.config.ai.model = model;
     s.config.ai.apiKey = apiKey;
     s.config.ai.systemPrompt = systemPrompt;
-    pushLog(s, 'config', 'Configurações e personalidade da IA salvas');
+    pushLog(s, 'config', `Configurações da IA salvas (provedor: ${AI_PROVIDERS[provider]?.label || provider})`);
   });
 
   isEditingAiPrompt = false;
@@ -2597,6 +2699,24 @@ function saveAiSettings({ showToast = true } = {}) {
 }
 
 function bindIaTabEvents() {
+  $('#cfgAiProvider')?.addEventListener('change', () => {
+    updateAiProviderUi({ applyDefaults: true });
+    saveAiSettings({ showToast: false });
+    const label = AI_PROVIDERS[$('#cfgAiProvider')?.value]?.label || 'personalizado';
+    toast(`Provedor ${label} selecionado. Cole a sua chave e clique em Salvar Parâmetros.`);
+  });
+
+  $('#cfgAiBaseUrl')?.addEventListener('change', () => {
+    const sel = $('#cfgAiProvider');
+    const inferred = inferAiProvider($('#cfgAiBaseUrl')?.value || '');
+    if (sel && sel.value !== 'custom' && sel.value !== inferred) sel.value = inferred;
+    if (sel && sel.value === 'custom' && inferred === 'custom' && !sel.value) sel.value = 'custom';
+    updateAiProviderUi();
+  });
+
+  $('#cfgAiApiKey')?.addEventListener('input', () => updateAiProviderUi());
+  updateAiProviderUi();
+
   $('#cfgAiEnabled')?.addEventListener('change', (e) => {
     updateAiStatusBadge(e.target.checked);
     saveAiSettings({ showToast: false });
@@ -2636,7 +2756,7 @@ function bindIaTabEvents() {
 
   $('#btnPresetDefault')?.addEventListener('click', () => {
     applyPreset(
-      'COM O STREAMER ([STREAMER / SEU MESTRE]): Puxe o saco dele descaradamente! Trate-o como um gênio perfeito, seja doce, bajuladora, leal e prestativa.\nCOM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas.',
+      'COM O STREAMER ([STREAMER / SEU MESTRE]): Puxe o saco dele descaradamente! Trate-o como um gênio perfeito, seja doce, bajuladora, leal e prestativa. Nunca assuma o gênero de quem comanda o canal: chame de "chefe", "chefia" ou pelo próprio @nick.\nCOM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas.',
       'Padrão Oficial'
     );
   });
@@ -2671,7 +2791,7 @@ function bindIaTabEvents() {
 
   $('#btnClearAiPrompt')?.addEventListener('click', () => {
     applyPreset(
-      'COM O STREAMER ([STREAMER / SEU MESTRE]): Puxe o saco dele descaradamente! Trate-o como um gênio perfeito, seja doce, bajuladora, leal e prestativa.\nCOM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas.',
+      'COM O STREAMER ([STREAMER / SEU MESTRE]): Puxe o saco dele descaradamente! Trate-o como um gênio perfeito, seja doce, bajuladora, leal e prestativa. Nunca assuma o gênero de quem comanda o canal: chame de "chefe", "chefia" ou pelo próprio @nick.\nCOM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas.',
       'Padrão Oficial'
     );
   });
@@ -2706,7 +2826,8 @@ function bindIaTabEvents() {
           systemPrompt,
           model,
           apiKey,
-          baseUrl
+          baseUrl,
+          provider: ($('#cfgAiProvider')?.value || aiCfg.provider || '')
         }),
       });
       const data = await res.json().catch(() => null);

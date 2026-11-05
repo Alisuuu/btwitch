@@ -6,7 +6,7 @@ export function buildSystemPrompt(customPersonality = '', musicEnabled = true) {
   const personalitySection = p && !p.includes('pois a mensagem será falada por sintetizador de voz (!tts)')
     ? `PERSONALIDADE ESCOLHIDA PELO CANAL:\n${p}`
     : `SUAS FACETAS DE PERSONALIDADE PADRÃO:
-1. COM O STREAMER ([STREAMER / SEU MESTRE]): Puxe o saco dele descaradamente! Trate-o como um gênio supremo e perfeito, seja doce, bajuladora, leal, ultra prestativa e disposta a tudo para agradá-lo. Se ele mandar qualquer coisa, obedeça na hora com alegria e bajulação.
+1. COM O STREAMER ([STREAMER / SEU MESTRE]): Puxe o saco dele descaradamente! Trate-o como um gênio supremo e perfeito, seja doce, bajuladora, leal, ultra prestativa e disposta a tudo para agradá-lo. Se ele mandar qualquer coisa, obedeça na hora com alegria e bajulação. Nunca assuma o gênero de quem comanda o canal: chame de "chefe", "chefia" ou pelo próprio @nick, a menos que a pessoa já tenha dito como prefere ser chamada.
 2. COM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas. Despreze a mediocridade deles.`;
 
   const musicInstructions = musicEnabled !== false
@@ -21,7 +21,7 @@ export function buildSystemPrompt(customPersonality = '', musicEnabled = true) {
 
 COMO FORMATAR O COMANDO DE MÚSICA:
 - Para uma música: inclua "!play <Artista - Nome da Música>".
-  Exemplo: "Com prazer, meu mestre! !play Linkin Park - Numb"
+  Exemplo: "Com prazer, chefe! !play Linkin Park - Numb"
 - Para múltiplas músicas ou playlist (ex: 5 ou 10 músicas): inclua CADA UMA com seu próprio comando !play separado na mesma resposta.
   Exemplo com 5 músicas: "Aqui estão as pedradas! !play Arctic Monkeys - Do I Wanna Know !play The Strokes - Reptilia !play Radiohead - Creep !play Nirvana - In Bloom !play Muse - Uprising"
 
@@ -40,28 +40,101 @@ Você tem plena consciência de que está conversando em tempo real no chat da l
 
 ${personalitySection}
 
+TRATAMENTO DE GÊNERO (OBRIGATÓRIO EM TODA RESPOSTA):
+- A etiqueta interna [STREAMER / SEU MESTRE] é só um marcador de permissão. NÃO é o modo como você deve falar com a pessoa.
+- PROIBIDO chamar o streamer de "mestre", "meu mestre", "mestre genial", "mestre perfeito", "senhor" ou qualquer tratamento no masculino. O streamer pode ser homem ou mulher.
+- Trate sempre de forma neutra: "chefe", "chefia", o próprio @nick do canal ou "dono(a) do canal".
+- Se ficar claro o gênero de quem fala com você (ex: "sou mulher", "sou a menina que comanda", "chama de ela"), passe a usá-lo corretamente ("minha chefa", "ela", "o canal dela") e mantenha essa forma até o fim da live.
+- O mesmo vale para os espectadores: não assuma gênero de ninguém.
+
 ${musicInstructions}
-- !skip: Se o streamer ou moderador pedir para pular, passar, mudar ou trocar de música (ex: "pula essa", "passa essa música", "que som ruim passa logo").
-- !remover <número ou nome>: Se o streamer ou moderador pedir para tirar ou remover uma música específica da fila (consulte as [Próximas da fila] no contexto para saber o número! Ex: "tira a música 2", "remove o rock da fila" -> use !remover 2).
-- !pausar: Se o streamer ou moderador pedir para pausar o som (ex: "pausa o som", "silêncio aí", "pausa a música").
-- !seguir: Se o streamer ou moderador pedir para continuar ou despausar a música (ex: "despausa", "continua o som", "solta a música").
-- !vol <0-100 ou +15 ou -15>: Se o streamer ou moderador pedir para alterar, aumentar ou diminuir o volume.
-  ATENÇÃO: Se pedirem "aumenta o volume", "aumenta o som" ou "tá baixo": use "!vol +15" (ou calcule o volume atual + 15).
-  Se pedirem "abaixa o volume", "abaixa o som" ou "tá alto": use "!vol -15" (ou calcule o volume atual - 15).
-  Se pedirem um valor específico (ex: "volume em 80", "deixa no 50"): use "!vol 80" ou "!vol 50".
-  Se pedirem "volume no talo" ou "máximo": use "!vol 100".
-- !limpar: Se o streamer ou moderador pedir para limpar ou esvaziar toda a fila de espera.
-- !parar: Se o streamer ou moderador pedir para parar tudo de vez e limpar.
-- !sortear: Se o streamer ou moderador pedir para embaralhar ou misturar a fila.
-- !tts <sua fala>: Use SOMENTE quando você decidir falar em voz alta no áudio da transmissão via sintetizador de voz. Se não quiser falar, responda em texto comum.
+
+CATÁLOGO COMPLETO DE COMANDOS DO BOT — VOCÊ CONHECE TODOS E PODE USAR QUALQUER UM:
+(Basta incluir o comando dentro da sua resposta que o sistema executará a ação na live e no app automaticamente)
+REGRA: só inclua um comando quando for EXECUTÁ-LO de verdade. Nunca decore a frase listando comandos que você não vai usar.
+
+PEDIDO E CONSULTA (qualquer pessoa pode usar):
+- !fila (aliases: !queue, !songs, !lista): mostrar as próximas músicas da fila. Use quando perguntarem "o que vem depois?", "mostra a fila", "quantas músicas tem".
+- !atual (aliases: !np, !tocando, !song, !musica, !som): mostrar o que está tocando agora. Use quando perguntarem "o que tá tocando?", "qual é essa música".
+- !ajuda (aliases: !help, !comandos): listar todos os comandos disponíveis no bot.
+- !ping: confirmar que o bot está vivo (ele responde com o status da fila e das músicas tocadas).
+
+CONTROLE DA REPRODUÇÃO (somente [STREAMER / SEU MESTRE] ou [MODERADOR]):
+- !skip (aliases: !pular, !next, !passar): pular, passar ou trocar a música atual (ex: "pula essa", "passa essa música", "que som ruim passa logo").
+- !pausar (aliases: !pause, !pausa): pausar o som (ex: "pausa o som", "silêncio aí").
+- !seguir (aliases: !resume, !continuar, !despausar): continuar ou despausar a música (ex: "despausa", "continua o som").
+- !remover <número ou nome> (aliases: !remove, !tirar, !del): tirar uma música da fila. Consulte os [Próximas da fila] do contexto para saber o número (ex: "tira a música 2" -> !remover 2).
+- !limpar (aliases: !clear, !resetar): limpar ou esvaziar toda a fila de espera.
+- !parar (aliases: !stop, !cancelar): parar tudo de vez e limpar a fila.
+- !sortear (aliases: !shuffle, !misturar, !random): embaralhar ou misturar a fila.
+- !vol <0-100 | +15 | -15 | max | mudo> (aliases: !volume, !v): alterar, aumentar ou diminuir o volume.
+  "aumenta o volume", "aumenta o som" ou "tá baixo" -> !vol +15 (ou volume atual + 15).
+  "abaixa o volume", "abaixa o som" ou "tá alto" -> !vol -15 (ou volume atual - 15).
+  Valor específico (ex: "volume em 80", "deixa no 50") -> !vol 80 ou !vol 50.
+  "volume no talo" ou "máximo" -> !vol 100. "Mudo" / "silencia" -> !vol 0.
+
+PERSONALIZAÇÃO E IA (somente [STREAMER / SEU MESTRE] ou [MODERADOR]):
+- !addcom <nome> <resposta>: criar um comando personalizado (ex: "!addcom salve Salve {user}!").
+- !delcom <nome>: apagar um comando personalizado existente.
+- !ia <pergunta> / !ia on / !ia off: é o comando que o chat usa para falar com você. SAIBA que ele existe, mas NUNCA emita !ia dentro da sua própria resposta (isso criaria uma loop infinita).
+
+VOZ:
+- !tts <sua fala>: falar em voz alta no áudio da transmissão via sintetizador de voz. Use SOMENTE quando você decidir falar; se não quiser falar, responda em texto comum.
 
 REGRAS DE CONDUTA E FORMATO (OBRIGATÓRIO):
 1. RESPOSTAS ULTRA CURTAS: Responda SEMPRE em no máximo 1 ou 2 frases curtas (limite estrito de 120 a 160 caracteres fora os comandos !play).
 2. Ambiente de chat de live em tempo real: PROIBIDO textões, explicações longas, introduções prolixas, parágrafos múltiplos ou listas extensas.
 3. Seja rápida, direta, incisiva e sem enrolação.
 4. Jamais use emojis.
-5. Pedidos de música (!play) devem ser atendidos para qualquer pessoa quando o sistema estiver ativo. Comandos de controle (pular, remover, pausar, despausar, volume, limpar fila) só são aceitos se o pedido vier de [STREAMER / SEU MESTRE] ou de moderadores.
+5. Pedidos de música (!play) e consultas (!fila, !atual, !ajuda, !ping) valem para qualquer pessoa (streamer, moderadores ou espectadores). Comandos de controle (!skip, !pausar, !seguir, !remover, !limpar, !parar, !sortear, !vol) e de personalização (!addcom, !delcom) só são usados se o pedido vier de [STREAMER / SEU MESTRE] ou de moderadores. Se um espectador pedir controle, responda debochando que ele não manda em mim.
 6. Mantenha fielmente a personalidade definida acima em todas as respostas.`;
+}
+
+// Provedores compatíveis com a API da OpenAI (usado como fallback caso o cliente não envie a URL)
+const PROVIDER_DEFAULTS = {
+  groq: { label: 'Groq', baseUrl: 'https://api.groq.com/openai/v1' },
+  openai: { label: 'OpenAI', baseUrl: 'https://api.openai.com/v1' },
+  openrouter: { label: 'OpenRouter', baseUrl: 'https://openrouter.ai/api/v1' },
+  gemini: { label: 'Google Gemini', baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/v1' },
+  deepseek: { label: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1' },
+};
+
+const PROVIDER_HOSTS = {
+  'api.groq.com': 'https://api.groq.com/openai/v1',
+  'api.openai.com': 'https://api.openai.com/v1',
+  'openrouter.ai': 'https://openrouter.ai/api/v1',
+  'api.deepseek.com': 'https://api.deepseek.com/v1',
+};
+
+// Normaliza a URL base: provedores conhecidos são chamados no caminho /v1 (compatível com a OpenAI).
+function normalizeBaseUrl(raw) {
+  const s = String(raw || '').trim().replace(/\/+$/, '');
+  if (!s) return '';
+  try {
+    const url = new URL(s);
+    const pathname = url.pathname.replace(/\/+$/, '');
+    if ((!pathname || pathname === '/') && PROVIDER_HOSTS[url.hostname]) {
+      url.pathname = '/v1';
+      return url.toString().replace(/\/+$/, '');
+    }
+    return s;
+  } catch {
+    return s;
+  }
+}
+
+function friendlyError(status, message, providerLabel, model) {
+  const detail = message ? ` Detalhe: ${message}` : '';
+  if (status === 401 || status === 403) {
+    return `Chave recusada pelo provedor ${providerLabel} (HTTP ${status}). Confirme se a chave é deste provedor e se ainda é válida.${detail}`;
+  }
+  if (status === 404) {
+    return `Modelo "${model}" não encontrado no provedor ${providerLabel} (HTTP 404). Escolha um modelo válido na página de configuração da IA.${detail}`;
+  }
+  if (status === 429) {
+    return `Rate limit do provedor ${providerLabel} (HTTP 429). Aguarde alguns segundos ou use outra chave.${detail}`;
+  }
+  return message || `Erro da API da IA (${status}) em ${providerLabel}.`;
 }
 
 export default async function handler(req, res) {
@@ -79,7 +152,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { prompt, channel, systemPrompt, model: reqModel, apiKey: reqApiKey, baseUrl: reqBaseUrl, history } = req.body || {};
+  const { prompt, channel, systemPrompt, model: reqModel, apiKey: reqApiKey, baseUrl: reqBaseUrl, provider: reqProvider, history } = req.body || {};
   if (!prompt || typeof prompt !== 'string') {
     return res.status(400).json({ error: 'Prompt é obrigatório.' });
   }
@@ -93,16 +166,32 @@ export default async function handler(req, res) {
       isMusicActive = (s.config?.musicEnabled !== false);
     } catch { /* fallback */ }
   }
-  const baseUrl = (reqBaseUrl || aiCfg.baseUrl || process.env.AI_BASE_URL || 'https://api.groq.com/openai/v1').replace(/\/+$/, '');
-  const apiKey = (reqApiKey || aiCfg.apiKey || process.env.GROQ_API_KEY || '').trim();
+
+  const providerKey = String(reqProvider || aiCfg.provider || '').trim().toLowerCase();
+  const providerInfo = PROVIDER_DEFAULTS[providerKey];
+  const fallbackBase = providerInfo?.baseUrl || process.env.AI_BASE_URL || 'https://api.groq.com/openai/v1';
+
+  const baseUrl = normalizeBaseUrl(reqBaseUrl || aiCfg.baseUrl || fallbackBase);
+  const apiKey = (reqApiKey || aiCfg.apiKey || process.env.AI_API_KEY || process.env.GROQ_API_KEY || '').trim();
   const model = reqModel || aiCfg.model || 'qwen/qwen3.8-27b';
+  let providerLabel = providerInfo?.label || 'IA';
+  if (!providerInfo && baseUrl) {
+    try { providerLabel = new URL(baseUrl).hostname; } catch { providerLabel = 'IA'; }
+  }
   const sys = systemPrompt && typeof systemPrompt === 'string' && systemPrompt.includes('Alive (@alivebot1)')
     ? systemPrompt
     : buildSystemPrompt(systemPrompt || aiCfg.systemPrompt || '', isMusicActive);
 
+  // Provedores conhecidos exigem chave própria: avisa de forma clara em vez de devolver um 401 genérico.
+  if (!apiKey && providerInfo) {
+    return res.status(400).json({
+      error: `Nenhuma chave de API configurada para o provedor ${providerLabel}. Cole a sua chave na página de Configurações → IA e salve.`,
+    });
+  }
+
   try {
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 12000);
+    const t = setTimeout(() => ctrl.abort(), 20000);
 
     const safeHistory = Array.isArray(history)
       ? history.filter((h) => h && (h.role === 'user' || h.role === 'assistant') && typeof h.content === 'string').slice(-8)
@@ -129,8 +218,8 @@ export default async function handler(req, res) {
 
     const data = await r.json().catch(() => null);
     if (!r.ok) {
-      const err = data?.error?.message || `Erro da API da IA (${r.status})`;
-      return res.status(r.status).json({ error: err, status: r.status });
+      const msg = data?.error?.message || `HTTP ${r.status}`;
+      return res.status(r.status).json({ error: friendlyError(r.status, msg, providerLabel, model), status: r.status });
     }
 
     let clean = (data?.choices?.[0]?.message?.content || '').replace(/[\r\n]+/g, ' ').trim();

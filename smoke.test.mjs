@@ -44,6 +44,12 @@ const runner = createRunner({
     if (q.includes('adiciona duas músicas')) return { ok: true, text: 'Colocando ambas, meu mestre genial! !play Música Teste A !play Música Teste B' };
     if (q.includes('add 5 músicas')) return { ok: true, text: 'Às suas ordens mestre! !play 1. Canção Um !play 2. Canção Dois !play 3. Canção Três !play 4. Canção Quatro !play 5. Canção Cinco' };
     if (q.includes('toca uma playlist de rock')) return { ok: true, text: 'Essa função de música está desativada no momento. !play playlist rock' };
+    if (q.includes('mostra a fila pra mim')) return { ok: true, text: 'Olha o que vem por aí, chefe: !fila' };
+    if (q.includes('olha o que tá tocando')) return { ok: true, text: 'Segura aí, chefia: !atual' };
+    if (q.includes('verifica se você tá viva')) return { ok: true, text: 'Tô viva, chefe: !ping' };
+    if (q.includes('quais comandos você tem')) return { ok: true, text: 'Tenho um monte, chefia: !ajuda' };
+    if (q.includes('cria o comando salve')) return { ok: true, text: 'Criando agora, chefe: !addcom salve Salve {user}' };
+    if (q.includes('apaga o comando salve')) return { ok: true, text: 'Apagando, chefe: !delcom salve' };
     return {
       ok: true,
       text: 'Tsc, precisava me incomodar pra perguntar isso? A resposta é óbvia, seu ignorante.'
@@ -374,5 +380,56 @@ store.update((s) => {
 });
 await runner(msg('!play musica teste', { userId: 'u_disabled_2', displayName: 'UserDis2' }));
 assert(store.state.now !== null, 'Música volta a tocar após reativar');
+
+console.log('\n33) IA usando TODOS os comandos de consulta e de personalização do bot');
+store.update((s) => {
+  s.config.ai.enabled = true;
+  s.config.globalCooldown = 0;
+  s.now = { id: 'm_ia', title: 'Música IA', duration: 100, position: 5, paused: false, requestedBy: 'Fã' };
+  s.queue = [{ id: 'm_q1', title: 'Fila Um', duration: 120, position: 0, paused: false, requestedBy: 'Fã' }];
+});
+const STREAMER_IA = { userId: 'streamer_id', displayName: 'StreamerTop', broadcaster: true, mod: false };
+const replyOf = (from) => sent.slice(from).find((t) => t.startsWith('@StreamerTop')) || '';
+
+// !fila
+let n0 = sent.length;
+await runner(msg('!ia mostra a fila pra mim', STREAMER_IA));
+await new Promise((r) => setTimeout(r, 200));
+assert(sent.slice(n0).some((t) => t.includes('Fila (1/')), 'IA executou !fila e listou a fila no chat');
+assert(!replyOf(n0).includes('!fila'), 'comando !fila foi removido da resposta conversacional');
+
+// !atual
+n0 = sent.length;
+await runner(msg('!ia olha o que tá tocando', STREAMER_IA));
+await new Promise((r) => setTimeout(r, 200));
+assert(sent.slice(n0).some((t) => t.includes('Tocando: Música IA')), 'IA executou !atual');
+assert(!replyOf(n0).includes('!atual'), 'comando !atual foi removido da resposta conversacional');
+
+// !ping
+n0 = sent.length;
+await runner(msg('!ia verifica se você tá viva', STREAMER_IA));
+await new Promise((r) => setTimeout(r, 200));
+assert(sent.slice(n0).some((t) => t.startsWith('Pong!')), 'IA executou !ping');
+
+// !ajuda
+n0 = sent.length;
+await runner(msg('!ia quais comandos você tem', STREAMER_IA));
+await new Promise((r) => setTimeout(r, 200));
+assert(sent.slice(n0).some((t) => t.includes('Alive Bot — comandos')), 'IA executou !ajuda');
+assert(!replyOf(n0).includes('!ajuda'), 'comando !ajuda foi removido da resposta conversacional');
+
+// !addcom
+n0 = sent.length;
+await runner(msg('!ia cria o comando salve', STREAMER_IA));
+await new Promise((r) => setTimeout(r, 200));
+assert(store.state.config.custom.salve?.text.includes('{user}'), 'IA criou comando personalizado via !addcom');
+assert(!replyOf(n0).includes('!addcom'), 'comando !addcom foi removido da resposta conversacional');
+
+// !delcom
+n0 = sent.length;
+await runner(msg('!ia apaga o comando salve', STREAMER_IA));
+await new Promise((r) => setTimeout(r, 200));
+assert(!store.state.config.custom.salve, 'IA apagou comando personalizado via !delcom');
+assert(!replyOf(n0).includes('!delcom'), 'comando !delcom foi removido da resposta conversacional');
 
 console.log('\n✅ Smoke test concluído.\n');

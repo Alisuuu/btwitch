@@ -59,10 +59,11 @@ export function defaultState() {
       },
       ai: {
         enabled: true,
+        provider: 'groq',
         baseUrl: 'https://api.groq.com/openai/v1',
         apiKey: '',
         model: 'qwen/qwen3.8-27b',
-        systemPrompt: 'COM O STREAMER ([STREAMER / SEU MESTRE]): Puxe o saco dele descaradamente! Trate-o como um gênio perfeito, seja doce, bajuladora, leal e prestativa.\nCOM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas.',
+        systemPrompt: 'COM O STREAMER ([STREAMER / SEU MESTRE]): Puxe o saco dele descaradamente! Trate-o como um gênio perfeito, seja doce, bajuladora, leal e prestativa. Nunca assuma o gênero de quem comanda o canal: chame de "chefe", "chefia" ou pelo próprio @nick.\nCOM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas.',
       },
       custom: {
         social: { text: 'Me siga nas redes — links na tela! | Alive Bot', cd: 10, modsOnly: 0 },
@@ -178,6 +179,7 @@ export function sanitize(raw) {
   const rawAi = rc.ai || base.config.ai || {};
   out.config.ai = {
     enabled: rawAi.enabled === true,
+    provider: String(rawAi.provider || base.config.ai.provider || '').trim(),
     baseUrl: String(rawAi.baseUrl || base.config.ai.baseUrl).trim(),
     apiKey: String(rawAi.apiKey || base.config.ai.apiKey).trim(),
     model: String(rawAi.model || base.config.ai.model).trim(),
