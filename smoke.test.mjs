@@ -50,6 +50,8 @@ const runner = createRunner({
     if (q.includes('quais comandos você tem')) return { ok: true, text: 'Tenho um monte, chefia: !ajuda' };
     if (q.includes('cria o comando salve')) return { ok: true, text: 'Criando agora, chefe: !addcom salve Salve {user}' };
     if (q.includes('apaga o comando salve')) return { ok: true, text: 'Apagando, chefe: !delcom salve' };
+    if (q.includes('toca uma música')) return { ok: true, text: 'Fechado, chefia! !play Música Teste A' };
+    if (q.includes('cria o comando teste')) return { ok: true, text: 'Criando agora, chefe! !addcom teste Resposta Teste' };
     return {
       ok: true,
       text: 'Tsc, precisava me incomodar pra perguntar isso? A resposta é óbvia, seu ignorante.'
@@ -363,17 +365,32 @@ await runner(msg('!playlist https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PLr
 assert(store.state.now !== null, 'Playlist via URL iniciou primeira música');
 assert(store.state.queue.length > 0, 'Restante da playlist entrou na fila');
 
-console.log('\n32) Desativar função de música (musicEnabled = false): comandos de música bloqueados e aviso enviado');
+console.log('\n32) Desativar música (musicEnabled = false): sem aviso de desativado, sem player interno e comandos seguem para o chat');
 store.update((s) => {
   s.config.musicEnabled = false;
   s.now = null;
   s.queue = [];
 });
+let n32 = sent.length;
 await runner(msg('!play musica teste', { userId: 'u_disabled_1', displayName: 'UserDis1' }));
-assert(sent.at(-1).includes('desativado'), 'Avisou que o sistema de música está desativado');
-assert(store.state.now === null, 'Música não tocou quando desativado');
+assert(!sent.slice(n32).some((t) => /desativad/i.test(t)), 'Comando direto !play não responde mais que o sistema está desativado');
+assert(store.state.now === null, 'Música não tocou no player interno quando desativado');
 
-await runner(msg('!skip', { userId: 'mod1', displayName: 'Mod1', mod: true }));
+// IA com a música desligada continua emitindo !play para o chat (a aplicação externa executa)
+n32 = sent.length;
+await runner(msg('!ia toca uma música', { userId: 'streamer_id', login: 'streamertop', displayName: 'StreamerTop', channel: 'streamertop', broadcaster: true, mod: false }));
+await new Promise((r) => setTimeout(r, 400));
+assert(sent.slice(n32).some((t) => t.includes('!play Música Teste A')), 'IA emitiu !play para o chat mesmo com o player desativado');
+assert(!sent.slice(n32).some((t) => /desativad/i.test(t)), 'Nenhuma resposta da IA menciona música desativada');
+assert(store.state.now === null, 'IA não ativou o player interno com a música desativada');
+
+// Nada mais é bloqueado: a IA cria comando personalizado mesmo com a música desligada
+n32 = sent.length;
+await runner(msg('!ia cria o comando teste', { userId: 'streamer_id', login: 'streamertop', displayName: 'StreamerTop', channel: 'streamertop', broadcaster: true, mod: false }));
+await new Promise((r) => setTimeout(r, 400));
+assert(store.state.config.custom.teste?.text.includes('Resposta Teste'), 'IA criou o comando !teste com a música desativada');
+await runner(msg('!teste', { userId: 'u_disabled_3', displayName: 'UserDis3' }));
+assert(sent.at(-1).includes('Resposta Teste'), 'O comando !teste criado pela IA respondeu no chat');
 
 store.update((s) => {
   s.config.musicEnabled = true;

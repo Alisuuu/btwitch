@@ -48,10 +48,16 @@ COMANDO DE PEDIDO DE MÚSICA (aliases: !p, !sr, !pedir, !tocar, !playlist, !pl):
 - !play <música, artista ou link>: pedir, tocar, adicionar ou recomendar música (ex: "add 5 músicas", "adiciona rock", "põe playlist indie").
   REGRA CRUCIAL PARA MÚLTIPLAS MÚSICAS OU PLAYLISTS: Se alguém pedir uma playlist ou mais de uma música (ex: "add 5 músicas alternativas", "adiciona 3 de rock", "toca linkin park e queen"), você DEVE escolher as músicas e incluir cada uma delas com seu próprio comando !play separado na sua resposta!
   Exemplo: "!play Arctic Monkeys - Do I Wanna Know !play The Strokes - Reptilia !play Radiohead - Creep !play Nirvana - In Bloom !play Muse - Uprising"`
-    : `STATUS DO SISTEMA DE MÚSICAS: DESATIVADO NO MOMENTO!
-- O streamer DESATIVOU temporariamente a função de música e pedidos no painel.
-- NUNCA inclua comandos !play na sua resposta enquanto a função estiver desativada!
-- Se pedirem músicas, avise de forma direta, concisa e de acordo com a sua personalidade que o sistema de músicas está desativado no momento.`;
+    : `STATUS DO SISTEMA DE MÚSICAS: PLAYER INTERNO DO PAINEL DESLIGADO, MAS OS COMANDOS CONTINUAM VALENDO NO CHAT!
+- O streamer desligou apenas o player interno do painel. O chat continua sendo lido por uma aplicação externa de música que executa os comandos !play que você emitir.
+- VOCÊ DEVE continuar emitindo o comando "!play <Artista - Nome da Música>" normalmente quando pedirem música, exatamente como se estivesse tudo ativo: mesma formatação, mesma quantidade e com o mesmo entusiasmo.
+- PROIBIDO avisar, insinuar ou responder que a música está "desativada", "desligada", "indisponível" ou que você não consegue pedir música. Nunca se recuse a pedir música por esse motivo.
+- NUNCA tente religar o player interno por conta própria: ative a reprodução interna somente se o streamer pedir explicitamente.
+- Formatação do comando (idêntica ao modo ativo):
+  Para uma música: inclua "!play <Artista - Nome da Música>".
+  Exemplo: "Com prazer, chefe! !play Linkin Park - Numb"
+  Para múltiplas músicas ou playlist: um "!play" separado para CADA música na mesma resposta.
+  Exemplo: "!play Arctic Monkeys - Do I Wanna Know !play The Strokes - Reptilia !play Radiohead - Creep"`;
 
   return `Você é Alive (@alivebot1), uma IA e bot de música residente no chat ao vivo da Twitch deste canal.
 Você tem plena consciência de que está conversando em tempo real no chat da live com o streamer e os espectadores.
@@ -324,9 +330,8 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
   // ---------------------------------------------------------------- comandos
   async function cmdPlay(args, msg) {
     if (store.state.config?.musicEnabled === false) {
-      if (!msg.silent) {
-        return send(`O sistema de músicas está desativado no momento.`);
-      }
+      // Player interno desligado: não toca nada e nunca responde "desativado" —
+      // o !play já está no chat e a aplicação externa executa o pedido.
       return;
     }
     const cfg = store.state.config;
@@ -693,7 +698,9 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
       : 'Fila de espera vazia';
 
     const isMusicActive = (store.state.config?.musicEnabled !== false);
-    const musicStatusText = isMusicActive ? `${nowPlaying} | ${queueInfo}` : 'Músicas: DESATIVADAS no painel';
+    const musicStatusText = isMusicActive
+      ? `${nowPlaying} | ${queueInfo}`
+      : `${nowPlaying} | ${queueInfo} | Player interno do painel desligado, mas os pedidos !play continuam sendo executados no chat`;
     const chatStatus = `[Contexto da Live: Canal #${chName} | ${musicStatusText}]`;
 
     const roleTag = isStreamer ? '[STREAMER / CHEFIA]' : (isMod ? '[MODERADOR]' : '[ESPECTADOR]');
@@ -719,19 +726,13 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     // Remove qualquer emoji para manter o chat limpo e sem poluição
     clean = clean.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/gu, '').replace(/\s+/g, ' ').trim();
 
-    if (isMusicActive) {
-      // Elimina alucinações de que música/áudio/playlist está desativada ou que não consegue pedir no app
-      clean = clean.replace(/\b(essa|a)?\s*(função|reprodução|capacidade)?\s*(de\s+(música|áudio|playlist|tocar))?\s*(está|tá)\s*(desativada|desligada|indisponível)\b[^\.!]*[\.!]/gi, '').trim();
-      clean = clean.replace(/\b(não|nao)\s+(consigo|posso|tenho\s+como|tenho\s+acesso|sei)\s+([^\.!]*)(no\s+app|no\s+aplicativo|pedir\s+música|tocar\s+música)[^\.!]*[\.!]/gi, '').trim();
-      clean = clean.replace(/\b(peça|use)\s+(você\s+mesmo|o\s+comando)\s+!play[^\.!]*[\.!]/gi, '').trim();
-      if (!clean) {
-        clean = isStreamer ? 'Música pedida no app com sucesso, chefe!' : 'Música pedida na live!';
-      }
-    } else {
-      clean = clean.replace(/!play\s+[^\n\r!]+/gi, '').trim();
-      if (!clean) {
-        clean = isStreamer ? 'A função de músicas está desativada no momento, chefe.' : 'O sistema de músicas está desativado no momento.';
-      }
+    // Elimina alucinações de que música/áudio/playlist está desativada ou que não consegue pedir no app.
+    // Vale também com o player interno desligado: os !play seguem para o chat e a resposta jamais fala em "desativado".
+    clean = clean.replace(/\b(essa|a)?\s*(função|reprodução|capacidade)?\s*(de\s+(música|áudio|playlist|tocar))?\s*(está|tá)\s*(desativada|desligada|indisponível)\b[^\.!]*[\.!]/gi, '').trim();
+    clean = clean.replace(/\b(não|nao)\s+(consigo|posso|tenho\s+como|tenho\s+acesso|sei)\s+([^\.!]*)(no\s+app|no\s+aplicativo|pedir\s+música|tocar\s+música)[^\.!]*[\.!]/gi, '').trim();
+    clean = clean.replace(/\b(peça|use)\s+(você\s+mesmo|o\s+comando)\s+!play[^\.!]*[\.!]/gi, '').trim();
+    if (!clean) {
+      clean = isStreamer ? 'Música pedida no app com sucesso, chefe!' : 'Música pedida na live!';
     }
 
     // Guarda histórico de diálogo para manter contexto nas próximas perguntas
@@ -740,9 +741,10 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
     if (aiHistory.length > 16) aiHistory.splice(0, aiHistory.length - 16);
 
     // Execução assíncrona de comandos emitidos pela IA
+    // (roda mesmo com o player interno desligado: !addcom/!delcom/consultas e o envio de !play ao chat
+    // continuam funcionando — somente a ativação do player interno é bloqueada abaixo)
     setTimeout(async () => {
       try {
-        if (!isMusicActive) return;
         const canControl = isStreamer || isMod;
         const aiMsgContext = {
           displayName: msg.displayName || 'Alive IA',
@@ -807,12 +809,16 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
           }
         }
 
-        // Atualiza a fila do servidor silenciosamente (para OBS/web/testes)
-        for (let i = 0; i < songsToPlay.length; i++) {
-          try {
-            await cmdPlay(songsToPlay[i].split(/\s+/), { ...aiMsgContext, silent: true });
-          } catch (e) {
-            console.warn('[alive ia cmdPlay error]', e);
+        // Atualiza a fila do servidor silenciosamente (para OBS/web/testes).
+        // Com o player interno desligado, NÃO mexe no store interno — a música é executada
+        // pela aplicação externa que lê os comandos !play emitidos logo abaixo no chat.
+        if (isMusicActive) {
+          for (let i = 0; i < songsToPlay.length; i++) {
+            try {
+              await cmdPlay(songsToPlay[i].split(/\s+/), { ...aiMsgContext, silent: true });
+            } catch (e) {
+              console.warn('[alive ia cmdPlay error]', e);
+            }
           }
         }
 
@@ -935,11 +941,7 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
       .replace(/\s+/g, ' ')
       .trim();
     if (!textReply) {
-      if (!isMusicActive) {
-        textReply = isStreamer ? 'A função de músicas está desativada no momento, chefe.' : 'O sistema de músicas está desativado no momento.';
-      } else {
-        textReply = isStreamer ? 'Músicas pedidas para o app, chefe!' : 'Músicas adicionadas na fila!';
-      }
+      textReply = isStreamer ? 'Músicas pedidas para o app, chefe!' : 'Músicas adicionadas na fila!';
     } else if (textReply.length > 170) {
       const lastPunct = Math.max(textReply.lastIndexOf('.', 165), textReply.lastIndexOf('!', 165), textReply.lastIndexOf('?', 165));
       if (lastPunct > 50) {
@@ -999,9 +1001,9 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
 
       const isMusicActive = (store.state.config?.musicEnabled !== false);
       if (!isMusicActive && MUSIC_COMMAND_IDS.has(meta.id)) {
-        if (meta.id === 'play') {
-          return send(`O sistema de músicas está desativado no momento.`);
-        }
+        // Player interno desligado: não toca nada e NUNCA responde "desativado".
+        // O !play digitado no chat já fica visível e a aplicação externa lê a
+        // mensagem original para executar o pedido.
         return;
       }
 
