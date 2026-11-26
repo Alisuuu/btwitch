@@ -629,8 +629,10 @@ async function pollLoop() {
    HTTP
    ========================================================================== */
 function json(res, code, obj) {
+  if (res.headersSent || res.writableEnded) return true;
   res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
   res.end(JSON.stringify(obj, null, 2));
+  return true;
 }
 
 function readBody(req, limit) {
@@ -686,6 +688,7 @@ function sendBuffer(req, res, buf, mime, filename, maxAge) {
   }
   res.writeHead(200, Object.assign({ 'Content-Type': mime, 'Content-Length': buf.length }, common));
   res.end(buf);
+  return true;
 }
 
 function serveStatic(req, res, urlPath) {
@@ -767,6 +770,11 @@ async function handleStoreRequest(req, res, u) {
     return false;
   }
 
+  await handleStoreApi(req, res, u, p);
+  return true;
+}
+
+async function handleStoreApi(req, res, u, p) {
   try {
     if (p === '/api/proxy-image') {
       const targetUrl = u.searchParams.get('url');

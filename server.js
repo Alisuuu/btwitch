@@ -46,6 +46,7 @@ const MIME = {
 };
 
 function json(res, status, obj) {
+  if (res.headersSent || res.writableEnded) return;
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.end(JSON.stringify(obj));
@@ -175,7 +176,9 @@ const server = http.createServer(async (req, res) => {
     await serveStatic(res, url.pathname);
   } catch (e) {
     console.error(e);
-    json(res, 500, { error: e.message });
+    if (!res.headersSent && !res.writableEnded) {
+      json(res, 500, { error: e.message });
+    }
   }
 });
 
