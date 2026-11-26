@@ -7,6 +7,8 @@
 
   var U = window.ALIVE_UI;
   var A = window.ALIVE_ACTIONS;
+  var I = window.ALIVE_I18N;
+  function t(k, vars) { return I ? I.t(k, vars) : k; }
 
   function ALL() { return window.ALIVE_CATALOG; }
 
@@ -53,7 +55,7 @@
     list.sort(function (a, b) {
       var d = (b.featured || 0) - (a.featured || 0);
       if (d) return d;
-      return String(a.name).localeCompare(String(b.name), 'pt-BR');
+      return String(a.name).localeCompare(String(b.name), I ? I.locale() : 'pt-BR');
     });
     return list;
   }
@@ -63,28 +65,28 @@
       if (state.tab === 'pagos') {
         grid.innerHTML =
           '<div class="coming-soon-card">' +
-            '<span class="coming-soon-pill">Em breve</span>' +
-            '<h3 class="coming-soon-title">Overlays Pagos em Breve</h3>' +
-            '<p class="coming-soon-desc">A loja de temas e overlays exclusivos está sendo preparada para as próximas atualizações.</p>' +
+            '<span class="coming-soon-pill">' + U.esc(t('coming_soon_pill')) + '</span>' +
+            '<h3 class="coming-soon-title">' + U.esc(t('coming_soon_title')) + '</h3>' +
+            '<p class="coming-soon-desc">' + U.esc(t('coming_soon_desc')) + '</p>' +
           '</div>';
-        countEl.textContent = 'Em breve';
+        countEl.textContent = t('coming_soon_pill');
         return;
       }
 
       var list = applyFilters();
       var emptyMsg = state.q
-        ? 'Tente outro termo de busca.'
+        ? t('empty_search')
         : (state.tab === 'comunidade'
-            ? 'Assim que um tema for publicado, ele aparece aqui.'
-            : 'Carregando animes…');
+            ? t('empty_community')
+            : t('empty_anime'));
 
       grid.innerHTML = list.length
         ? list.map(function (p) {
             try { return U.cardHtml(p); } catch (e) { return ''; }
           }).join('')
-        : '<div class="empty"><b>Nenhum produto encontrado</b>' + emptyMsg + '</div>';
+        : '<div class="empty"><b>' + U.esc(t('empty_title')) + '</b>' + U.esc(emptyMsg) + '</div>';
 
-      countEl.textContent = list.length === 1 ? '1 produto' : list.length + ' produtos';
+      countEl.textContent = list.length === 1 ? t('count_one') : t('count_many', { n: list.length });
 
       U.observeReveal(grid);
       U.manageVideos(grid);
@@ -109,10 +111,10 @@
     if (p.isAnime && window.ALIVE_ANIME) {
       document.getElementById('modalCat').textContent = 'Alive Studio';
       document.getElementById('modalName').textContent = p.name;
-      document.getElementById('modalTag').textContent = 'Overlay para Celular e Tablet';
+      document.getElementById('modalTag').textContent = t('modal_subtitle_anime');
       document.getElementById('modalExtra').innerHTML = '';
       document.getElementById('modalPriceBox').innerHTML =
-        '<span class="tag tag-cyan">Overlay Sob Demanda</span><span class="muted" style="font-size:12.5px">Pronto para o app</span>';
+        '<span class="tag tag-cyan">' + U.esc(t('modal_tag_ondemand')) + '</span><span class="muted" style="font-size:12.5px">' + U.esc(t('card_ready')) + '</span>';
       document.getElementById('modalIncludes').innerHTML = '';
 
       var note = document.getElementById('modalNote');
@@ -124,20 +126,20 @@
 
       document.getElementById('modalArt').innerHTML =
         U.previewHtml(p, { controls: true }) + U.badgeHtml(p);
-      document.getElementById('modalCat').textContent = 'Comunidade';
+      document.getElementById('modalCat').textContent = t('tab_community');
       document.getElementById('modalName').textContent = p.name;
-      document.getElementById('modalTag').textContent = p.tagline || 'Tema oficial da comunidade';
+      document.getElementById('modalTag').textContent = p.tagline || t('modal_tag_community_default');
       document.getElementById('modalExtra').innerHTML =
         p.themeInfo ? U.themeExtraHtml(p) : '';
       document.getElementById('modalPriceBox').innerHTML =
-        '<span class="tag tag-cyan">Comunidade</span><span class="muted" style="font-size:12.5px">Pronto para o app</span>';
+        '<span class="tag tag-cyan">' + U.esc(t('tab_community')) + '</span><span class="muted" style="font-size:12.5px">' + U.esc(t('card_ready')) + '</span>';
       document.getElementById('modalIncludes').innerHTML = '';
 
       var note = document.getElementById('modalNote');
       if (note) note.style.display = 'none';
 
       var buyBtn = document.getElementById('modalBuy');
-      buyBtn.textContent = 'Baixar';
+      buyBtn.textContent = t('btn_download');
       buyBtn.className = 'btn btn-lg btn-primary';
       buyBtn.onclick = function () {
         U.isFree(p) ? A.download(p) : A.buy(p, { button: buyBtn });
@@ -270,7 +272,7 @@
         updateClearBtn();
 
         if (state.tab === 'alive') {
-          if (searchEl) searchEl.placeholder = 'Buscar animes e desenhos…';
+          if (searchEl) searchEl.placeholder = t('search_placeholder_anime');
           if (window.ALIVE_ANIME) {
             if (window.ALIVE_ANIME.resetToPresets && window.ALIVE_ANIME.resetToPresets()) {
               render();
@@ -281,10 +283,10 @@
             render();
           }
         } else if (state.tab === 'comunidade') {
-          if (searchEl) searchEl.placeholder = 'Buscar temas ou autores…';
+          if (searchEl) searchEl.placeholder = t('search_placeholder_community');
           render();
         } else if (state.tab === 'pagos') {
-          if (searchEl) searchEl.placeholder = 'Em breve…';
+          if (searchEl) searchEl.placeholder = t('search_placeholder_soon');
           render();
         }
       });

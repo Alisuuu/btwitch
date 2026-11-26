@@ -7,6 +7,8 @@ import {
   LS_TOKEN, LS_CLIENT, LS_SECRET,
 } from './state.js';
 import { icon, renderIcons } from './icons.js';
+import { normalizeLang } from './i18n.js';
+import { pt, applyPanelI18n } from './panel-i18n.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -2324,6 +2326,11 @@ function syncConfigForm(s) {
     if ($('#cfgSecret')) $('#cfgSecret').value = localStorage.getItem(LS_SECRET) || '';
   } catch { /* storage indisponível */ }
 
+  const curLang = normalizeLang(c.language || localStorage.getItem('alive.lang') || 'pt');
+  if ($('#cfgLang')) $('#cfgLang').value = curLang;
+  if ($('#cfgLangTop')) $('#cfgLangTop').value = curLang;
+  applyPanelI18n(curLang);
+
   if ($('#cfgEveryone')) $('#cfgEveryone').checked = !!c.allowEveryonePlay;
   if ($('#cfgAnnounceNow')) $('#cfgAnnounceNow').checked = !!c.announceNow;
   if ($('#cfgAnnounceQueue')) $('#cfgAnnounceQueue').checked = !!c.announceQueue;
@@ -2370,8 +2377,12 @@ function saveConfig() {
     store.setChannel(newChan);
   }
 
+  const selectedLang = normalizeLang($('#cfgLang')?.value || $('#cfgLangTop')?.value || localStorage.getItem('alive.lang') || 'pt');
+  try { localStorage.setItem('alive.lang', selectedLang); } catch { /* */ }
+
   store.update((s) => {
     if (newChan) s.config.channel = newChan;
+    s.config.language = selectedLang;
     if ($('#cfgNick')) s.config.botNick = $('#cfgNick').value.trim().toLowerCase();
     if ($('#cfgEveryone')) s.config.allowEveryonePlay = $('#cfgEveryone').checked;
     if ($('#cfgAnnounceNow')) s.config.announceNow = $('#cfgAnnounceNow').checked;
@@ -2392,7 +2403,42 @@ function saveConfig() {
     pushLog(s, 'config', 'Configurações atualizadas');
   });
   store.flush();
-  toast('Configurações salvas!');
+  applyPanelI18n(selectedLang);
+  toast(pt(selectedLang, 'cfg_saved_toast'));
+}
+
+function setLanguagePreference(rawLang) {
+  const l = normalizeLang(rawLang);
+  try { localStorage.setItem('alive.lang', l); } catch { /* */ }
+  if ($('#cfgLang')) $('#cfgLang').value = l;
+  if ($('#cfgLangTop')) $('#cfgLangTop').value = l;
+  applyPanelI18n(l);
+  if (typeof store !== 'undefined' && store?.update) {
+    store.update((s) => {
+      if (!s.config) s.config = {};
+      s.config.language = l;
+    });
+    store.flush();
+  }
+}
+
+if (typeof document !== 'undefined') {
+  const bootLang = (() => {
+    try { return normalizeLang(localStorage.getItem('alive.lang') || 'pt'); } catch { return 'pt'; }
+  })();
+  const wireLangSelectors = () => {
+    if ($('#cfgLangTop')) {
+      $('#cfgLangTop').value = bootLang;
+      $('#cfgLangTop').addEventListener('change', (e) => setLanguagePreference(e.target.value));
+    }
+    if ($('#cfgLang')) {
+      $('#cfgLang').value = bootLang;
+      $('#cfgLang').addEventListener('change', (e) => setLanguagePreference(e.target.value));
+    }
+    applyPanelI18n(bootLang);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wireLangSelectors);
+  else wireLangSelectors();
 }
 
 // ------------------------------------------------------------------- aba ia

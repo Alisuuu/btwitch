@@ -76,17 +76,17 @@
     <div class="auth-gate-logo">
       <img src="/img/ic_splash_logo.webp" alt="Alive Bot">
     </div>
-    <h2>Painel do Streamer</h2>
-    <p>Acesse o painel para gerenciar a fila de músicas, comandos e notificações do Alive Bot no seu canal.</p>
+    <h2 data-i18n="auth_title">Painel do Streamer</h2>
+    <p data-i18n="auth_desc">Acesse o painel para gerenciar a fila de músicas, comandos e notificações do Alive Bot no seu canal.</p>
 
     <!-- Botão Oficial: Entrar com a Twitch -->
     <button class="btn twitch-btn large" id="btnAuthQuickStreamer" type="button" style="width:100%;margin-bottom:12px;justify-content:center;background:#9146FF;color:#fff;font-weight:600;font-size:15px;display:inline-flex;align-items:center;gap:10px;padding:12px 20px;border-radius:8px;border:none;cursor:pointer;">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
-      <span>Entrar com a Twitch</span>
+      <span data-i18n="auth_btn">Entrar com a Twitch</span>
     </button>
 
     <div class="auth-gate-footer">
-      <span>Painel restrito ao streamer. Suas configurações ficam protegidas e vinculadas à sua conta.</span>
+      <span data-i18n="auth_footer">Painel restrito ao streamer. Suas configurações ficam protegidas e vinculadas à sua conta.</span>
     </div>
   </div>
 </div>
@@ -96,8 +96,8 @@
   <aside class="nav-drawer" id="navDrawer" role="dialog" aria-modal="true" aria-label="Navegação de configurações">
     <div class="drawer-header">
       <div class="drawer-header-content">
-        <div class="drawer-title">CONFIGURAÇÕES</div>
-        <div class="drawer-subtitle">Selecione uma seção</div>
+        <div class="drawer-title" data-i18n="drawer_title">CONFIGURAÇÕES</div>
+        <div class="drawer-subtitle" data-i18n="drawer_sub">Selecione uma seção</div>
       </div>
       <button class="drawer-close-btn" id="btnNavDrawerClose" type="button" aria-label="Fechar menu" title="Fechar">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -170,38 +170,38 @@
     <nav class="tabs" id="tabsNav" role="tablist">
       <button class="tab active" data-tab="fila">
         <span data-icon="list-music" data-size="15"></span>
-        <span class="tab-label-full">Estúdio &amp; Fila</span>
-        <span class="tab-label-short">Estúdio</span>
+        <span class="tab-label-full" data-i18n="tab_fila_full">Estúdio &amp; Fila</span>
+        <span class="tab-label-short" data-i18n="tab_fila_short">Estúdio</span>
       </button>
       <button class="tab" data-tab="widget">
         <span data-icon="tv" data-size="15"></span>
-        <span class="tab-label-full">Widget</span>
-        <span class="tab-label-short">Widget</span>
+        <span class="tab-label-full" data-i18n="tab_widget">Widget</span>
+        <span class="tab-label-short" data-i18n="tab_widget">Widget</span>
       </button>
       <button class="tab" data-tab="comandos">
         <span data-icon="terminal" data-size="15"></span>
-        <span class="tab-label-full">Comandos</span>
-        <span class="tab-label-short">Cmds</span>
+        <span class="tab-label-full" data-i18n="tab_comandos_full">Comandos</span>
+        <span class="tab-label-short" data-i18n="tab_comandos_short">Cmds</span>
       </button>
       <button class="tab" data-tab="timers">
         <span data-icon="clock" data-size="15"></span>
-        <span class="tab-label-full">Temporizadores</span>
-        <span class="tab-label-short">Timers</span>
+        <span class="tab-label-full" data-i18n="tab_timers_full">Temporizadores</span>
+        <span class="tab-label-short" data-i18n="tab_timers_short">Timers</span>
       </button>
       <button class="tab" data-tab="ia" id="tabIaBtn" title="Configurar Inteligência Artificial da Live">
         <span data-icon="bot" data-size="15"></span>
-        <span class="tab-label-full">Inteligência Artificial</span>
-        <span class="tab-label-short">IA</span>
+        <span class="tab-label-full" data-i18n="tab_ia_full">Inteligência Artificial</span>
+        <span class="tab-label-short" data-i18n="tab_ia_short">IA</span>
       </button>
       <button class="tab" data-tab="config">
         <span data-icon="settings" data-size="15"></span>
-        <span class="tab-label-full">Configuração</span>
-        <span class="tab-label-short">Config</span>
+        <span class="tab-label-full" data-i18n="tab_config_full">Configuração</span>
+        <span class="tab-label-short" data-i18n="tab_config_short">Config</span>
       </button>
       <button class="tab" data-tab="discord" id="tabDiscordBtn" title="Configurar Notificações no Discord">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
-        <span class="tab-label-full">Discord Live</span>
-        <span class="tab-label-short">Discord</span>
+        <span class="tab-label-full" data-i18n="tab_discord_full">Discord Live</span>
+        <span class="tab-label-short" data-i18n="tab_discord_short">Discord</span>
       </button>
     </nav>
     <button class="tabs-scroll-btn right" id="tabsScrollRight" type="button" aria-label="Rolar para direita" title="Rolar abas">
@@ -210,9 +210,14 @@
   </div>
 
   <div class="top-actions">
+    <select id="cfgLangTop" aria-label="Idioma" style="background:rgba(255,255,255,0.06);color:#e4e4e7;border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 8px;font-size:12px;font-weight:600;cursor:pointer;outline:none;">
+      <option value="pt">PT</option>
+      <option value="en">EN</option>
+      <option value="es">ES</option>
+    </select>
     <a class="btn twitch-btn small btn-twitch-auth" id="btnTwitchTop" title="Entrar com a Twitch" href="#" onclick="handleTwitchLogin(event);">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
-      <span>Entrar com a Twitch</span>
+      <span data-i18n="auth_btn">Entrar com a Twitch</span>
     </a>
     <div class="user-profile-menu" id="userProfileMenu" hidden>
       <button class="user-pill-btn" id="userPillBtn" type="button" aria-haspopup="true" aria-expanded="false" title="Menu da conta">
@@ -802,14 +807,14 @@
     <div class="box highlight">
       <h2>
         <span data-icon="radio" data-size="16"></span>
-        Canal da Live na Twitch
+        <span data-i18n="cfg_channel_title">Canal da Live na Twitch</span>
       </h2>
-      <p class="hint">O bot vai monitorar o chat deste canal para receber os pedidos de música (!play, !skip, etc.). Digite o nome do seu canal:</p>
+      <p class="hint" data-i18n="cfg_channel_hint">O bot vai monitorar o chat deste canal para receber os pedidos de música (!play, !skip, etc.). Digite o nome do seu canal:</p>
       <div class="url-row" style="margin-top: 12px;">
         <input type="text" id="cfgChannel" placeholder="seu_canal (ex: alison)" autocomplete="off" spellcheck="false">
         <button class="btn primary" id="btnSaveChannel" type="button">
           <span data-icon="check" data-size="14"></span>
-          Conectar no Canal
+          <span data-i18n="cfg_channel_btn">Conectar no Canal</span>
         </button>
       </div>
     </div>
@@ -818,32 +823,39 @@
     <div class="box">
       <h2>
         <span data-icon="settings" data-size="16"></span>
-        Regras &amp; Moderação do Bot
+        <span data-i18n="cfg_rules_title">Regras &amp; Moderação do Bot</span>
       </h2>
       <div class="checks" style="margin-top: 12px; margin-bottom: 16px;">
-        <label class="check"><input type="checkbox" id="cfgEveryone"> Todos podem pedir música (!play)</label>
-        <label class="check"><input type="checkbox" id="cfgAnnounceNow"> Anunciar início de faixa no chat</label>
-        <label class="check"><input type="checkbox" id="cfgAnnounceQueue"> Anunciar adições na fila</label>
-        <label class="check"><input type="checkbox" id="cfgAutoSkip"> Pular faixas com erro automaticamente</label>
+        <label class="check"><input type="checkbox" id="cfgEveryone"> <span data-i18n="cfg_everyone">Todos podem pedir música (!play)</span></label>
+        <label class="check"><input type="checkbox" id="cfgAnnounceNow"> <span data-i18n="cfg_announce_now">Anunciar início de faixa no chat</span></label>
+        <label class="check"><input type="checkbox" id="cfgAnnounceQueue"> <span data-i18n="cfg_announce_queue">Anunciar adições na fila</span></label>
+        <label class="check"><input type="checkbox" id="cfgAutoSkip"> <span data-i18n="cfg_auto_skip">Pular faixas com erro automaticamente</span></label>
       </div>
 
       <div class="form-grid">
-        <label>Cooldown por usuário (segundos)
+        <label><span data-i18n="cfg_lang_label">Idioma do Bot &amp; IA</span>
+          <select id="cfgLang">
+            <option value="pt">Português (PT-BR)</option>
+            <option value="en">English (EN)</option>
+            <option value="es">Español (ES)</option>
+          </select>
+        </label>
+        <label><span data-i18n="cfg_per_user">Cooldown por usuário (segundos)</span>
           <input type="number" id="cfgPerUser" min="0" max="3600" placeholder="ex: 15">
         </label>
-        <label>Cooldown global do chat (segundos)
+        <label><span data-i18n="cfg_global">Cooldown global do chat (segundos)</span>
           <input type="number" id="cfgGlobal" min="0" max="60" placeholder="ex: 3">
         </label>
-        <label>Tamanho máximo da fila
+        <label><span data-i18n="cfg_max_queue">Tamanho máximo da fila</span>
           <input type="number" id="cfgMaxQueue" min="1" max="500" placeholder="ex: 50">
         </label>
-        <label>Máximo de faixas por playlist
+        <label><span data-i18n="cfg_max_playlist">Máximo de faixas por playlist</span>
           <input type="number" id="cfgMaxPlaylist" min="1" max="100" placeholder="ex: 20">
         </label>
-        <label>Votos necessários para pular (!skip)
+        <label><span data-i18n="cfg_skip_votes">Votos necessários para pular (!skip)</span>
           <input type="number" id="cfgSkipVotes" min="1" max="50" placeholder="ex: 3">
         </label>
-        <label>Intervalo de sincronização (segundos)
+        <label><span data-i18n="cfg_poll">Intervalo de sincronização (segundos)</span>
           <input type="number" id="cfgPoll" min="2" max="300" placeholder="ex: 5">
         </label>
       </div>
@@ -851,11 +863,11 @@
       <div class="row" style="margin-top: 24px; justify-content: flex-end; gap: 12px;">
         <button class="btn danger" id="btnReset" type="button">
           <span data-icon="rotate-ccw" data-size="14"></span>
-          Resetar estado
+          <span data-i18n="cfg_reset">Resetar estado</span>
         </button>
         <button class="btn primary" id="btnSaveCfg" type="button">
           <span data-icon="save" data-size="14"></span>
-          Salvar configurações
+          <span data-i18n="cfg_save">Salvar configurações</span>
         </button>
       </div>
     </div>

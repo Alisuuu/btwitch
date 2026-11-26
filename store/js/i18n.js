@@ -1,0 +1,375 @@
+/* ==========================================================================
+   ALIVE STORE — i18n (Português para pt*, Inglês para qualquer outro idioma)
+   ========================================================================== */
+(function () {
+  'use strict';
+
+  function detectLang() {
+    var raw = '';
+    try {
+      var m = /[?&]lang=([^&]+)/i.exec(location.search || '');
+      if (m && m[1]) raw = decodeURIComponent(m[1]);
+    } catch (e) {}
+
+    if (!raw && window.Alive && typeof window.Alive.getLanguage === 'function') {
+      try { raw = window.Alive.getLanguage(); } catch (e) {}
+    }
+    if (!raw && typeof navigator !== 'undefined') {
+      raw = navigator.language || navigator.userLanguage || '';
+    }
+    return String(raw || '').toLowerCase().indexOf('pt') === 0 ? 'pt' : 'en';
+  }
+
+  var LANG = detectLang();
+  try {
+    if (document && document.documentElement) {
+      document.documentElement.lang = LANG === 'pt' ? 'pt-BR' : 'en';
+    }
+  } catch (e) {}
+
+  var DICT = {
+    pt: {
+      meta_desc_store: 'Loja de overlays e temas para live da Alive.',
+      meta_desc_detail: 'Detalhes do produto na Alive Store.',
+      page_title_detail: 'Produto — Alive Store',
+      tab_alive: 'Alive',
+      tab_community: 'Comunidade',
+      tab_paid: 'Pagos',
+      btn_publish: 'Publicar',
+      aria_open_search: 'Abrir busca',
+      title_search: 'Buscar',
+      search_placeholder_anime: 'Buscar animes e desenhos…',
+      search_placeholder_community: 'Buscar temas ou autores…',
+      search_placeholder_soon: 'Em breve…',
+      aria_search_products: 'Buscar produtos',
+      aria_clear_search: 'Limpar busca',
+      aria_close_search: 'Fechar busca',
+      aria_close: 'Fechar',
+      aria_share: 'Compartilhar',
+      label_device: 'Dispositivo',
+      device_phone: 'Celular',
+      device_tablet: 'Tablet',
+      label_banner_pos: 'Posição do Banner',
+      pos_bottom: 'Rodapé',
+      pos_top: 'Topo',
+      pos_left: 'Esquerda',
+      pos_right: 'Direita',
+      pos_none: 'Sem banner',
+      label_banner: 'Banner',
+      label_standby: 'Tela de Espera',
+      label_logo: 'Logo Oficial',
+      btn_buy: 'Comprar',
+      btn_buy_in_app: 'Comprar no app',
+      btn_download: 'Baixar',
+      note_play_store: 'Compra segura via Google Play · entrega automática no app',
+      note_play_store_detail: 'Compra segura via Google Play · entrega automática no app Alive',
+      publish_badge: 'Comunidade Alive',
+      publish_title: 'Publicar Tema',
+      publish_sub: 'Envie seu pacote .zip contendo o theme.json e assets.',
+      publish_pick: 'Selecione o arquivo .zip',
+      publish_hint: 'Toque para escolher ou arraste o arquivo aqui',
+      publish_ready: 'Pronto',
+      publish_btn: 'Publicar Tema',
+      publish_err_zip: 'Selecione um arquivo compactado no formato .zip',
+      publish_validating: 'Validando estrutura do tema…',
+      publish_err_jszip: 'Módulo JSZip não disponível',
+      publish_err_themejson: 'O arquivo .zip deve conter o theme.json na raiz do tema.',
+      publish_err_name: 'theme.json não possui o campo obrigatório "name".',
+      publish_with_standby: 'com espera',
+      publish_no_standby: 'sem espera',
+      publish_err_read: 'Erro ao ler pacote .zip: {err}',
+      publish_submitting: 'Publicando tema…',
+      publish_uploading: 'Enviando arquivos e processando tema…',
+      publish_invalid_resp: 'Resposta inválida do servidor',
+      publish_success: 'Tema publicado com sucesso na Comunidade!',
+      publish_fail: 'Falha na publicação: {err}',
+      publish_retry: 'Tentar novamente',
+      back_to_store: '← Voltar à loja',
+      not_found_title: 'Produto não encontrado',
+      not_found_desc: 'O link pode estar desatualizado. Volte ao catálogo para ver tudo que está à venda.',
+      view_catalog: 'Ver catálogo',
+      whats_included: 'O que vem no pacote',
+      compatible_with: 'Compatível com',
+      you_may_like: 'Você também pode gostar',
+      badge_hot: 'Mais vendido',
+      badge_new: 'Novo',
+      badge_sale: 'Promoção',
+      standby_wait: 'Aguarde um momento',
+      standby_aria: 'Tela de espera',
+      preview_of: 'Preview de {name}',
+      card_subtitle_anime: 'Overlay Celular & Tablet',
+      card_subtitle_default: 'Overlay para transmissão',
+      card_view_aria: 'Ver {name}',
+      card_by: 'por ',
+      card_ready: 'Pronto para o app',
+      theme_composition: 'Composição · 1920×1080',
+      theme_standby_btn: 'Tela de espera',
+      theme_specs: 'Especificações técnicas',
+      meta_author: 'Autor',
+      meta_version: 'Versão',
+      meta_widgets: 'Widgets',
+      meta_profile: 'Perfil',
+      meta_border: 'Borda',
+      meta_border_yes: 'sim',
+      meta_border_off: 'desligada',
+      meta_layers: 'Camadas',
+      meta_updated: 'Atualizado',
+      meta_size: 'Tamanho',
+      meta_license: 'Licença',
+      meta_license_personal: 'Pessoal',
+      meta_delivery: 'Entrega',
+      meta_delivery_auto: 'Automática',
+      meta_category: 'Categoria',
+      license_free: 'Licença de uso pessoal',
+      license_paid: 'Pagamento único · sem assinatura',
+      coming_soon_pill: 'Em breve',
+      coming_soon_title: 'Overlays Pagos em Breve',
+      coming_soon_desc: 'A loja de temas e overlays exclusivos está sendo preparada para as próximas atualizações.',
+      empty_search: 'Tente outro termo de busca.',
+      empty_community: 'Assim que um tema for publicado, ele aparece aqui.',
+      empty_anime: 'Carregando animes…',
+      empty_title: 'Nenhum produto encontrado',
+      count_one: '1 produto',
+      count_many: '{n} produtos',
+      modal_subtitle_anime: 'Overlay para Celular e Tablet',
+      modal_tag_ondemand: 'Overlay Sob Demanda',
+      modal_tag_community_default: 'Tema oficial da comunidade',
+      fb_title: 'Compre dentro do app Alive',
+      fb_store: 'Abrir na Google Play',
+      fb_support: 'Falar no suporte',
+      fb_note: 'As compras são processadas pela Google Play dentro do app. Nenhum dado de cartão passa pela loja web.',
+      fb_whats_msg: 'Oi! Preciso de ajuda na loja de overlays da Alive.',
+      fb_text_native: 'Não foi possível iniciar a compra agora.',
+      fb_text_web: 'Você está vendo a loja no navegador. Abra o app Alive para pagar com Google Play e receber o overlay automaticamente.',
+      processing: 'Processando…',
+      buy_unlocked: '{name} liberado no app Alive!',
+      buy_cancelled: 'Compra cancelada',
+      buy_error: 'Não foi possível concluir a compra',
+      dl_started: 'Download de {name} iniciado',
+      dl_error: 'Não foi possível baixar agora',
+      share_text: 'Olha esse overlay da loja Alive: {name} — {price}\n{url}',
+      share_free: 'grátis',
+      share_copied: 'Link copiado para compartilhar',
+      anime_banner_bottom: 'Banner Base Celular',
+      anime_banner_top: 'Banner Topo Celular',
+      anime_banner_left: 'Banner Tablet Esquerda',
+      anime_banner_right: 'Banner Tablet Direita',
+      anime_standby_disabled: 'Tela de espera desativada',
+      anime_btn_composition: 'Composição',
+      anime_btn_standby: 'Tela de espera',
+      anime_btn_no_standby: 'Sem espera',
+      anime_btn_no_logo: 'Sem logo',
+      anime_prep_dl: 'Preparando download do pacote…',
+      anime_gen_standby: 'Gerando tela de espera (standby)…',
+      anime_gen_banner: 'Renderizando banner oficial…',
+      anime_gen_preview: 'Gerando preview do overlay…',
+      anime_gen_logo: 'Processando logo oficial…',
+      anime_zipping: 'Comprimindo pacote .zip…',
+      anime_dl_done: 'Download concluído com sucesso!',
+      anime_gen_err: 'Erro ao gerar o tema: {err}',
+      cat_todos: 'Todos',
+      cat_tema: 'Temas',
+      cat_gratis: 'Grátis',
+      cat_tela: 'Overlays de tela',
+      cat_cenas: 'Cenas',
+      cat_molduras: 'Molduras de cam',
+      cat_alertas: 'Alertas',
+      cat_pacote: 'Pacotes',
+      cat_favoritos: 'Favoritos'
+    },
+    en: {
+      meta_desc_store: 'Alive live-streaming overlays and themes store.',
+      meta_desc_detail: 'Product details on Alive Store.',
+      page_title_detail: 'Product — Alive Store',
+      tab_alive: 'Alive',
+      tab_community: 'Community',
+      tab_paid: 'Paid',
+      btn_publish: 'Publish',
+      aria_open_search: 'Open search',
+      title_search: 'Search',
+      search_placeholder_anime: 'Search anime & shows…',
+      search_placeholder_community: 'Search themes or authors…',
+      search_placeholder_soon: 'Coming soon…',
+      aria_search_products: 'Search products',
+      aria_clear_search: 'Clear search',
+      aria_close_search: 'Close search',
+      aria_close: 'Close',
+      aria_share: 'Share',
+      label_device: 'Device',
+      device_phone: 'Phone',
+      device_tablet: 'Tablet',
+      label_banner_pos: 'Banner Position',
+      pos_bottom: 'Bottom',
+      pos_top: 'Top',
+      pos_left: 'Left',
+      pos_right: 'Right',
+      pos_none: 'No banner',
+      label_banner: 'Banner',
+      label_standby: 'Standby Screen',
+      label_logo: 'Official Logo',
+      btn_buy: 'Buy',
+      btn_buy_in_app: 'Buy in app',
+      btn_download: 'Download',
+      note_play_store: 'Secure purchase via Google Play · instant delivery in the app',
+      note_play_store_detail: 'Secure purchase via Google Play · instant delivery in the Alive app',
+      publish_badge: 'Alive Community',
+      publish_title: 'Publish Theme',
+      publish_sub: 'Upload your .zip package containing theme.json and assets.',
+      publish_pick: 'Select .zip file',
+      publish_hint: 'Tap to choose or drag and drop the file here',
+      publish_ready: 'Ready',
+      publish_btn: 'Publish Theme',
+      publish_err_zip: 'Please select a compressed .zip file',
+      publish_validating: 'Validating theme structure…',
+      publish_err_jszip: 'JSZip module is not available',
+      publish_err_themejson: 'The .zip file must contain theme.json at the root.',
+      publish_err_name: 'theme.json is missing the required "name" field.',
+      publish_with_standby: 'with standby',
+      publish_no_standby: 'no standby',
+      publish_err_read: 'Failed to read .zip package: {err}',
+      publish_submitting: 'Publishing theme…',
+      publish_uploading: 'Uploading files and processing theme…',
+      publish_invalid_resp: 'Invalid server response',
+      publish_success: 'Theme published to the Community!',
+      publish_fail: 'Publish failed: {err}',
+      publish_retry: 'Try again',
+      back_to_store: '← Back to store',
+      not_found_title: 'Product not found',
+      not_found_desc: 'This link may be outdated. Go back to the catalog to browse everything available.',
+      view_catalog: 'View catalog',
+      whats_included: 'What is included',
+      compatible_with: 'Compatible with',
+      you_may_like: 'You may also like',
+      badge_hot: 'Best seller',
+      badge_new: 'New',
+      badge_sale: 'Sale',
+      standby_wait: 'Please wait a moment',
+      standby_aria: 'Standby screen',
+      preview_of: 'Preview of {name}',
+      card_subtitle_anime: 'Phone & Tablet Overlay',
+      card_subtitle_default: 'Stream overlay',
+      card_view_aria: 'View {name}',
+      card_by: 'by ',
+      card_ready: 'App ready',
+      theme_composition: 'Composition · 1920×1080',
+      theme_standby_btn: 'Standby screen',
+      theme_specs: 'Technical specs',
+      meta_author: 'Author',
+      meta_version: 'Version',
+      meta_widgets: 'Widgets',
+      meta_profile: 'Profile',
+      meta_border: 'Border',
+      meta_border_yes: 'yes',
+      meta_border_off: 'off',
+      meta_layers: 'Layers',
+      meta_updated: 'Updated',
+      meta_size: 'Size',
+      meta_license: 'License',
+      meta_license_personal: 'Personal',
+      meta_delivery: 'Delivery',
+      meta_delivery_auto: 'Automatic',
+      meta_category: 'Category',
+      license_free: 'Personal use license',
+      license_paid: 'One-time payment · no subscription',
+      coming_soon_pill: 'Coming soon',
+      coming_soon_title: 'Paid Overlays Coming Soon',
+      coming_soon_desc: 'The exclusive themes and overlays store is being prepared for upcoming updates.',
+      empty_search: 'Try a different search term.',
+      empty_community: 'As soon as a theme is published, it will appear here.',
+      empty_anime: 'Loading anime…',
+      empty_title: 'No products found',
+      count_one: '1 product',
+      count_many: '{n} products',
+      modal_subtitle_anime: 'Phone & Tablet Overlay',
+      modal_tag_ondemand: 'On-Demand Overlay',
+      modal_tag_community_default: 'Official community theme',
+      fb_title: 'Buy inside the Alive app',
+      fb_store: 'Open on Google Play',
+      fb_support: 'Contact support',
+      fb_note: 'Purchases are processed by Google Play inside the app. No card details pass through the web store.',
+      fb_whats_msg: 'Hi! I need help with the Alive overlays store.',
+      fb_text_native: 'Could not start the purchase right now.',
+      fb_text_web: 'You are viewing the store in a browser. Open the Alive app to pay with Google Play and receive the overlay automatically.',
+      processing: 'Processing…',
+      buy_unlocked: '{name} unlocked in the Alive app!',
+      buy_cancelled: 'Purchase cancelled',
+      buy_error: 'Could not complete purchase',
+      dl_started: 'Download of {name} started',
+      dl_error: 'Could not download right now',
+      share_text: 'Check out this overlay on Alive Store: {name} — {price}\n{url}',
+      share_free: 'free',
+      share_copied: 'Link copied to share',
+      anime_banner_bottom: 'Phone Bottom Banner',
+      anime_banner_top: 'Phone Top Banner',
+      anime_banner_left: 'Tablet Left Banner',
+      anime_banner_right: 'Tablet Right Banner',
+      anime_standby_disabled: 'Standby screen disabled',
+      anime_btn_composition: 'Composition',
+      anime_btn_standby: 'Standby screen',
+      anime_btn_no_standby: 'No standby',
+      anime_btn_no_logo: 'No logo',
+      anime_prep_dl: 'Preparing package download…',
+      anime_gen_standby: 'Generating standby screen…',
+      anime_gen_banner: 'Rendering official banner…',
+      anime_gen_preview: 'Generating overlay preview…',
+      anime_gen_logo: 'Processing official logo…',
+      anime_zipping: 'Compressing .zip package…',
+      anime_dl_done: 'Download completed successfully!',
+      anime_gen_err: 'Failed to generate theme: {err}',
+      cat_todos: 'All',
+      cat_tema: 'Themes',
+      cat_gratis: 'Free',
+      cat_tela: 'Screen overlays',
+      cat_cenas: 'Scenes',
+      cat_molduras: 'Webcam frames',
+      cat_alertas: 'Alerts',
+      cat_pacote: 'Bundles',
+      cat_favoritos: 'Favorites'
+    }
+  };
+
+  function t(key, vars) {
+    var table = DICT[LANG] || DICT.en;
+    var str = Object.prototype.hasOwnProperty.call(table, key) ? table[key] : (DICT.en[key] || key);
+    if (vars) {
+      Object.keys(vars).forEach(function (k) {
+        str = str.split('{' + k + '}').join(String(vars[k] == null ? '' : vars[k]));
+      });
+    }
+    return str;
+  }
+
+  function applyDom(root) {
+    var scope = root || document;
+    scope.querySelectorAll('[data-i18n]').forEach(function (el) {
+      el.textContent = t(el.getAttribute('data-i18n'));
+    });
+    scope.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
+      el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
+    });
+    scope.querySelectorAll('[data-i18n-aria-label]').forEach(function (el) {
+      el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria-label')));
+    });
+    scope.querySelectorAll('[data-i18n-title]').forEach(function (el) {
+      el.setAttribute('title', t(el.getAttribute('data-i18n-title')));
+    });
+    scope.querySelectorAll('[data-i18n-content]').forEach(function (el) {
+      el.setAttribute('content', t(el.getAttribute('data-i18n-content')));
+    });
+  }
+
+  window.ALIVE_I18N = {
+    lang: LANG,
+    isPt: function () { return LANG === 'pt'; },
+    tmdbLang: function () { return LANG === 'pt' ? 'pt-BR' : 'en-US'; },
+    locale: function () { return LANG === 'pt' ? 'pt-BR' : 'en-US'; },
+    t: t,
+    applyDom: applyDom
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { applyDom(document); });
+  } else {
+    applyDom(document);
+  }
+})();

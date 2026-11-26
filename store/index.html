@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#000000">
   <title>Alive Store</title>
-  <meta name="description" content="Loja de overlays e temas para live da Alive.">
+  <meta name="description" content="Loja de overlays e temas para live da Alive." data-i18n-content="meta_desc_store">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23000000' stroke='%23ffffff' stroke-width='4'/%3E%3Ctext x='32' y='44' font-family='Arial' font-size='34' font-weight='800' text-anchor='middle' fill='%23ffffff'%3EA%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,14 +19,14 @@
     <div class="container">
       <!-- Abas Principais, Botão Publicar e Botão Buscar em Linha Única -->
       <div class="tab-nav">
-        <button class="tab-btn active" data-tab="alive">Alive</button>
-        <button class="tab-btn" data-tab="comunidade">Comunidade</button>
-        <button class="tab-btn" data-tab="pagos">Pagos</button>
+        <button class="tab-btn active" data-tab="alive" data-i18n="tab_alive">Alive</button>
+        <button class="tab-btn" data-tab="comunidade" data-i18n="tab_community">Comunidade</button>
+        <button class="tab-btn" data-tab="pagos" data-i18n="tab_paid">Pagos</button>
         <button class="btn-publish" id="btnPublish">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <span>Publicar</span>
+          <span data-i18n="btn_publish">Publicar</span>
         </button>
-        <button type="button" class="btn-search-toggle" id="btnSearchToggle" aria-label="Abrir busca" title="Buscar" aria-expanded="false">
+        <button type="button" class="btn-search-toggle" id="btnSearchToggle" aria-label="Abrir busca" data-i18n-aria-label="aria_open_search" title="Buscar" data-i18n-title="title_search" aria-expanded="false">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         </button>
       </div>
@@ -36,11 +36,11 @@
         <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
           <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
         </svg>
-        <input id="search" type="search" placeholder="Buscar animes e desenhos…" aria-label="Buscar produtos" autocomplete="off">
-        <button type="button" class="search-clear-btn" id="searchClearBtn" aria-label="Limpar busca" style="display:none">
+        <input id="search" type="search" placeholder="Buscar animes e desenhos…" data-i18n-placeholder="search_placeholder_anime" aria-label="Buscar produtos" data-i18n-aria-label="aria_search_products" autocomplete="off">
+        <button type="button" class="search-clear-btn" id="searchClearBtn" aria-label="Limpar busca" data-i18n-aria-label="aria_clear_search" style="display:none">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
-        <button type="button" class="search-close-btn" id="searchCloseBtn" aria-label="Fechar busca" title="Fechar busca">
+        <button type="button" class="search-close-btn" id="searchCloseBtn" aria-label="Fechar busca" data-i18n-aria-label="aria_close_search" title="Fechar busca" data-i18n-title="aria_close_search">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
@@ -64,7 +64,7 @@
   <div class="modal" id="productModal" role="dialog" aria-modal="true" aria-labelledby="modalName">
     <div class="modal-backdrop"></div>
     <div class="modal-panel">
-      <button class="modal-close" id="modalClose" aria-label="Fechar">
+      <button class="modal-close" id="modalClose" aria-label="Fechar" data-i18n-aria-label="aria_close">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
       <div class="modal-scroll-wrap">
@@ -80,52 +80,52 @@
           <!-- Opções de personalização sob demanda (Aba Alive) -->
           <div id="modalCustomOptions" style="display:none;flex-direction:column;gap:12px">
             <div class="seg-group">
-              <span class="seg-label">Dispositivo</span>
+              <span class="seg-label" data-i18n="label_device">Dispositivo</span>
               <div class="seg-row">
-                <button class="seg-item active" data-device="celular">Celular</button>
-                <button class="seg-item" data-device="tablet">Tablet</button>
+                <button class="seg-item active" data-device="celular" data-i18n="device_phone">Celular</button>
+                <button class="seg-item" data-device="tablet" data-i18n="device_tablet">Tablet</button>
               </div>
             </div>
 
             <div class="seg-group" id="segPosCelular">
-              <span class="seg-label">Posição do Banner</span>
+              <span class="seg-label" data-i18n="label_banner_pos">Posição do Banner</span>
               <div class="seg-row">
-                <button class="seg-item active" data-pos="bottom">Rodapé</button>
-                <button class="seg-item" data-pos="top">Topo</button>
-                <button class="seg-item" data-pos="none">Sem banner</button>
+                <button class="seg-item active" data-pos="bottom" data-i18n="pos_bottom">Rodapé</button>
+                <button class="seg-item" data-pos="top" data-i18n="pos_top">Topo</button>
+                <button class="seg-item" data-pos="none" data-i18n="pos_none">Sem banner</button>
               </div>
             </div>
 
             <div class="seg-group" id="segPosTablet" style="display:none">
-              <span class="seg-label">Posição do Banner</span>
+              <span class="seg-label" data-i18n="label_banner_pos">Posição do Banner</span>
               <div class="seg-row">
-                <button class="seg-item active" data-pos="left">Esquerda</button>
-                <button class="seg-item" data-pos="right">Direita</button>
-                <button class="seg-item" data-pos="none">Sem banner</button>
+                <button class="seg-item active" data-pos="left" data-i18n="pos_left">Esquerda</button>
+                <button class="seg-item" data-pos="right" data-i18n="pos_right">Direita</button>
+                <button class="seg-item" data-pos="none" data-i18n="pos_none">Sem banner</button>
               </div>
             </div>
 
             <div class="seg-group" id="segBackdropGroup" style="display:none">
-              <span class="seg-label">Banner</span>
+              <span class="seg-label" data-i18n="label_banner">Banner</span>
               <div class="backdrops-row" id="modalBackdropsRow"></div>
             </div>
 
             <div class="seg-group" id="segStandbyGroup" style="display:none">
-              <span class="seg-label">Tela de Espera</span>
+              <span class="seg-label" data-i18n="label_standby">Tela de Espera</span>
               <div class="backdrops-row" id="modalStandbyRow"></div>
             </div>
 
             <div class="seg-group" id="segLogoGroup" style="display:none">
-              <span class="seg-label">Logo Oficial</span>
+              <span class="seg-label" data-i18n="label_logo">Logo Oficial</span>
               <div class="logos-row" id="modalLogosRow"></div>
             </div>
           </div>
 
           <div class="buy-row">
-            <button class="btn btn-primary btn-lg" id="modalBuy">Comprar</button>
+            <button class="btn btn-primary btn-lg" id="modalBuy" data-i18n="btn_buy">Comprar</button>
           </div>
 
-          <p class="note" id="modalNote">Compra segura via Google Play · entrega automática no app</p>
+          <p class="note" id="modalNote" data-i18n="note_play_store">Compra segura via Google Play · entrega automática no app</p>
 
           <ul class="includes" id="modalIncludes"></ul>
 
@@ -140,16 +140,16 @@
   <div class="modal" id="publishModal" role="dialog" aria-modal="true" aria-labelledby="publishTitle">
     <div class="modal-backdrop"></div>
     <div class="modal-panel publish-panel">
-      <button class="modal-close" id="publishClose" aria-label="Fechar">
+      <button class="modal-close" id="publishClose" aria-label="Fechar" data-i18n-aria-label="aria_close">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
 
       <div class="modal-scroll-wrap">
         <div class="publish-body">
         <div class="publish-header">
-          <span class="tag tag-cyan">Comunidade Alive</span>
-          <h2 class="display" id="publishTitle" style="margin:6px 0 4px;font-size:22px">Publicar Tema</h2>
-          <p class="muted" style="margin:0;font-size:13.5px">Envie seu pacote .zip contendo o theme.json e assets.</p>
+          <span class="tag tag-cyan" data-i18n="publish_badge">Comunidade Alive</span>
+          <h2 class="display" id="publishTitle" style="margin:6px 0 4px;font-size:22px" data-i18n="publish_title">Publicar Tema</h2>
+          <p class="muted" style="margin:0;font-size:13.5px" data-i18n="publish_sub">Envie seu pacote .zip contendo o theme.json e assets.</p>
         </div>
 
         <div class="publish-dropzone" id="publishDropzone">
@@ -158,8 +158,8 @@
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00E5FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           </div>
           <div class="dropzone-text">
-            <b>Selecione o arquivo .zip</b>
-            <span class="muted" style="font-size:12.5px;display:block;margin-top:2px">Toque para escolher ou arraste o arquivo aqui</span>
+            <b data-i18n="publish_pick">Selecione o arquivo .zip</b>
+            <span class="muted" style="font-size:12.5px;display:block;margin-top:2px" data-i18n="publish_hint">Toque para escolher ou arraste o arquivo aqui</span>
           </div>
         </div>
 
@@ -168,17 +168,18 @@
             <b id="publishThemeName">—</b>
             <span class="muted" id="publishThemeDetails" style="font-size:12.5px">—</span>
           </div>
-          <span class="tag tag-ok" id="publishValidBadge">Pronto</span>
+          <span class="tag tag-ok" id="publishValidBadge" data-i18n="publish_ready">Pronto</span>
         </div>
 
         <div class="publish-status-box" id="publishStatus" style="display:none"></div>
 
-        <button class="btn btn-primary btn-lg" id="publishSubmitBtn" style="width:100%" disabled>Publicar Tema</button>
+        <button class="btn btn-primary btn-lg" id="publishSubmitBtn" style="width:100%" disabled data-i18n="publish_btn">Publicar Tema</button>
       </div>
       </div>
     </div>
   </div>
 
+  <script src="js/i18n.js"></script>
   <script src="js/art.js"></script>
   <script src="js/catalog.js"></script>
   <script src="js/alive-bridge.js"></script>

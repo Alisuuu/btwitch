@@ -7,6 +7,8 @@
   const TMDB_API_KEY = '5e5da432e96174227b25086fe8637985';
   const TMDB_BASE = 'https://api.themoviedb.org/3';
   const IMG_BASE = 'https://image.tmdb.org/t/p/';
+  const I = window.ALIVE_I18N;
+  const t = (k, vars) => (I ? I.t(k, vars) : k);
 
   const PRESETS = [
     'Naruto Shippuden', 'Demon Slayer', 'One Piece', 'Attack on Titan',
@@ -150,7 +152,8 @@
     if (!query || !query.trim()) return [];
     const q = encodeURIComponent(query.trim());
     try {
-      const res = await fetch(`${TMDB_BASE}/search/multi?api_key=${TMDB_API_KEY}&query=${q}&language=pt-BR&include_adult=false`);
+      const tmdbLang = I ? I.tmdbLang() : 'pt-BR';
+      const res = await fetch(`${TMDB_BASE}/search/multi?api_key=${TMDB_API_KEY}&query=${q}&language=${tmdbLang}&include_adult=false`);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       let list = (data.results || []).filter(isAnimeOrCartoon);
@@ -467,18 +470,18 @@
       ctx.fill();
       ctx.globalAlpha = 1.0;
 
-      // Texto simples estrito: "Aguarde um momento"
+      // Texto simples estrito: "Aguarde um momento" / "Please wait a moment"
       ctx.shadowColor = 'rgba(0, 229, 255, 0.55)';
       ctx.shadowBlur = 20;
       ctx.fillStyle = '#ffffff';
       ctx.font = '700 52px Sora, Inter, sans-serif';
-      ctx.fillText('Aguarde um momento', 960, centerY);
+      ctx.fillText(t('standby_wait'), 960, centerY);
       ctx.shadowBlur = 0;
 
       // Rodapé Alive Studio
       ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
       ctx.font = '600 16px Sora, Inter, sans-serif';
-      ctx.fillText('ALIVE STUDIO · TELA DE ESPERA', 960, 1010);
+      ctx.fillText('ALIVE STUDIO · ' + t('anime_btn_standby').toUpperCase(), 960, 1010);
     }
 
     // Renderiza frame inicial
@@ -578,7 +581,7 @@
     const btn = document.getElementById('modalBuy');
     const note = document.getElementById('modalNote');
     if (btn) btn.disabled = true;
-    if (note) note.textContent = 'Preparando download do pacote…';
+    if (note) note.textContent = t('anime_prep_dl');
 
     try {
       const zip = new window.JSZip();
@@ -591,7 +594,7 @@
       let standbyBlob = null;
 
       if (STATE.standbyEnabled) {
-        if (note) note.textContent = 'Gerando tela de espera (standby)…';
+        if (note) note.textContent = t('anime_gen_standby');
         const targetStandbyUrl = STATE.activeStandbyUrl || STATE.activeBackdropUrl;
 
         const pNameLower = (p.name || '').toLowerCase();
@@ -636,13 +639,13 @@
       const previewFilename = 'preview.png';
 
       if (hasBanner) {
-        if (note) note.textContent = 'Renderizando banner oficial…';
+        if (note) note.textContent = t('anime_gen_banner');
         const bannerBlob = await renderBannerCanvas();
         if (bannerBlob) {
           zip.file(bannerFilename, bannerBlob);
         }
       } else {
-        if (note) note.textContent = 'Gerando preview do overlay…';
+        if (note) note.textContent = t('anime_gen_preview');
         const previewBlob = await renderPreviewImage(STATE.activeBackdropUrl, p.name);
         if (previewBlob) {
           zip.file(previewFilename, previewBlob);
@@ -653,7 +656,7 @@
       const logoFilename = 'widget_3_logo.png';
       let hasLogo = false;
       if (STATE.activeLogoUrl) {
-        if (note) note.textContent = 'Processando logo oficial…';
+        if (note) note.textContent = t('anime_gen_logo');
         const logoBlob = await generateLogoBlob(p);
         if (logoBlob) {
           zip.file(logoFilename, logoBlob);
@@ -780,7 +783,7 @@
       zip.file('theme.json', JSON.stringify(themeJson, null, 2));
 
       // 6. Compressão e Download
-      if (note) note.textContent = 'Comprimindo pacote .zip…';
+      if (note) note.textContent = t('anime_zipping');
       const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
 
       const cleanSlug = p.name.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 18);
@@ -794,10 +797,10 @@
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 
-      if (note) note.textContent = 'Download concluído com sucesso!';
+      if (note) note.textContent = t('anime_dl_done');
     } catch (err) {
       console.error(err);
-      alert('Erro ao gerar o tema: ' + err.message);
+      alert(t('anime_gen_err', { err: err.message }));
     } finally {
       if (btn) btn.disabled = false;
     }
@@ -842,8 +845,8 @@
 
     standbyGroup.style.display = 'flex';
 
-    const sameBtn = `<button type="button" class="standby-pick-btn ${!STATE.activeStandbyUrl && STATE.standbyEnabled ? 'active' : ''}" data-mode="same">Mesmo do banner</button>`;
-    const noneBtn = `<button type="button" class="standby-pick-btn ${!STATE.standbyEnabled ? 'active' : ''}" data-mode="none">Sem espera</button>`;
+    const sameBtn = `<button type="button" class="standby-pick-btn ${!STATE.activeStandbyUrl && STATE.standbyEnabled ? 'active' : ''}" data-mode="same">${t('label_banner')}</button>`;
+    const noneBtn = `<button type="button" class="standby-pick-btn ${!STATE.standbyEnabled ? 'active' : ''}" data-mode="none">${t('anime_btn_no_standby')}</button>`;
     const list = (backdrops && backdrops.length) ? backdrops : (STATE.activeBackdropUrl ? [STATE.activeBackdropUrl] : []);
 
     const listHtml = list.slice(0, 8).map((url, i) => `
@@ -881,7 +884,7 @@
 
     logoGroup.style.display = 'flex';
 
-    const noneBtn = `<button type="button" class="logo-pick logo-pick-none ${!STATE.activeLogoUrl ? 'active' : ''}" data-url="">Sem logo</button>`;
+    const noneBtn = `<button type="button" class="logo-pick logo-pick-none ${!STATE.activeLogoUrl ? 'active' : ''}" data-url="">${t('anime_btn_no_logo')}</button>`;
     const listHtml = (logos || []).slice(0, 6).map((url, i) => `
       <img class="logo-pick ${STATE.activeLogoUrl === url ? 'active' : ''}" src="${getProxiedImageUrl(url)}" data-url="${url}" alt="Logo ${i + 1}">
     `).join('');
@@ -921,8 +924,8 @@
     const view = STATE.modalView || 'composition';
     const switcherHtml = `
       <div class="modal-art-switcher">
-        <button type="button" class="art-switch-btn ${view === 'composition' ? 'active' : ''}" data-view="composition">Composição</button>
-        <button type="button" class="art-switch-btn ${view === 'standby' ? 'active' : ''}" data-view="standby">Tela de espera</button>
+        <button type="button" class="art-switch-btn ${view === 'composition' ? 'active' : ''}" data-view="composition">${t('anime_btn_composition')}</button>
+        <button type="button" class="art-switch-btn ${view === 'standby' ? 'active' : ''}" data-view="standby">${t('anime_btn_standby')}</button>
       </div>
     `;
 
@@ -940,9 +943,9 @@
         standbyBody = `
           <div class="anime-standby-stage" style="background:#07070a;width:100%;height:100%;">
             <div class="standby-center-box">
-              <span class="anime-standby-title" style="color:var(--muted);font-size:24px;">Tela de espera desativada</span>
+              <span class="anime-standby-title" style="color:var(--muted);font-size:24px;">${t('anime_standby_disabled')}</span>
             </div>
-            <div class="standby-footer-tag">ALIVE STUDIO · OVERLAY SEM STANDBY</div>
+            <div class="standby-footer-tag">ALIVE STUDIO</div>
           </div>
         `;
       } else {
@@ -952,9 +955,9 @@
           <div class="anime-standby-stage" style="background-image:linear-gradient(to bottom, rgba(0,0,0,0.45), rgba(0,0,0,0.85)), url('${bgUrl}');width:100%;height:100%;">
             <div class="standby-center-box">
               <div class="standby-pulse-dot"></div>
-              <span class="anime-standby-title">Aguarde um momento</span>
+              <span class="anime-standby-title">${t('standby_wait')}</span>
             </div>
-            <div class="standby-footer-tag">ALIVE STUDIO · TELA DE ESPERA</div>
+            <div class="standby-footer-tag">ALIVE STUDIO · ${t('anime_btn_standby').toUpperCase()}</div>
           </div>
         `;
       }
@@ -1020,7 +1023,7 @@
 
     const buyBtn = document.getElementById('modalBuy');
     if (buyBtn) {
-      buyBtn.textContent = 'Baixar';
+      buyBtn.textContent = t('btn_download');
       buyBtn.className = 'btn btn-lg btn-primary';
       buyBtn.onclick = downloadAnimeZip;
     }

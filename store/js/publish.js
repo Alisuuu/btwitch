@@ -5,6 +5,8 @@
   'use strict';
 
   var selectedFile = null;
+  var I = window.ALIVE_I18N;
+  function t(k, vars) { return I ? I.t(k, vars) : k; }
 
   function initPublish() {
     var btnPublish = document.getElementById('btnPublish');
@@ -44,7 +46,7 @@
       }
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Publicar Tema';
+        submitBtn.textContent = t('publish_btn');
       }
     }
 
@@ -58,22 +60,22 @@
     async function handleFile(file) {
       if (!file) return;
       if (!file.name.toLowerCase().endsWith('.zip')) {
-        showStatus('Selecione um arquivo compactado no formato .zip', 'error');
+        showStatus(t('publish_err_zip'), 'error');
         return;
       }
 
-      showStatus('Validando estrutura do tema…', 'info');
+      showStatus(t('publish_validating'), 'info');
 
       try {
         if (!window.JSZip) {
-          throw new Error('Módulo JSZip não disponível');
+          throw new Error(t('publish_err_jszip'));
         }
 
         var zip = await window.JSZip.loadAsync(file);
         var themeJsonFile = zip.file('theme.json');
 
         if (!themeJsonFile) {
-          showStatus('O arquivo .zip deve conter o theme.json na raiz do tema.', 'error');
+          showStatus(t('publish_err_themejson'), 'error');
           if (previewCard) previewCard.style.display = 'none';
           if (submitBtn) submitBtn.disabled = true;
           return;
@@ -83,14 +85,14 @@
         var theme = JSON.parse(jsonText);
 
         if (!theme.name) {
-          throw new Error('theme.json não possui o campo obrigatório "name".');
+          throw new Error(t('publish_err_name'));
         }
 
         selectedFile = file;
         if (themeNameEl) themeNameEl.textContent = theme.name;
         if (themeDetailsEl) {
           var widgetsCount = (theme.widgets || []).length;
-          var hasStandby = theme.standby && theme.standby.enabled ? 'com espera' : 'sem espera';
+          var hasStandby = theme.standby && theme.standby.enabled ? t('publish_with_standby') : t('publish_no_standby');
           themeDetailsEl.textContent = (theme.author || 'Alive Studio') + ' · ' + widgetsCount + ' widget(s) · ' + hasStandby;
         }
 
@@ -98,10 +100,10 @@
         if (statusBox) statusBox.style.display = 'none';
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Publicar Tema';
+          submitBtn.textContent = t('publish_btn');
         }
       } catch (err) {
-        showStatus('Erro ao ler pacote .zip: ' + err.message, 'error');
+        showStatus(t('publish_err_read', { err: err.message }), 'error');
         if (previewCard) previewCard.style.display = 'none';
         if (submitBtn) submitBtn.disabled = true;
       }
@@ -150,8 +152,8 @@
         if (!selectedFile) return;
 
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Publicando tema…';
-        showStatus('Enviando arquivos e processando tema…', 'info');
+        submitBtn.textContent = t('publish_submitting');
+        showStatus(t('publish_uploading'), 'info');
 
         try {
           var uploadUrl = '/api/upload?name=' + encodeURIComponent(selectedFile.name);
@@ -161,7 +163,7 @@
           });
 
           var data = await res.json().catch(function () {
-            return { ok: false, error: 'Resposta inválida do servidor' };
+            return { ok: false, error: t('publish_invalid_resp') };
           });
 
           if (!res.ok || !data.ok) {
@@ -169,7 +171,7 @@
           }
 
           if (window.ALIVE_UI && window.ALIVE_UI.toast) {
-            window.ALIVE_UI.toast('Tema publicado com sucesso na Comunidade!', 'ok');
+            window.ALIVE_UI.toast(t('publish_success'), 'ok');
           }
 
           closeModal();
@@ -182,9 +184,9 @@
             window.ALIVE_THEMES_API.load();
           }
         } catch (err) {
-          showStatus('Falha na publicação: ' + err.message, 'error');
+          showStatus(t('publish_fail', { err: err.message }), 'error');
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Tentar novamente';
+          submitBtn.textContent = t('publish_retry');
         }
       });
     }

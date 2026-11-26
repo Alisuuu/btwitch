@@ -8,6 +8,8 @@
 
   var U = window.ALIVE_UI;
   var A = window.ALIVE_ACTIONS;
+  var I = window.ALIVE_I18N;
+  function t(k, vars) { return I ? I.t(k, vars) : k; }
 
   var wantedId = null;
   var renderedId = null;
@@ -51,7 +53,7 @@
     $('detailPriceBox').innerHTML =
       '<div>' + U.priceHtml(p) + '</div>' +
       '<span class="muted" style="font-size:13px">' +
-      (U.isFree(p) ? 'Licença de uso pessoal' : 'Pagamento único · sem assinatura') + '</span>';
+      U.esc(U.isFree(p) ? t('license_free') : t('license_paid')) + '</span>';
 
     $('detailIncludes').innerHTML =
       (p.includes || []).map(function (i) { return '<li>' + U.esc(i) + '</li>'; }).join('');
@@ -60,17 +62,17 @@
       (p.compat || []).map(function (c) { return '<span class="tag">' + U.esc(c) + '</span>'; }).join('');
 
     $('detailMeta').innerHTML =
-      '<div class="meta-item"><span>Versão</span><b>' + U.esc(p.version || '1.0') + '</b></div>' +
-      '<div class="meta-item"><span>Atualizado</span><b>' + U.esc(p.updated || '—') + '</b></div>' +
-      '<div class="meta-item"><span>Tamanho</span><b>' + U.esc(p.size || '—') + '</b></div>' +
-      '<div class="meta-item"><span>Licença</span><b>Pessoal</b></div>' +
-      '<div class="meta-item"><span>Entrega</span><b>Automática</b></div>' +
-      '<div class="meta-item"><span>Categoria</span><b>' + U.esc(U.catLabel(p.category)) + '</b></div>';
+      '<div class="meta-item"><span>' + U.esc(t('meta_version')) + '</span><b>' + U.esc(p.version || '1.0') + '</b></div>' +
+      '<div class="meta-item"><span>' + U.esc(t('meta_updated')) + '</span><b>' + U.esc(p.updated || '—') + '</b></div>' +
+      '<div class="meta-item"><span>' + U.esc(t('meta_size')) + '</span><b>' + U.esc(p.size || '—') + '</b></div>' +
+      '<div class="meta-item"><span>' + U.esc(t('meta_license')) + '</span><b>' + U.esc(t('meta_license_personal')) + '</b></div>' +
+      '<div class="meta-item"><span>' + U.esc(t('meta_delivery')) + '</span><b>' + U.esc(t('meta_delivery_auto')) + '</b></div>' +
+      '<div class="meta-item"><span>' + U.esc(t('meta_category')) + '</span><b>' + U.esc(U.catLabel(p.category)) + '</b></div>';
 
     $('detailExtra').innerHTML = p.themeInfo ? U.themeExtraHtml(p) : '';
 
     var buyBtn = $('detailBuy');
-    buyBtn.textContent = U.isFree(p) ? 'Baixar' : 'Comprar no app';
+    buyBtn.textContent = U.isFree(p) ? t('btn_download') : t('btn_buy_in_app');
     buyBtn.className = 'btn btn-lg ' + (U.isFree(p) ? '' : 'btn-primary');
     buyBtn.onclick = function () {
       U.isFree(p) ? A.download(p) : A.buy(p, { button: buyBtn });

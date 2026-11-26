@@ -1,6 +1,7 @@
 // Alive Bot — widget do OBS: toca a fila via player oficial do YouTube e mantém a UI em dia.
 import { Store } from './store.js';
 import { advanceQueue, pushLog, fmtTime, thumbFor } from './state.js';
+import { t, normalizeLang } from './i18n.js';
 
 const $ = (s) => (typeof document !== 'undefined' ? document.querySelector(s) : null);
 
@@ -30,7 +31,31 @@ const els = typeof document !== 'undefined' ? {
   hint: $('#hint'), brand: $('#brand'), idle: $('#idle'),
   toast: $('#toast'),
   kicker: $('#kickerText'),
+  idleKicker: $('#idle .kicker span:last-child'),
+  idleTitle: $('#idle .idle-title'),
+  idleSub: $('#idle .sub'),
+  unmuteText: $('#unmutePrompt span'),
+  nextHead: $('#next .next-head'),
 } : {};
+
+function widgetLang() {
+  return normalizeLang(params.get('lang') || store.state?.config?.language || 'pt');
+}
+
+function applyWidgetLang(l) {
+  if (typeof document === 'undefined') return;
+  document.documentElement.lang = l === 'en' ? 'en' : (l === 'es' ? 'es' : 'pt-BR');
+  if (els.idleKicker) els.idleKicker.textContent = t(l, 'widget_idle_kicker');
+  if (els.idleTitle) els.idleTitle.textContent = t(l, 'widget_idle_title');
+  if (els.idleSub) els.idleSub.innerHTML = t(l, 'widget_idle_sub');
+  if (els.unmuteText) els.unmuteText.textContent = t(l, 'widget_unmute');
+  if (els.nextHead) {
+    const countHtml = els.nextCount ? els.nextCount.outerHTML : '<span class="next-count" id="nextCount"></span>';
+    els.nextHead.innerHTML = `${esc(t(l, 'widget_next_head'))} ${countHtml}`;
+    els.nextCount = $('#nextCount');
+  }
+  if (els.hint) els.hint.innerHTML = t(l, 'widget_hint');
+}
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -137,9 +162,11 @@ function applyConfig(s) {
   document.body.classList.toggle('no-marquee', !marquee);
   document.body.classList.toggle('muted-widget', !playAudio);
 
+  const l = widgetLang();
+  applyWidgetLang(l);
   const paused = !!s.now?.paused;
   document.body.classList.toggle('paused', paused);
-  if (els.kicker) els.kicker.textContent = paused ? 'PAUSADO' : 'TOCANDO AGORA';
+  if (els.kicker) els.kicker.textContent = paused ? t(l, 'widget_paused') : t(l, 'widget_playing');
 
   // Aplicar mute se configurado para não tocar som no widget
   if (ytReady && player) {
@@ -154,7 +181,7 @@ function applyConfig(s) {
   }
 
   // Atualizar indicador visual de áudio / volume
-  if (els.volval) els.volval.textContent = playAudio ? String(Math.round(s.volume)) : 'MUDO';
+  if (els.volval) els.volval.textContent = playAudio ? String(Math.round(s.volume)) : t(l, 'widget_muted');
   if (els.volIcon) {
     els.volIcon.innerHTML = playAudio
       ? '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>'
@@ -172,7 +199,7 @@ function applyVolume(v) {
     if (ytReady && player && typeof player.mute === 'function') {
       try { player.mute(); } catch { /* */ }
     }
-    if (els.volval) els.volval.textContent = 'MUDO';
+    if (els.volval) els.volval.textContent = t(widgetLang(), 'widget_muted');
     return;
   }
 
@@ -196,7 +223,7 @@ function render(s) {
     const thumb = now.thumb || thumbFor(now.id);
     if (els.thumb.getAttribute('src') !== thumb) els.thumb.src = thumb;
     els.title.textContent = now.title || '—';
-    els.sub.textContent = [now.channel, now.requestedBy ? 'pedido por ' + now.requestedBy : '']
+    els.sub.textContent = [now.channel, now.requestedBy ? t(widgetLang(), 'widget_requested_by') + now.requestedBy : '']
       .filter(Boolean).join(' · ');
 
     // título longo vira marquise suave delimitado estritamente
@@ -229,7 +256,10 @@ function render(s) {
   // aviso de nova música na fila (ignora no carregamento inicial)
   if (!firstQueueRender && s.queue.length > lastQueueLen && lastQueueLen >= 0) {
     const newest = s.queue[s.queue.length - 1];
-    showToast(`Nova música na fila: ${newest.title}${newest.requestedBy ? ' — ' + newest.requestedBy : ''}`);
+    showToast(t(widgetLang(), 'widget_toast_added', {
+      title: newest.title,
+      by: newest.requestedBy ? ' — ' + newest.requestedBy : ''
+    }));
     els.card.classList.remove('flash');
     void els.card.offsetWidth;
     els.card.classList.add('flash');
@@ -560,7 +590,7 @@ async function onPlayerError(ev) {
     if (res && res.items && res.items.length) {
       const alt = res.items.find((it) => it.id !== current.id && !failedVideoIds.has(it.id));
       if (alt) {
-        showToast(`Tocando versão liberada: ${alt.title}`);
+        showToast(t(widgetLang(), 'widget_toast_alt', { title: alt.title }));
         curId = alt.id;
         curStartedAt = Date.now();
         startChecked = false;

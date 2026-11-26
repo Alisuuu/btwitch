@@ -4,9 +4,11 @@
 (function () {
   'use strict';
 
+  var I = window.ALIVE_I18N;
+  function t(k, vars) { return I ? I.t(k, vars) : k; }
   var C = window.ALIVE_CATEGORIES || [];
   var CAT_LABEL = {};
-  C.forEach(function (c) { CAT_LABEL[c.id] = c.label; });
+  C.forEach(function (c) { CAT_LABEL[c.id] = I ? t('cat_' + c.id) : c.label; });
 
   function esc(s) {
     return String(s == null ? '' : s)
@@ -29,9 +31,9 @@
   function isFree(p) { return !p.price || p.price <= 0; }
 
   function badgeHtml(p) {
-    if (p.badge === 'hot') return '<span class="badge">Mais vendido</span>';
-    if (p.badge === 'new') return '<span class="badge">Novo</span>';
-    if (p.badge === 'sale') return '<span class="badge">Promoção</span>';
+    if (p.badge === 'hot') return '<span class="badge">' + esc(t('badge_hot')) + '</span>';
+    if (p.badge === 'new') return '<span class="badge">' + esc(t('badge_new')) + '</span>';
+    if (p.badge === 'sale') return '<span class="badge">' + esc(t('badge_sale')) + '</span>';
     return '';
   }
 
@@ -53,7 +55,7 @@
     // 1. Topo do Popup (Modal): SEMPRE a Tela de Espera
     if (opts.modal || opts.controls) {
       if (p.standbyVideo) {
-        return '<video class="preview-video modal-preview-video" autoplay loop muted playsinline controls src="' + esc(p.standbyVideo) + '" aria-label="Tela de espera"></video>';
+        return '<video class="preview-video modal-preview-video" autoplay loop muted playsinline controls src="' + esc(p.standbyVideo) + '" aria-label="' + esc(t('standby_aria')) + '"></video>';
       }
       if (p.isAnime) {
         var bgUrl = p.backdropUrl || p.posterUrl || p.image || '';
@@ -61,7 +63,7 @@
         return '' +
           '<div class="anime-standby-stage" style="background-image:linear-gradient(to bottom, rgba(0,0,0,0.45), rgba(0,0,0,0.85)), url(\'' + esc(bgUrl) + '\');">' +
             '<div class="anime-standby-center">' +
-              '<span class="anime-standby-title">Aguarde um momento</span>' +
+              '<span class="anime-standby-title">' + esc(t('standby_wait')) + '</span>' +
             '</div>' +
           '</div>';
       }
@@ -82,7 +84,7 @@
 
     // C. Pagos / Imagem estática
     if (p.image) {
-      return '<img src="' + esc(p.image) + '" alt="Preview de ' + esc(p.name) + '" loading="lazy">';
+      return '<img src="' + esc(p.image) + '" alt="' + esc(t('preview_of', { name: p.name })) + '" loading="lazy">';
     }
     try {
       if (window.AliveArt && window.AliveArt.html) {
@@ -94,21 +96,21 @@
 
   function cardHtml(p) {
     var author = p.author || (p.themeInfo && p.themeInfo.author) || (p.theme && p.theme.author) || (p.isAnime ? 'Alive Studio' : '');
-    var subtitle = p.isAnime ? 'Overlay Celular & Tablet' : (p.tagline || 'Overlay para transmissão');
+    var subtitle = p.isAnime ? t('card_subtitle_anime') : (p.tagline || t('card_subtitle_default'));
     return '' +
-      '<article class="card reveal" data-id="' + esc(p.id) + '" tabindex="0" role="button" aria-label="Ver ' + esc(p.name) + '">' +
+      '<article class="card reveal" data-id="' + esc(p.id) + '" tabindex="0" role="button" aria-label="' + esc(t('card_view_aria', { name: p.name })) + '">' +
         '<div class="card-art">' +
           badgeHtml(p) +
           previewHtml(p) +
         '</div>' +
         '<div class="card-body">' +
           '<h3 class="card-title">' + esc(p.name) + '</h3>' +
-          (author ? '<p class="card-author">por <span>' + esc(author) + '</span></p>' : '') +
+          (author ? '<p class="card-author">' + esc(t('card_by')) + '<span>' + esc(author) + '</span></p>' : '') +
           '<p class="card-tag">' + esc(subtitle) + '</p>' +
           '<div class="card-foot">' +
-            '<span class="card-compat-pill">Pronto para o app</span>' +
+            '<span class="card-compat-pill">' + esc(t('card_ready')) + '</span>' +
             '<span class="btn btn-sm btn-action" aria-hidden="true">' +
-              (isFree(p) ? 'Baixar' : 'Comprar') +
+              esc(isFree(p) ? t('btn_download') : t('btn_buy')) +
             '</span>' +
           '</div>' +
         '</div>' +
@@ -137,7 +139,7 @@
     if (t.standby && t.standby.enabled && !p.isAnime) {
       standby =
         '<div class="standby-box">' +
-          '<span class="card-cat">Tela de espera</span>' +
+          '<span class="card-cat">' + esc(t('standby_aria')) + '</span>' +
           '<b>' + esc(t.standby.title || '—') + '</b>' +
           '<span>' + esc(t.standby.subtitle || '') + '</span>' +
           '<span class="tag">' + esc(t.standby.type || '') + '</span>' +
@@ -148,10 +150,10 @@
     var layout = (widgets.length && !p.isAnime)
       ? '<div class="layout-box">' +
           '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">' +
-            '<h4 style="margin:0">Composição · 1920×1080</h4>' +
+            '<h4 style="margin:0">' + esc(t('theme_composition')) + '</h4>' +
             '<button type="button" class="layout-standby-btn" id="layoutStandbyBtn">' +
               '<span style="width:6px;height:6px;border-radius:50%;background:#00E5FF;display:inline-block"></span>' +
-              'Tela de espera' +
+              esc(t('theme_standby_btn')) +
             '</button>' +
           '</div>' +
           window.AliveArt.layoutSvg(widgets, t.assetBase, t.viewport) +
@@ -161,22 +163,22 @@
     return '' +
       '<details class="theme-details-accordion">' +
         '<summary class="theme-details-summary">' +
-          '<span>Especificações técnicas</span>' +
+          '<span>' + esc(t('theme_specs')) + '</span>' +
           '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>' +
         '</summary>' +
         '<div class="theme-extra">' +
           '<div class="meta-grid">' +
-            '<div class="meta-item"><span>Autor</span><b>' + esc(t.author || '—') + '</b></div>' +
-            '<div class="meta-item"><span>Versão</span><b>' + esc(t.version || '—') + '</b></div>' +
-            '<div class="meta-item"><span>Widgets</span><b>' + (t.widgetCount || 0) + '</b></div>' +
-            '<div class="meta-item"><span>Perfil</span><b>' + esc(t.target_profile || '—') + '</b></div>' +
-            '<div class="meta-item"><span>Borda</span><b>' +
-              (t.frame && t.frame.enabled ? esc(t.frame.border_color || 'sim') : 'desligada') + '</b></div>' +
+            '<div class="meta-item"><span>' + esc(t('meta_author')) + '</span><b>' + esc(t.author || '—') + '</b></div>' +
+            '<div class="meta-item"><span>' + esc(t('meta_version')) + '</span><b>' + esc(t.version || '—') + '</b></div>' +
+            '<div class="meta-item"><span>' + esc(t('meta_widgets')) + '</span><b>' + (t.widgetCount || 0) + '</b></div>' +
+            '<div class="meta-item"><span>' + esc(t('meta_profile')) + '</span><b>' + esc(t.target_profile || '—') + '</b></div>' +
+            '<div class="meta-item"><span>' + esc(t('meta_border')) + '</span><b>' +
+              (t.frame && t.frame.enabled ? esc(t.frame.border_color || t('meta_border_yes')) : esc(t('meta_border_off'))) + '</b></div>' +
             '<div class="meta-item"><span>ID</span><b>' + esc(String(t.themeId || '—').slice(0, 8)) + '</b></div>' +
           '</div>' +
           standby +
           layout +
-          (rows ? '<div><h4>Camadas</h4><ul class="widget-list">' + rows + '</ul></div>' : '') +
+          (rows ? '<div><h4>' + esc(t('meta_layers')) + '</h4><ul class="widget-list">' + rows + '</ul></div>' : '') +
         '</div>' +
       '</details>';
   }

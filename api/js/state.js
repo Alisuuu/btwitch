@@ -21,6 +21,7 @@ export function defaultState() {
     config: {
       channel: '',                 // canal alvo (sem #)
       botNick: '',                 // nick da conta do bot
+      language: 'pt',              // pt | en | es
       allowEveryonePlay: true,     // qualquer um pode pedir música
       perUserCooldown: 15,         // segundos entre pedidos por usuário
       globalCooldown: 2,           // segundos entre comandos (anti-flood)
@@ -231,6 +232,9 @@ export function sanitize(raw) {
 
   out.config.channel = String(out.config.channel || '').replace(/^#/, '').trim().toLowerCase();
   out.config.botNick = String(out.config.botNick || '').trim().toLowerCase();
+  out.config.language = ['pt', 'en', 'es'].includes(String(out.config.language || '').toLowerCase())
+    ? String(out.config.language).toLowerCase()
+    : 'pt';
   out.config.maxQueue = clampInt(out.config.maxQueue, 1, 500, 50);
   out.config.maxPlaylist = clampInt(out.config.maxPlaylist, 1, 100, 20);
   out.config.perUserCooldown = clampInt(out.config.perUserCooldown, 0, 3600, 15);
