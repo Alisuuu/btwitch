@@ -131,8 +131,11 @@
       document.getElementById('modalCat').textContent = t('tab_community');
       document.getElementById('modalName').textContent = p.name;
       document.getElementById('modalTag').textContent = p.tagline || t('modal_tag_community_default');
-      document.getElementById('modalExtra').innerHTML =
-        p.themeInfo ? U.themeExtraHtml(p) : '';
+      var extraHtml = '';
+      if (p.themeInfo) {
+        try { extraHtml = U.themeExtraHtml(p); } catch (e) { if (window.console) console.warn('themeExtraHtml:', e); }
+      }
+      document.getElementById('modalExtra').innerHTML = extraHtml;
       document.getElementById('modalPriceBox').innerHTML =
         '<span class="tag tag-cyan">' + U.esc(t('tab_community')) + '</span><span class="muted" style="font-size:12.5px">' + U.esc(t('card_ready')) + '</span>';
       document.getElementById('modalIncludes').innerHTML = '';
@@ -330,6 +333,15 @@
     }
 
     grid.addEventListener('click', function (e) {
+      var rep = e.target.closest('.card-report-btn');
+      if (rep) {
+        e.preventDefault();
+        e.stopPropagation();
+        var rid = rep.getAttribute('data-report-id');
+        var rp = rid ? window.ALIVE_HELPERS.byId(rid) : null;
+        if (rp) A.openReport(rp);
+        return;
+      }
       var card = e.target.closest('.card');
       if (card) openProduct(card.dataset.id);
     });

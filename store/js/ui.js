@@ -109,9 +109,14 @@
           '<p class="card-tag">' + esc(subtitle) + '</p>' +
           '<div class="card-foot">' +
             '<span class="card-compat-pill">' + esc(t('card_ready')) + '</span>' +
-            '<span class="btn btn-sm btn-action" aria-hidden="true">' +
-              esc(isFree(p) ? t('btn_download') : t('btn_buy')) +
-            '</span>' +
+            '<div style="display:flex;align-items:center;gap:6px">' +
+              (!p.isAnime
+                ? '<button type="button" class="btn btn-sm card-report-btn" data-report-id="' + esc(p.id) + '" aria-label="' + esc(t('btn_report')) + '" style="padding:6px 10px;font-size:11.5px;opacity:0.85">' + esc(t('btn_report')) + '</button>'
+                : '') +
+              '<span class="btn btn-sm btn-action" aria-hidden="true">' +
+                esc(isFree(p) ? t('btn_download') : t('btn_buy')) +
+              '</span>' +
+            '</div>' +
           '</div>' +
         '</div>' +
       '</article>';

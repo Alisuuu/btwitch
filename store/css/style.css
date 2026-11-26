@@ -255,7 +255,7 @@ button, input, select { font: inherit; color: inherit; }
 .card:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
 .card-art { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: #000; }
-.card-art svg, .card-art img, .card-art video { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.35s ease; }
+.card-art svg, .card-art img, .card-art video { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.35s ease; pointer-events: none; }
 .card:hover .card-art svg, .card:hover .card-art img { transform: scale(1.04); }
 
 /* Vídeo da tela de espera (preview real do tema) */
