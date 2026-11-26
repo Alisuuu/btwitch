@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>Produto — Alive Store</title>
+  <meta name="description" content="Detalhes do produto na Alive Store.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23000000' stroke='%23ffffff' stroke-width='4'/%3E%3Ctext x='32' y='44' font-family='Arial' font-size='34' font-weight='800' text-anchor='middle' fill='%23ffffff'%3EA%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <main>
+    <section class="detail">
+      <div class="container">
+        <a class="crumb" href="index.html">← Voltar à loja</a>
+
+        <div class="empty" id="detailNotFound" style="display:none">
+          <b>Produto não encontrado</b>
+          O link pode estar desatualizado. Volte ao catálogo para ver tudo que está à venda.
+          <div style="margin-top:16px"><a class="btn btn-primary" href="index.html">Ver catálogo</a></div>
+        </div>
+
+        <div class="detail-grid" id="detailGrid">
+          <div class="detail-art" id="detailArt"></div>
+
+          <div class="detail-info">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <span class="card-cat" id="detailCat"></span>
+              <span id="detailBadge"></span>
+            </div>
+
+            <h1 class="display" id="detailName">—</h1>
+            <p class="lead" id="detailTag"></p>
+
+            <div class="price-box" id="detailPriceBox"></div>
+
+            <div class="buy-row">
+              <button class="btn btn-primary btn-lg" id="detailBuy">Comprar</button>
+              <button class="btn-icon" id="detailShare" aria-label="Compartilhar" style="width:54px;height:54px">↗</button>
+            </div>
+
+            <p class="note">Compra segura via Google Play · entrega automática no app Alive</p>
+
+            <div>
+              <h4 style="margin:0 0 10px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">O que vem no pacote</h4>
+              <ul class="includes" id="detailIncludes"></ul>
+            </div>
+
+            <div>
+              <h4 style="margin:0 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Compatível com</h4>
+              <div class="tag-row" id="detailCompat"></div>
+            </div>
+
+            <div class="meta-grid" id="detailMeta"></div>
+
+            <div id="detailExtra"></div>
+
+            <p class="muted" id="detailDesc" style="margin:0;font-size:14.5px"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="relatedWrap">
+      <div class="container">
+        <div class="section-head reveal">
+          <h2 class="display">Você também pode gostar</h2>
+        </div>
+        <div class="related" id="relatedGrid"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/art.js"></script>
+  <script src="js/catalog.js"></script>
+  <script src="js/alive-bridge.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/actions.js"></script>
+  <script src="js/themes.js"></script>
+  <script src="js/product.js"></script>
+</body>
+</html>

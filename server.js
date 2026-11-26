@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { botService } from './api/_lib/irc-bot.js';
 import { discordGateway } from './api/_lib/discord-gateway.js';
+import storeService from './store/store-service.cjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 
@@ -161,7 +162,11 @@ const server = http.createServer(async (req, res) => {
         bot: botService?.connected ? 'online' : (botService?.running ? 'connecting' : 'offline'),
         discord: discordGateway?.connected ? 'online' : 'disabled',
         channels: botService ? Array.from(botService.channels) : [],
+        store: storeService.getStoreStatus(),
       });
+    }
+    if (await storeService.handleStoreRequest(req, res, url)) {
+      return;
     }
     if (url.pathname === '/api' || url.pathname.startsWith('/api/')) {
       const done = await handleApi(req, res, url);
@@ -176,6 +181,7 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, async () => {
   await botService.init();
+  storeService.initStore().catch((e) => console.error('[store] erro no init:', e.message));
   if (process.env.DISCORD_BOT_TOKEN) {
     discordGateway.start();
   }
@@ -186,5 +192,6 @@ server.listen(PORT, async () => {
   console.log(`\n  Alive Bot rodando em  http://localhost:${PORT}`);
   console.log(`     Painel:  http://localhost:${PORT}/`);
   console.log(`     Widget:  http://localhost:${PORT}/widget`);
+  console.log(`     Loja:    http://localhost:${PORT}/store/`);
   console.log(`     API Bot: http://localhost:${PORT}/api/bot\n`);
 });

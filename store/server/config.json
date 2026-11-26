@@ -1,0 +1,12 @@
+{
+  "token": "",
+  "chatId": "",
+  "_nota": "chatId vazio = o servidor captura o ID do grupo sozinho assim que você mandar /start (ou qualquer comando) para @Alive1_Bot dentro do grupo. Depois ele é gravado aqui automaticamente.",
+  "updateOffset": 0,
+  "publicUrl": "",
+  "notify": true,
+  "allowAnyMember": false,
+  "allowedUsers": [],
+  "_nota2": "publicUrl = endereço público da loja (ex: https://seu-tunel ou http://10.0.0.47:8787). Vazio = sem botão de download (Telegram rejeita localhost).",
+  "_nota3": "Quem pode publicar: allowAnyMember=true libera pra qualquer membro; ou liste IDs em allowedUsers (ex: [123456789]). Padrão = só administradores do grupo."
+}

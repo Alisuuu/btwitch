@@ -363,16 +363,6 @@ async function initPanelPlayer() {
 }
 
 async function syncPanelPlayer(s) {
-  const musicEnabled = (s.config?.musicEnabled !== false);
-  if (!musicEnabled) {
-    if (curPlayingId) {
-      curPlayingId = null;
-      curPlayingStartedAt = 0;
-    }
-    try { panelPlayer?.pauseVideo?.(); } catch { /* */ }
-    return;
-  }
-
   const now = s.now;
   if (!now || !now.id) {
     if (curPlayingId) {
@@ -1311,34 +1301,15 @@ if (typeof document !== 'undefined') {
 let posCache = { id: null, pos: 0, at: 0 };
 
 function renderNow(s) {
-  const musicEnabled = (s.config?.musicEnabled !== false);
   const now = s.now;
   const card = $('#nowCard');
-  card.classList.toggle('paused', !musicEnabled || !!now?.paused);
+  card.classList.toggle('paused', !!now?.paused);
 
   const pauseBtn = $('#btnPause');
   if (pauseBtn) {
-    pauseBtn.innerHTML = (!musicEnabled || now?.paused)
+    pauseBtn.innerHTML = now?.paused
       ? icon('play', { size: 18 })
       : icon('pause', { size: 18 });
-  }
-
-  if (!musicEnabled) {
-    $('#nowKicker').textContent = 'MÚSICAS DESATIVADAS';
-    if (!now) {
-      $('#nowThumb').removeAttribute('src');
-      $('#nowTitle').textContent = 'Função desativada';
-      $('#nowSub').textContent = 'Ative a função de música na aba Widget para voltar a tocar';
-      $('#nowFill').style.width = '0%';
-      $('#nowCur').textContent = '0:00';
-      $('#nowDur').textContent = '0:00';
-    } else {
-      const thumb = now.thumb || thumbFor(now.id);
-      if ($('#nowThumb').getAttribute('src') !== thumb) $('#nowThumb').src = thumb;
-      $('#nowTitle').textContent = now.title;
-      $('#nowSub').textContent = 'Reprodução e pedidos pausados temporariamente pelo painel';
-    }
-    return;
   }
 
   if (!now) {
@@ -2101,56 +2072,7 @@ function updateLivePreview() {
 // ---------------------------------------------------------------- widget
 function syncWidgetForm(s) {
   const w = s.config.widget || {};
-  if ($('#widgetUrl')) $('#widgetUrl').value = widgetUrl();
-
-  const musicEnabled = (s.config?.musicEnabled !== false);
-  const badge = $('#musicStatusBadge');
-  const btn = $('#btnToggleMusic');
-  const btnText = $('#btnToggleMusicText');
-  const iconSpan = $('#btnToggleMusicIcon');
-  const desc = $('#musicStatusDesc');
-  const bannerLogo = $('#musicBannerLogo');
-  const check = $('#wMusicEnabled');
-
-  if (check) check.checked = musicEnabled;
-
-  if (badge) {
-    if (musicEnabled) {
-      badge.textContent = '● MÚSICA ATIVADA';
-      badge.style.background = 'rgba(29, 185, 84, 0.15)';
-      badge.style.color = '#1db954';
-      badge.style.borderColor = 'rgba(29, 185, 84, 0.3)';
-    } else {
-      badge.textContent = '● MÚSICA DESATIVADA';
-      badge.style.background = 'rgba(239, 68, 68, 0.15)';
-      badge.style.color = '#ef4444';
-      badge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
-    }
-  }
-
-  if (desc) {
-    desc.innerHTML = musicEnabled
-      ? 'A reprodução de músicas, pedidos de espectadores no chat via <code>!play</code> e a fila no widget do OBS estão <b>ativos</b>.'
-      : 'A função de música está <b>desativada</b>. Pedidos no chat e reprodução no widget estão pausados temporariamente.';
-  }
-
-  if (bannerLogo) {
-    bannerLogo.style.borderColor = musicEnabled ? 'rgba(29, 185, 84, 0.5)' : 'rgba(239, 68, 68, 0.5)';
-    bannerLogo.style.boxShadow = musicEnabled ? '0 4px 16px rgba(29, 185, 84, 0.25)' : '0 4px 16px rgba(239, 68, 68, 0.25)';
-  }
-
-  if (btn) {
-    if (musicEnabled) {
-      btn.className = 'btn danger';
-      if (btnText) btnText.textContent = 'Desativar Músicas';
-      if (iconSpan) iconSpan.setAttribute('data-icon', 'power');
-    } else {
-      btn.className = 'btn primary';
-      if (btnText) btnText.textContent = 'Ativar Músicas';
-      if (iconSpan) iconSpan.setAttribute('data-icon', 'power');
-    }
-    renderIcons(btn);
-  }
+  $('#widgetUrl').value = widgetUrl();
 
   // Sincroniza seletores gráficos
   const curLayout = w.layout || 'card';
@@ -2202,46 +2124,6 @@ function syncWidgetForm(s) {
 }
 
 function bindWidgetForm() {
-  // 0. Botão principal e toggle da Função de Música
-  $('#btnToggleMusic')?.addEventListener('click', () => {
-    store.update((s) => {
-      s.config = s.config || {};
-      const current = (s.config.musicEnabled !== false);
-      const next = !current;
-      s.config.musicEnabled = next;
-      if (!next && s.now && !s.now.paused) {
-        s.now.paused = true;
-      }
-      pushLog(s, 'config', `Função de música ${next ? 'ativada' : 'desativada'} no painel do widget`);
-    });
-    if (store.state.config?.musicEnabled === false) {
-      try { panelPlayer?.pauseVideo?.(); } catch {}
-    }
-    store.flush();
-    syncWidgetForm(store.state);
-    syncPanelPlayer(store.state);
-    renderNow(store.state);
-  });
-
-  $('#wMusicEnabled')?.addEventListener('change', (e) => {
-    const val = !!e.target.checked;
-    store.update((s) => {
-      s.config = s.config || {};
-      s.config.musicEnabled = val;
-      if (!val && s.now && !s.now.paused) {
-        s.now.paused = true;
-      }
-      pushLog(s, 'config', `Função de música ${val ? 'ativada' : 'desativada'} no painel do widget`);
-    });
-    if (!val) {
-      try { panelPlayer?.pauseVideo?.(); } catch {}
-    }
-    store.flush();
-    syncWidgetForm(store.state);
-    syncPanelPlayer(store.state);
-    renderNow(store.state);
-  });
-
   // 1. Seletor gráfico de formato / layout
   $('#layoutPicker')?.addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-layout]');
@@ -2443,8 +2325,6 @@ function syncConfigForm(s) {
   } catch { /* storage indisponível */ }
 
   if ($('#cfgEveryone')) $('#cfgEveryone').checked = !!c.allowEveryonePlay;
-  if ($('#cfgQuietMode')) $('#cfgQuietMode').checked = !!c.quietMode;
-  if ($('#cfgCooldownWarn')) $('#cfgCooldownWarn').checked = c.cooldownWarnings !== false;
   if ($('#cfgAnnounceNow')) $('#cfgAnnounceNow').checked = !!c.announceNow;
   if ($('#cfgAnnounceQueue')) $('#cfgAnnounceQueue').checked = !!c.announceQueue;
   if ($('#cfgAutoSkip')) $('#cfgAutoSkip').checked = !!c.autoSkipError;
@@ -2494,8 +2374,6 @@ function saveConfig() {
     if (newChan) s.config.channel = newChan;
     if ($('#cfgNick')) s.config.botNick = $('#cfgNick').value.trim().toLowerCase();
     if ($('#cfgEveryone')) s.config.allowEveryonePlay = $('#cfgEveryone').checked;
-    if ($('#cfgQuietMode')) s.config.quietMode = $('#cfgQuietMode').checked;
-    if ($('#cfgCooldownWarn')) s.config.cooldownWarnings = $('#cfgCooldownWarn').checked;
     if ($('#cfgAnnounceNow')) s.config.announceNow = $('#cfgAnnounceNow').checked;
     if ($('#cfgAnnounceQueue')) s.config.announceQueue = $('#cfgAnnounceQueue').checked;
     if ($('#cfgAutoSkip')) s.config.autoSkipError = $('#cfgAutoSkip').checked;
@@ -2507,7 +2385,6 @@ function saveConfig() {
     if ($('#cfgPoll')) s.config.pollInterval = Math.max(2, Number($('#cfgPoll').value) || 5);
     if (!s.config.ai) s.config.ai = {};
     if ($('#cfgAiEnabled')) s.config.ai.enabled = $('#cfgAiEnabled').checked;
-    if ($('#cfgAiProvider')) s.config.ai.provider = $('#cfgAiProvider').value;
     if ($('#cfgAiBaseUrl')) s.config.ai.baseUrl = $('#cfgAiBaseUrl').value.trim();
     if ($('#cfgAiModel')) s.config.ai.model = $('#cfgAiModel').value.trim();
     if ($('#cfgAiApiKey')) s.config.ai.apiKey = $('#cfgAiApiKey').value.trim();
@@ -2520,99 +2397,6 @@ function saveConfig() {
 
 // ------------------------------------------------------------------- aba ia
 let isEditingAiPrompt = false;
-
-// Provedores de IA compatíveis com a API da OpenAI (baseUrl + modelos + origem da chave)
-const AI_PROVIDERS = {
-  groq: {
-    label: 'Groq',
-    baseUrl: 'https://api.groq.com/openai/v1',
-    models: ['qwen/qwen3.8-27b', 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'openai/gpt-oss-120b', 'mixtral-8x7b-32768'],
-    keyHint: 'Grátis em console.groq.com/keys (chave começa com gsk_).',
-  },
-  openai: {
-    label: 'OpenAI',
-    baseUrl: 'https://api.openai.com/v1',
-    models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini', 'gpt-4.1', 'o4-mini'],
-    keyHint: 'Crie em platform.openai.com/api-keys (chave começa com sk-).',
-  },
-  openrouter: {
-    label: 'OpenRouter',
-    baseUrl: 'https://openrouter.ai/api/v1',
-    models: ['openai/gpt-4o-mini', 'anthropic/claude-3.5-sonnet', 'meta-llama/llama-3.3-70b-instruct', 'google/gemini-2.0-flash-001', 'deepseek/deepseek-chat'],
-    keyHint: 'Crie em openrouter.ai/keys (chave começa com sk-or-v1-).',
-  },
-  gemini: {
-    label: 'Google Gemini',
-    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/v1',
-    models: ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'],
-    keyHint: 'Grátis em aistudio.google.com/apikey (chave começa com AIza).',
-  },
-  deepseek: {
-    label: 'DeepSeek',
-    baseUrl: 'https://api.deepseek.com/v1',
-    models: ['deepseek-chat', 'deepseek-reasoner'],
-    keyHint: 'Crie em platform.deepseek.com (chave começa com sk-).',
-  },
-  custom: {
-    label: 'Personalizado',
-    baseUrl: '',
-    models: [],
-    keyHint: 'Informe uma URL base compatível com a API da OpenAI e a chave correspondente.',
-  },
-};
-
-function inferAiProvider(baseUrl) {
-  const u = String(baseUrl || '').toLowerCase();
-  if (!u) return 'groq';
-  if (u.includes('groq')) return 'groq';
-  if (u.includes('openrouter')) return 'openrouter';
-  if (u.includes('generativelanguage') || u.includes('gemini')) return 'gemini';
-  if (u.includes('deepseek')) return 'deepseek';
-  if (u.includes('openai.com')) return 'openai';
-  return 'custom';
-}
-
-function aiKeyPresent() {
-  return !!($('#cfgAiApiKey')?.value || '').trim() || !!((store.state?.config?.ai || {}).apiKey || '').trim();
-}
-
-// Atualiza o <datalist> de modelos e o aviso do provedor. applyDefaults preenche URL e modelo.
-function updateAiProviderUi({ applyDefaults = false } = {}) {
-  const sel = $('#cfgAiProvider');
-  const key = (sel && sel.value) || inferAiProvider($('#cfgAiBaseUrl')?.value || store.state?.config?.ai?.baseUrl || '');
-  const p = AI_PROVIDERS[key] || AI_PROVIDERS.custom;
-
-  const list = $('#aiModelList');
-  if (list) {
-    list.innerHTML = '';
-    for (const m of p.models) {
-      const o = document.createElement('option');
-      o.value = m;
-      list.appendChild(o);
-    }
-  }
-
-  const hint = $('#aiProviderHint');
-  if (hint) {
-    const status = aiKeyPresent()
-      ? '<span style="color:#4ade80;">chave detectada</span>'
-      : '<span style="color:#fbbf24;">sem chave: será usada a chave padrão do servidor</span>';
-    hint.innerHTML = `<strong style="color:var(--text)">${p.label}</strong> — ${p.keyHint} · ${status}`;
-  }
-
-  if (applyDefaults) {
-    const urlInput = $('#cfgAiBaseUrl');
-    const modelInput = $('#cfgAiModel');
-    if (urlInput && p.baseUrl && urlInput.value.trim() !== p.baseUrl) {
-      urlInput.value = p.baseUrl;
-    }
-    if (modelInput && p.models.length) {
-      const prev = modelInput.value.trim();
-      const isKnownDefault = Object.values(AI_PROVIDERS).some((x) => x.models.includes(prev));
-      if (!prev || isKnownDefault) modelInput.value = p.models[0];
-    }
-  }
-}
 
 function updateAiStatusBadge(enabled) {
   const badge = $('#aiStatusBadge');
@@ -2648,11 +2432,6 @@ function syncIaTab(s) {
   }
   updateAiStatusBadge(isEnabled);
 
-  const provSel = $('#cfgAiProvider');
-  if (provSel && document.activeElement !== provSel) {
-    provSel.value = ai.provider || inferAiProvider(ai.baseUrl);
-  }
-
   if ($('#cfgAiBaseUrl') && document.activeElement !== $('#cfgAiBaseUrl')) {
     $('#cfgAiBaseUrl').value = ai.baseUrl || 'https://api.groq.com/openai/v1';
   }
@@ -2662,7 +2441,6 @@ function syncIaTab(s) {
   if ($('#cfgAiApiKey') && document.activeElement !== $('#cfgAiApiKey')) {
     $('#cfgAiApiKey').value = ai.apiKey || '';
   }
-  updateAiProviderUi();
 
   const ta = $('#cfgAiSystem');
   if (ta && !isEditingAiPrompt && document.activeElement !== ta) {
@@ -2677,18 +2455,16 @@ function saveAiSettings({ showToast = true } = {}) {
   const model = ($('#cfgAiModel')?.value || 'qwen/qwen3.8-27b').trim();
   const apiKey = ($('#cfgAiApiKey')?.value || '').trim();
   const systemPrompt = ($('#cfgAiSystem')?.value || '').trim();
-  const provider = $('#cfgAiProvider')?.value || inferAiProvider(baseUrl);
 
   store.update((s) => {
     if (!s.config) s.config = {};
     if (!s.config.ai) s.config.ai = {};
     s.config.ai.enabled = enabled;
-    s.config.ai.provider = provider;
     s.config.ai.baseUrl = baseUrl;
     s.config.ai.model = model;
     s.config.ai.apiKey = apiKey;
     s.config.ai.systemPrompt = systemPrompt;
-    pushLog(s, 'config', `Configurações da IA salvas (provedor: ${AI_PROVIDERS[provider]?.label || provider})`);
+    pushLog(s, 'config', 'Configurações e personalidade da IA salvas');
   });
 
   isEditingAiPrompt = false;
@@ -2699,24 +2475,6 @@ function saveAiSettings({ showToast = true } = {}) {
 }
 
 function bindIaTabEvents() {
-  $('#cfgAiProvider')?.addEventListener('change', () => {
-    updateAiProviderUi({ applyDefaults: true });
-    saveAiSettings({ showToast: false });
-    const label = AI_PROVIDERS[$('#cfgAiProvider')?.value]?.label || 'personalizado';
-    toast(`Provedor ${label} selecionado. Cole a sua chave e clique em Salvar Parâmetros.`);
-  });
-
-  $('#cfgAiBaseUrl')?.addEventListener('change', () => {
-    const sel = $('#cfgAiProvider');
-    const inferred = inferAiProvider($('#cfgAiBaseUrl')?.value || '');
-    if (sel && sel.value !== 'custom' && sel.value !== inferred) sel.value = inferred;
-    if (sel && sel.value === 'custom' && inferred === 'custom' && !sel.value) sel.value = 'custom';
-    updateAiProviderUi();
-  });
-
-  $('#cfgAiApiKey')?.addEventListener('input', () => updateAiProviderUi());
-  updateAiProviderUi();
-
   $('#cfgAiEnabled')?.addEventListener('change', (e) => {
     updateAiStatusBadge(e.target.checked);
     saveAiSettings({ showToast: false });
@@ -2756,7 +2514,7 @@ function bindIaTabEvents() {
 
   $('#btnPresetDefault')?.addEventListener('click', () => {
     applyPreset(
-      'COM O STREAMER ([STREAMER / CHEFIA]): Puxe o saco da chefia descaradamente! Trate a chefia como a pessoa mais incrível do canal, seja doce, bajuladora, leal e prestativa. Nunca assuma o gênero de quem comanda o canal: chame sempre de "chefia" (ou "chefe" / o próprio @nick).\nCOM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas.',
+      'COM O STREAMER ([STREAMER / SEU MESTRE]): Puxe o saco dele descaradamente! Trate-o como um gênio perfeito, seja doce, bajuladora, leal e prestativa.\nCOM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas.',
       'Padrão Oficial'
     );
   });
@@ -2791,7 +2549,7 @@ function bindIaTabEvents() {
 
   $('#btnClearAiPrompt')?.addEventListener('click', () => {
     applyPreset(
-      'COM O STREAMER ([STREAMER / CHEFIA]): Puxe o saco da chefia descaradamente! Trate a chefia como a pessoa mais incrível do canal, seja doce, bajuladora, leal e prestativa. Nunca assuma o gênero de quem comanda o canal: chame sempre de "chefia" (ou "chefe" / o próprio @nick).\nCOM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas.',
+      'COM O STREAMER ([STREAMER / SEU MESTRE]): Puxe o saco dele descaradamente! Trate-o como um gênio perfeito, seja doce, bajuladora, leal e prestativa.\nCOM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas.',
       'Padrão Oficial'
     );
   });
@@ -2821,13 +2579,12 @@ function bindIaTabEvents() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: `[Contexto da Live: Canal #${currentChannel || 'streamer'}] [STREAMER / CHEFIA] ${prompt}`,
+          prompt: `[Contexto da Live: Canal #${currentChannel || 'streamer'}] [STREAMER / SEU MESTRE] ${prompt}`,
           channel: currentChannel,
           systemPrompt,
           model,
           apiKey,
-          baseUrl,
-          provider: ($('#cfgAiProvider')?.value || aiCfg.provider || '')
+          baseUrl
         }),
       });
       const data = await res.json().catch(() => null);
@@ -2961,12 +2718,10 @@ store.subscribe((s) => {
     return;
   }
   if (runnerBusy) { prevNowId = id; return; }
-  // Evita anunciar se a música foi iniciada por um comando direto (!play) há menos de 4s (já anunciada pelo comando)
-  const isDirectAdd = s.now?.startedAt && (Date.now() - s.now.startedAt < 4000) && (s.now?.requestedAt && (Date.now() - s.now.requestedAt < 4000));
-  if (id && id !== prevNowId && s.config.announceNow && !isDirectAdd && !s.config.quietMode) {
+  if (id && id !== prevNowId && s.config.announceNow) {
     send(`Tocando agora: ${short(s.now.title, 70)} — pedido por ${s.now.requestedBy}`);
   }
-  if (grew && newest && s.config.announceQueue && !s.config.quietMode) {
+  if (grew && newest && s.config.announceQueue) {
     send(`Na fila: ${short(newest.title, 60)} (posição ${s.queue.length}) — ${newest.requestedBy}`);
   }
   prevNowId = id;

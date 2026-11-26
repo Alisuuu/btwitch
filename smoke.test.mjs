@@ -22,12 +22,6 @@ const catalog = [
   { id: 'eeee5555555', title: 'Música Teste E', channel: 'Canal E', thumb: '', duration: 180 },
 ];
 
-let iaAddRockCalls = 0; // controla a1ª/2ª tentativa do retry no grupo 34
-let iaAddcomCalls = 0;  // controla a1ª/2ª tentativa do retry de !addcom no grupo 35
-let iaCountCalls = 0;   // tentativas do retry por QUANTIDADE no grupo 36a
-let iaCount2Calls = 0;  // tentativas do grupo 36b (contagem já cumprida = sem retry)
-const iaPrompts = [];   // todos os prompts enviados à IA (valida o retry do grupo 34/35/36)
-
 const runner = createRunner({
   store,
   send: (t) => sent.push(t),
@@ -43,48 +37,13 @@ const runner = createRunner({
     return catalog;
   },
   fetchAi: async (q) => {
-    iaPrompts.push(q);
-    if (q.includes('pula essa música')) return { ok: true, text: 'Com prazer, chefia! !skip' };
+    if (q.includes('pula essa música')) return { ok: true, text: 'Com prazer, mestre! !skip' };
     if (q.includes('remove a música 1')) return { ok: true, text: 'Removendo da fila agora mesmo! !remover 1' };
     if (q.includes('pausa o som')) return { ok: true, text: 'Pausado imediatamente! !pausar' };
     if (q.includes('coloca volume 33')) return { ok: true, text: 'Volume ajustado! !vol 33' };
-    if (q.includes('adiciona duas músicas')) return { ok: true, text: 'Colocando ambas, chefia! !play Música Teste A !play Música Teste B' };
-    if (q.includes('add 5 músicas')) return { ok: true, text: 'Às suas ordens, chefia! !play 1. Canção Um !play 2. Canção Dois !play 3. Canção Três !play 4. Canção Quatro !play 5. Canção Cinco' };
+    if (q.includes('adiciona duas músicas')) return { ok: true, text: 'Colocando ambas, meu mestre genial! !play Música Teste A !play Música Teste B' };
+    if (q.includes('add 5 músicas')) return { ok: true, text: 'Às suas ordens mestre! !play 1. Canção Um !play 2. Canção Dois !play 3. Canção Três !play 4. Canção Quatro !play 5. Canção Cinco' };
     if (q.includes('toca uma playlist de rock')) return { ok: true, text: 'Essa função de música está desativada no momento. !play playlist rock' };
-    if (q.includes('mostra a fila pra mim')) return { ok: true, text: 'Olha o que vem por aí, chefe: !fila' };
-    if (q.includes('olha o que tá tocando')) return { ok: true, text: 'Segura aí, chefia: !atual' };
-    if (q.includes('verifica se você tá viva')) return { ok: true, text: 'Tô viva, chefe: !ping' };
-    if (q.includes('quais comandos você tem')) return { ok: true, text: 'Tenho um monte, chefia: !ajuda' };
-    if (q.includes('cria o comando salve')) return { ok: true, text: 'Criando agora, chefe: !addcom salve Salve {user}' };
-    if (q.includes('apaga o comando salve')) return { ok: true, text: 'Apagando, chefe: !delcom salve' };
-    if (q.includes('toca uma música')) return { ok: true, text: 'Fechado, chefia! !play Música Teste A' };
-    if (q.includes('cria o comando teste')) return { ok: true, text: 'Criando agora, chefe! !addcom teste Resposta Teste' };
-    // Grupo 34: IAs propositalmente não cooperativas (só conversam, sem comandos)
-    if (q.includes('limpe a fila agora')) return { ok: true, text: 'Feito, chefia! A fila tá zerada.' };
-    if (q.includes('adicione 10 músicas')) return { ok: true, text: 'A fila tá lotada de jazz, chefia. Quer que eu limpe isso aí ou vai deixar o chat cochilar?' };
-    if (q.includes('adicione rock novo')) {
-      iaAddRockCalls += 1;
-      if (iaAddRockCalls < 2) return { ok: true, text: 'Deixa comigo, chefe! Que tal um clássico?' };
-      return { ok: true, text: 'Fechado, chefia! !play Música Teste B' };
-    }
-    // Grupo 35: pedidos mistos (limpar + adicionar) e pedidos de comando novo
-    if (q.includes('limpe e adicione 20')) return { ok: true, text: 'Feito, chefia! Tá tudo zerado e cheio de música nova.' };
-    if (q.includes('adicione um comando teste')) {
-      iaAddcomCalls += 1;
-      if (iaAddcomCalls < 2) return { ok: true, text: 'Deixa comigo criar isso, chefe!' };
-      return { ok: true, text: 'Criando agora, chefe! !addcom teste Resposta AI' };
-    }
-    if (q.includes('crie o comando ping2')) return { ok: true, text: 'Já já, chefe, só um instante que eu monto isso pra você.' };
-    // Grupo 36: contagem de músicas — 1ª tentativa entrega menos do que o pedido
-    if (q.includes('adicione 3 músicas')) {
-      iaCountCalls += 1;
-      if (iaCountCalls < 2) return { ok: true, text: '!play Música Teste A' };
-      return { ok: true, text: '!play Música Teste A !play Música Teste B !play Faixa Três' };
-    }
-    if (q.includes('adicione 2 músicas')) {
-      iaCount2Calls += 1;
-      return { ok: true, text: '!play Música Teste A !play Música Teste B' };
-    }
     return {
       ok: true,
       text: 'Tsc, precisava me incomodar pra perguntar isso? A resposta é óbvia, seu ignorante.'
@@ -397,190 +356,5 @@ await runner(msg('!playlist https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PLr
 }));
 assert(store.state.now !== null, 'Playlist via URL iniciou primeira música');
 assert(store.state.queue.length > 0, 'Restante da playlist entrou na fila');
-
-console.log('\n32) Desativar música (musicEnabled = false): sem aviso de desativado, sem player interno e comandos seguem para o chat');
-store.update((s) => {
-  s.config.musicEnabled = false;
-  s.now = null;
-  s.queue = [];
-});
-let n32 = sent.length;
-await runner(msg('!play musica teste', { userId: 'u_disabled_1', displayName: 'UserDis1' }));
-assert(!sent.slice(n32).some((t) => /desativad/i.test(t)), 'Comando direto !play não responde mais que o sistema está desativado');
-assert(store.state.now === null, 'Música não tocou no player interno quando desativado');
-
-// IA com a música desligada continua emitindo !play para o chat (a aplicação externa executa)
-n32 = sent.length;
-await runner(msg('!ia toca uma música', { userId: 'streamer_id', login: 'streamertop', displayName: 'StreamerTop', channel: 'streamertop', broadcaster: true, mod: false }));
-await new Promise((r) => setTimeout(r, 400));
-assert(sent.slice(n32).some((t) => t.includes('!play Música Teste A')), 'IA emitiu !play para o chat mesmo com o player desativado');
-assert(!sent.slice(n32).some((t) => /desativad/i.test(t)), 'Nenhuma resposta da IA menciona música desativada');
-assert(store.state.now === null, 'IA não ativou o player interno com a música desativada');
-
-// Nada mais é bloqueado: a IA cria comando personalizado mesmo com a música desligada
-n32 = sent.length;
-await runner(msg('!ia cria o comando teste', { userId: 'streamer_id', login: 'streamertop', displayName: 'StreamerTop', channel: 'streamertop', broadcaster: true, mod: false }));
-await new Promise((r) => setTimeout(r, 400));
-assert(store.state.config.custom.teste?.text.includes('Resposta Teste'), 'IA criou o comando !teste com a música desativada');
-await runner(msg('!teste', { userId: 'u_disabled_3', displayName: 'UserDis3' }));
-assert(sent.at(-1).includes('Resposta Teste'), 'O comando !teste criado pela IA respondeu no chat');
-
-store.update((s) => {
-  s.config.musicEnabled = true;
-});
-await runner(msg('!play musica teste', { userId: 'u_disabled_2', displayName: 'UserDis2' }));
-assert(store.state.now !== null, 'Música volta a tocar após reativar');
-
-console.log('\n33) IA usando TODOS os comandos de consulta e de personalização do bot');
-store.update((s) => {
-  s.config.ai.enabled = true;
-  s.config.globalCooldown = 0;
-  s.now = { id: 'm_ia', title: 'Música IA', duration: 100, position: 5, paused: false, requestedBy: 'Fã' };
-  s.queue = [{ id: 'm_q1', title: 'Fila Um', duration: 120, position: 0, paused: false, requestedBy: 'Fã' }];
-});
-const STREAMER_IA = { userId: 'streamer_id', displayName: 'StreamerTop', broadcaster: true, mod: false };
-const replyOf = (from) => sent.slice(from).find((t) => t.startsWith('@StreamerTop')) || '';
-
-// !fila
-let n0 = sent.length;
-await runner(msg('!ia mostra a fila pra mim', STREAMER_IA));
-await new Promise((r) => setTimeout(r, 200));
-assert(sent.slice(n0).some((t) => t.includes('Fila (1/')), 'IA executou !fila e listou a fila no chat');
-assert(!replyOf(n0).includes('!fila'), 'comando !fila foi removido da resposta conversacional');
-
-// !atual
-n0 = sent.length;
-await runner(msg('!ia olha o que tá tocando', STREAMER_IA));
-await new Promise((r) => setTimeout(r, 200));
-assert(sent.slice(n0).some((t) => t.includes('Tocando: Música IA')), 'IA executou !atual');
-assert(!replyOf(n0).includes('!atual'), 'comando !atual foi removido da resposta conversacional');
-
-// !ping
-n0 = sent.length;
-await runner(msg('!ia verifica se você tá viva', STREAMER_IA));
-await new Promise((r) => setTimeout(r, 200));
-assert(sent.slice(n0).some((t) => t.startsWith('Pong!')), 'IA executou !ping');
-
-// !ajuda
-n0 = sent.length;
-await runner(msg('!ia quais comandos você tem', STREAMER_IA));
-await new Promise((r) => setTimeout(r, 200));
-assert(sent.slice(n0).some((t) => t.includes('Alive Bot — comandos')), 'IA executou !ajuda');
-assert(!replyOf(n0).includes('!ajuda'), 'comando !ajuda foi removido da resposta conversacional');
-
-// !addcom
-n0 = sent.length;
-await runner(msg('!ia cria o comando salve', STREAMER_IA));
-await new Promise((r) => setTimeout(r, 200));
-assert(store.state.config.custom.salve?.text.includes('{user}'), 'IA criou comando personalizado via !addcom');
-assert(!replyOf(n0).includes('!addcom'), 'comando !addcom foi removido da resposta conversacional');
-
-// !delcom
-n0 = sent.length;
-await runner(msg('!ia apaga o comando salve', STREAMER_IA));
-await new Promise((r) => setTimeout(r, 200));
-assert(!store.state.config.custom.salve, 'IA apagou comando personalizado via !delcom');
-assert(!replyOf(n0).includes('!delcom'), 'comando !delcom foi removido da resposta conversacional');
-
-console.log('\n34) IA conversa sem emitir comando: retry + fallbacks executam a ação de verdade');
-store.update((s) => {
-  s.config.ai.enabled = true;
-  s.config.globalCooldown = 0;
-  s.now = { id: 'm_now34', title: 'Música Na Fila', duration: 100, position: 0, paused: false, requestedBy: 'Fã' };
-  s.queue = [{ id: 'm_q34', title: 'Jazz Chato', duration: 100, position: 0, paused: false, requestedBy: 'Fã' }];
-});
-
-// a) "limpe" com IA que só conversa: o fallback limpa a fila de verdade
-n0 = sent.length;
-await runner(msg('!ia limpe a fila agora', STREAMER_IA));
-await new Promise((r) => setTimeout(r, 500));
-assert(store.state.queue.length === 0, 'Fila realmente limpa mesmo com a IA respondendo só conversa');
-assert(sent.slice(n0).some((t) => t.includes('Fila limpa por StreamerTop')), 'cmdClear executou de verdade ("Fila limpa por ..." foi ao chat)');
-
-// b) pedido de música em que a IA esqueceu o !play na 1ª tentativa: o retry emite o comando
-n0 = sent.length;
-await runner(msg('!ia adicione rock novo', STREAMER_IA));
-await new Promise((r) => setTimeout(r, 500));
-assert(iaAddRockCalls === 2, 'IA foi consultada 2x (retry corretivo disparou)');
-assert(sent.slice(n0).some((t) => t.startsWith('!play Música Teste B')), '!play foi emitido para o chat na segunda tentativa');
-assert(store.state.queue.some((x) => x.id === 'bbbb2222222'), 'Música entrou na fila interna');
-
-// c) IA falha nas 2 tentativas ("adicione 10 músicas"): o fallback ainda emite !play
-n0 = sent.length;
-await runner(msg('!ia adicione 10 músicas', STREAMER_IA));
-await new Promise((r) => setTimeout(r, 500));
-assert(sent.slice(n0).some((t) => t.startsWith('!play ')), 'Fallback emitiu !play para o chat mesmo sem cooperar da IA');
-assert(!sent.slice(n0).some((t) => /desativad/i.test(t)), 'Nenhuma resposta fala em música desativada');
-
-// d) "não limpe" não pode limpar por engano
-store.update((s) => { s.queue = [{ id: 'm_keep', title: 'Pra Ficar', duration: 90, position: 0, paused: false, requestedBy: 'Fã' }]; });
-n0 = sent.length;
-await runner(msg('!ia não limpe a fila', STREAMER_IA));
-await new Promise((r) => setTimeout(r, 500));
-assert(store.state.queue.length === 1, '"não limpe" não limpou a fila');
-assert(!sent.slice(n0).some((t) => t.includes('Fila limpa por')), 'Nenhuma limpeza executada com negação');
-
-console.log('\n35) IA: pedidos mistos, contagem exata e criação de comando sem cooperar');
-store.update((s) => {
-  s.config.ai.enabled = true;
-  s.config.globalCooldown = 0;
-  s.queue = [{ id: 'm_q35', title: 'Pra Limpar', duration: 90, position: 0, paused: false, requestedBy: 'Fã' }];
-});
-
-// a) "limpe e adicione 20": limpa de verdade e NÃO emite !play com termo lixo colado
-n0 = sent.length;
-await runner(msg('!ia limpe e adicione 20', STREAMER_IA));
-await new Promise((r) => setTimeout(r, 500));
-assert(store.state.queue.length === 0, '"limpe e adicione 20" limpou a fila');
-assert(sent.slice(n0).some((t) => t.includes('Fila limpa por StreamerTop')), 'cmdClear executou de verdade ("Fila limpa por ..." foi ao chat)');
-assert(!sent.slice(n0).some((t) => /^!play\b/i.test(t)), 'nenhum !play com termo lixo foi emitido');
-
-// b) pedido de comando novo em que a IA responde !play na 1ª tentativa: o retry exige !addcom
-iaAddcomCalls = 0;
-n0 = sent.length;
-await runner(msg('!ia adicione um comando teste', STREAMER_IA));
-await new Promise((r) => setTimeout(r, 500));
-assert(iaAddcomCalls === 2, 'IA foi consultada 2x (retry de !addcom disparou)');
-assert(store.state.config.custom.teste?.text === 'Resposta AI', 'IA criou o comando !teste via !addcom na 2ª tentativa');
-assert(!sent.slice(n0).some((t) => t.includes('!play comandoteste')), 'nenhum !play comandoteste foi ao chat');
-
-// c) IA nunca emite !addcom: fallback cria o comando a partir do nome pedido
-n0 = sent.length;
-await runner(msg('!ia crie o comando ping2', STREAMER_IA));
-await new Promise((r) => setTimeout(r, 500));
-assert(store.state.config.custom.ping2?.text.includes('Comando !ping2 ativo'), 'fallback criou !ping2 mesmo com a IA só conversando');
-await runner(msg('!ping2', { userId: 'u35', displayName: 'User35' }));
-assert(sent.at(-1).includes('Comando !ping2 ativo'), 'o comando !ping2 criado responde no chat');
-
-// d) retry de múltiplas músicas manda listar exatamente N comandos !play
-assert(iaPrompts.some((p) => p.includes('adicione 10 músicas') && p.includes('10 comandos !play')), 'retry de "adicione 10 músicas" pede exatamente 10 comandos !play');
-
-console.log('\n36) IA respeita a QUANTIDADE exata de músicas pedida (retry por contagem)');
-store.update((s) => {
-  s.config.ai.enabled = true;
-  s.config.globalCooldown = 0;
-  s.config.musicEnabled = true;
-  s.now = null;
-  s.queue = [];
-});
-
-// a) pediu 3, a IA entregou 1 na 1ª tentativa: o retry cobra a contagem e a 2ª entrega 3
-n0 = sent.length;
-iaCountCalls = 0;
-await runner(msg('!ia adicione 3 músicas', STREAMER_IA));
-await new Promise((r) => setTimeout(r, 600));
-assert(iaCountCalls === 2, 'IA foi consultada 2x (retry por contagem disparou)');
-assert((store.state.now ? 1 : 0) + store.state.queue.length === 3, 'as 3 músicas pedidas entraram de verdade');
-assert(sent.slice(n0).some((t) => t.startsWith('!play ')), '!play foi emitido para o chat');
-assert(iaPrompts.some((p) => p.includes('adicione 3 músicas') && p.includes('3 comandos !play')), 'retry pede exatamente 3 comandos !play');
-
-// b) quando a contagem já vem certa na 1ª tentativa, não há retry extra
-store.update((s) => { s.now = null; s.queue = []; });
-n0 = sent.length;
-iaCount2Calls = 0;
-await runner(msg('!ia adicione 2 músicas', STREAMER_IA));
-await new Promise((r) => setTimeout(r, 600));
-assert(iaCount2Calls === 1, 'sem retry quando a IA já cumpriu a contagem');
-assert((store.state.now ? 1 : 0) + store.state.queue.length === 2, 'as 2 músicas entraram na fila');
 
 console.log('\n✅ Smoke test concluído.\n');

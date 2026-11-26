@@ -1,0 +1,216 @@
+{
+  "files": [
+    {
+      "id": "fmwqqxdgf2",
+      "name": "theme_akame_tablet_1795282803512.zip",
+      "kind": "theme",
+      "size": 5700704,
+      "fileId": "BQACAgEAAyEFAATsXxkPAAMSawHj28KhtNxc_hYk7jFQmfwo7g0AArYKAAIntRFEKB_ld7lsEm89BA",
+      "ownedZip": false,
+      "mime": "application/zip",
+      "messageId": 18,
+      "manifestId": 24,
+      "uploadedAt": "2026-11-21T18:33:18.429Z",
+      "theme": {
+        "themeId": "29f89004-6de3-4e10-be06-5d9d96ab014a",
+        "name": "akame tablet",
+        "description": "Overlay completo com bordas, moldura e tela de espera.",
+        "author": "Alive Studio",
+        "version": "1.0",
+        "preview_image": "widget_1_widget_media_1795282756701.jpg",
+        "target_profile": "custom",
+        "standby": {
+          "enabled": true,
+          "type": "video",
+          "file": "standby.mp4",
+          "title": "AGUARDE UM MOMENTO",
+          "subtitle": ""
+        },
+        "background": {
+          "enabled": false,
+          "file": ""
+        },
+        "frame": {
+          "enabled": false,
+          "file": "",
+          "border_color": "#00E5FF",
+          "border_width": 3
+        },
+        "viewport": {
+          "locked": true,
+          "offset_x": 0.1,
+          "offset_y": 0,
+          "scale_x": 0.8,
+          "scale_y": 1
+        },
+        "widgets": [
+          {
+            "name": "Banner Tablet Esquerda",
+            "type": "image",
+            "file": "widget_1_widget_media_1795282756701.jpg",
+            "width": 384,
+            "height": 1080,
+            "x": 0.1,
+            "y": 0.5,
+            "scale": 1,
+            "opacity": 1
+          },
+          {
+            "name": "Fila de Músicas 2",
+            "type": "musicqueue",
+            "file": "",
+            "width": 560,
+            "height": 276,
+            "x": 0.8541666,
+            "y": 0.12777779,
+            "scale": 1,
+            "opacity": 1
+          },
+          {
+            "name": "Imagem 4",
+            "type": "image",
+            "file": "widget_3_widget_media_1795277389018.png",
+            "width": 574,
+            "height": 640,
+            "x": 0.90412366,
+            "y": 0.8099548,
+            "scale": 0.6414024,
+            "opacity": 1
+          }
+        ],
+        "widgetCount": 3
+      },
+      "assets": {
+        "widget_1_widget_media_1795282756701.jpg": {
+          "fileId": "BQACAgEAAyEGAATsXxkPAAMaawHj626ioQ4MSsiyT8TgxZ2ZHagAArwKAAIntRFEc1ihumEMx2c9BA",
+          "size": 53209,
+          "mime": "image/jpeg"
+        },
+        "widget_3_widget_media_1795277389018.png": {
+          "fileId": "BQACAgEAAyEGAATsXxkPAAMbawHj7teORnuBs66m_QqRizMNoJUAAr0KAAIntRFEXePz63Y0ARE9BA",
+          "size": 2867797,
+          "mime": "image/png"
+        }
+      },
+      "assetMessageIds": [
+        26,
+        27
+      ],
+      "errors": []
+    },
+    {
+      "id": "fmwqmw4fb4i807",
+      "name": "theme_artery_1794873607049.zip",
+      "kind": "theme",
+      "size": 4405297,
+      "fileId": "BQACAgEAAyEFAATsXxkPAAMFawHJbDDfUFRBy5z1jjSX6875dyQAAnkKAAIntRFE1xBes70Z42s9BA",
+      "mime": "application/zip",
+      "messageId": 5,
+      "uploadedAt": "2026-11-21T16:40:15.846Z",
+      "zipPath": null,
+      "theme": {
+        "themeId": "b9cc74e5-ff6b-49f8-a2c4-44199b6d7590",
+        "name": "artery",
+        "description": "Overlay completo com bordas, moldura e tela de espera.",
+        "author": "Alive Studio",
+        "version": "1.0",
+        "preview_image": "widget_1_widget_media_1794774365452.jpg",
+        "target_profile": "custom",
+        "standby": {
+          "enabled": true,
+          "type": "video",
+          "file": "standby.mp4",
+          "title": "AGUARDE UM MOMENTO",
+          "subtitle": ""
+        },
+        "background": {
+          "enabled": false,
+          "file": ""
+        },
+        "frame": {
+          "enabled": false,
+          "file": "",
+          "border_color": "#00E5FF",
+          "border_width": 3
+        },
+        "viewport": {
+          "locked": true,
+          "offset_x": 0,
+          "offset_y": -0.1,
+          "scale_x": 1,
+          "scale_y": 0.8
+        },
+        "widgets": [
+          {
+            "name": "Banner Base Celular",
+            "type": "image",
+            "file": "widget_1_widget_media_1794774365452.jpg",
+            "width": 1920,
+            "height": 216,
+            "x": 0.5,
+            "y": 0.9,
+            "scale": 1,
+            "opacity": 1
+          },
+          {
+            "name": "Fonte Web 1",
+            "type": "link",
+            "file": "",
+            "width": 1958,
+            "height": 485,
+            "x": 0.18858053,
+            "y": 0.9247425,
+            "scale": 0.33516732,
+            "opacity": 1
+          },
+          {
+            "name": "Fonte Web 2",
+            "type": "link",
+            "file": "",
+            "width": 990,
+            "height": 1203,
+            "x": 0.08084439,
+            "y": 0.16368464,
+            "scale": 0.2447743,
+            "opacity": 1
+          },
+          {
+            "name": "Fila de Músicas",
+            "type": "musicqueue",
+            "file": "",
+            "width": 560,
+            "height": 280,
+            "x": 0.78818476,
+            "y": 0.8703704,
+            "scale": 1,
+            "opacity": 1
+          }
+        ],
+        "widgetCount": 4
+      },
+      "errors": [],
+      "standbyFile": "standby.mp4",
+      "files": [
+        "standby.mp4",
+        "theme.json",
+        "widget_1_widget_media_1794774365452.jpg"
+      ],
+      "assets": {
+        "widget_1_widget_media_1794774365452.jpg": {
+          "fileId": "BQACAgEAAyEGAATsXxkPAAMKawHTwOF3X33tLk9tLN4ZIZlAivkAAo0KAAIntRFE5Jburx9PaRM9BA",
+          "size": 96313,
+          "mime": "image/jpeg"
+        },
+        "standby.mp4": {
+          "fileId": "BAACAgEAAyEGAATsXxkPAAMRawHjWxB_4se55gABndTdQQ5w5bJ3AAK1CgACJ7URRGx250sGW4oxPQQ",
+          "size": 4849581,
+          "mime": "video/mp4"
+        }
+      },
+      "assetMessageIds": [
+        10
+      ],
+      "manifestId": 8
+    }
+  ]
+}

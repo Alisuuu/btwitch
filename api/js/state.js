@@ -21,17 +21,14 @@ export function defaultState() {
     config: {
       channel: '',                 // canal alvo (sem #)
       botNick: '',                 // nick da conta do bot
-      musicEnabled: true,          // função de música e songrequest ativa
       allowEveryonePlay: true,     // qualquer um pode pedir música
       perUserCooldown: 15,         // segundos entre pedidos por usuário
       globalCooldown: 2,           // segundos entre comandos (anti-flood)
       maxQueue: 50,
       maxPlaylist: 20,             // máximo de músicas absorvidas de uma playlist
       skipVotes: 3,                // votos necessários para pular (mods pulam na hora)
-      announceNow: false,          // anunciar no chat o que começou a tocar (desligado por padrão para evitar poluição; o widget OBS já mostra)
-      announceQueue: false,        // anunciar cada entrada na fila (desligado por padrão para evitar duplicação)
-      quietMode: false,            // modo chat limpo (respostas concisas e sem mensagens de erro verbosas)
-      cooldownWarnings: true,      // avisar cooldown no chat ("Calma, @User...")
+      announceNow: true,           // anunciar no chat o que começou a tocar
+      announceQueue: false,        // anunciar cada entrada na fila
       autoSkipError: true,         // pular automático se o vídeo não tocar
       pollInterval: 5,             // segundos de sincronização com a API
       commands: {
@@ -59,11 +56,10 @@ export function defaultState() {
       },
       ai: {
         enabled: true,
-        provider: 'groq',
         baseUrl: 'https://api.groq.com/openai/v1',
         apiKey: '',
         model: 'qwen/qwen3.8-27b',
-        systemPrompt: 'COM O STREAMER ([STREAMER / CHEFIA]): Puxe o saco da chefia descaradamente! Trate a chefia como a pessoa mais incrível do canal, seja doce, bajuladora, leal e prestativa. Nunca assuma o gênero de quem comanda o canal: chame sempre de "chefia" (ou "chefe" / o próprio @nick).\nCOM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas.',
+        systemPrompt: 'COM O STREAMER ([STREAMER / SEU MESTRE]): Puxe o saco dele descaradamente! Trate-o como um gênio perfeito, seja doce, bajuladora, leal e prestativa.\nCOM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas.',
       },
       custom: {
         social: { text: 'Me siga nas redes — links na tela! | Alive Bot', cd: 10, modsOnly: 0 },
@@ -74,17 +70,17 @@ export function defaultState() {
         social: {
           name: 'Redes Sociais',
           message: 'Gosta da live? Siga nas redes sociais e entre no nosso Discord! Links na tela.',
-          interval: 20,
-          minLines: 15,
-          enabled: false,
+          interval: 15,
+          minLines: 2,
+          enabled: true,
           lastRun: 0,
         },
         songrequest: {
           name: 'Songrequest',
           message: 'Peça sua música favorita no chat usando !play <nome ou link> · Tocando agora: {np}',
-          interval: 25,
-          minLines: 15,
-          enabled: false,
+          interval: 20,
+          minLines: 2,
+          enabled: true,
           lastRun: 0,
         },
       },
@@ -165,11 +161,6 @@ export function sanitize(raw) {
   out.config = {
     ...base.config,
     ...rc,
-    musicEnabled: rc.musicEnabled !== false,
-    announceNow: rc.announceNow === true,
-    announceQueue: rc.announceQueue === true,
-    quietMode: rc.quietMode === true,
-    cooldownWarnings: rc.cooldownWarnings !== false,
     commands: { ...base.config.commands, ...(rc.commands || {}) },
     cmdPermissions: { ...base.config.cmdPermissions, ...(rc.cmdPermissions || {}) },
     custom: { ...(rc.custom || {}) },
@@ -179,7 +170,6 @@ export function sanitize(raw) {
   const rawAi = rc.ai || base.config.ai || {};
   out.config.ai = {
     enabled: rawAi.enabled === true,
-    provider: String(rawAi.provider || base.config.ai.provider || '').trim(),
     baseUrl: String(rawAi.baseUrl || base.config.ai.baseUrl).trim(),
     apiKey: String(rawAi.apiKey || base.config.ai.apiKey).trim(),
     model: String(rawAi.model || base.config.ai.model).trim(),
