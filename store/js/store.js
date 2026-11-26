@@ -60,6 +60,60 @@
     return list;
   }
 
+  /* ---------------- Grid com carregamento sob demanda ----------------
+     Só a primeira página de cards é pintada; as demais entram conforme o
+     usuário rola, evitando montar dezenas de cards (e animações) de uma vez. */
+  var GRID_PAGE_SIZE = 24;
+  var gridPage = 1;
+  var gridList = [];
+  var loadPending = false;
+
+  function cardChunkHtml(items) {
+    return items.map(function (p) {
+      try { return U.cardHtml(p); } catch (e) { return ''; }
+    }).join('');
+  }
+
+  function loadMoreGrid() {
+    var start = gridPage * GRID_PAGE_SIZE;
+    if (start >= gridList.length) return false;
+    gridPage++;
+    var html = cardChunkHtml(gridList.slice(start, gridPage * GRID_PAGE_SIZE));
+    if (!html) return false;
+
+    var tpl = document.createElement('template');
+    tpl.innerHTML = html;
+    var hasVideo = !!tpl.content.querySelector('video');
+    grid.appendChild(tpl.content);
+
+    U.observeReveal(grid);
+    if (hasVideo) U.manageVideos(grid);
+    return true;
+  }
+
+  function gridNearBottom() {
+    var doc = document.documentElement;
+    var bottom = window.innerHeight + (window.pageYOffset || doc.scrollTop || 0);
+    var height = Math.max(doc.scrollHeight, document.body ? document.body.scrollHeight : 0);
+    return bottom >= height - 700;
+  }
+
+  function maybeLoadMoreGrid() {
+    if (!gridList.length) return;
+    var guard = 0;
+    while (gridNearBottom() && loadMoreGrid() && guard++ < 12) {
+      /* continua enchendo a viewport enquanto houver cards */
+    }
+  }
+
+  function scheduleLoadMoreGrid() {
+    if (loadPending) return;
+    loadPending = true;
+    var run = function () { loadPending = false; maybeLoadMoreGrid(); };
+    if (window.requestAnimationFrame) window.requestAnimationFrame(run);
+    else setTimeout(run, 16);
+  }
+
   function render() {
     try {
       if (state.tab === 'pagos') {
@@ -80,16 +134,18 @@
             ? t('empty_community')
             : t('empty_anime'));
 
+      gridList = list;
+      gridPage = 1;
+
       grid.innerHTML = list.length
-        ? list.map(function (p) {
-            try { return U.cardHtml(p); } catch (e) { return ''; }
-          }).join('')
+        ? cardChunkHtml(list.slice(0, GRID_PAGE_SIZE))
         : '<div class="empty"><b>' + U.esc(t('empty_title')) + '</b>' + U.esc(emptyMsg) + '</div>';
 
       countEl.textContent = list.length === 1 ? t('count_one') : t('count_many', { n: list.length });
 
       U.observeReveal(grid);
       U.manageVideos(grid);
+      scheduleLoadMoreGrid();
     } catch (err) {
       if (window.console) console.error('Erro na renderização:', err);
     }
@@ -411,6 +467,15 @@
     document.addEventListener('alive:themes', function (e) {
       if (state.tab === 'comunidade') render();
     });
+
+    // Catálogo popular da aba Alive chegou em background → repinta a lista
+    document.addEventListener('alive:anime-more', function () {
+      if (state.tab === 'alive' && !state.q) render();
+    });
+
+    // Carregamento sob demanda: mais cards conforme o usuário rola
+    window.addEventListener('scroll', scheduleLoadMoreGrid, { passive: true });
+    window.addEventListener('resize', scheduleLoadMoreGrid, { passive: true });
 
     // Carga inicial dos animes na aba Alive
     if (window.ALIVE_ANIME) {

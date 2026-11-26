@@ -177,39 +177,106 @@
         }
       }
 
-      return uniqueList.map(item => {
-        const p = {
-          id: 'anime-' + item.id,
-          animeId: item.id,
-          mediaType: item.media_type,
-          name: item.name || item.title || item.original_name || 'Anime',
-          author: 'Alive Studio',
-          tagline: ((item.first_air_date || item.release_date || '').slice(0, 4) || '2026') + ' · Overlay sob demanda',
-          description: item.overview || 'Overlay completo com banner e tela de espera pronto para o Alive.',
-          category: 'tema',
-          price: 0,
-          badge: 'new',
-          size: '4 MB',
-          version: '1.0',
-          image: item.backdropUrl || item.posterUrl || (item.backdrop_path ? `${IMG_BASE}original${item.backdrop_path}` : null),
-          isAnime: true,
-          posterUrl: item.poster_path ? `${IMG_BASE}w500${item.poster_path}` : null,
-          backdropUrl: item.backdrop_path ? `${IMG_BASE}original${item.backdrop_path}` : null,
-          includes: [
-            'Todos os assets originais em .zip',
-            'Tema do Alive Studio · versão 1.0',
-            'Standby em vídeo: "Aguarde um momento"',
-            '3 widget(s): Banner, Fila de Músicas, Logo Oficial',
-            'Compatível com Alive App'
-          ]
-        };
-        p.themeInfo = createAnimeThemeInfo(p, 'celular', 'bottom');
-        return p;
-      });
+      return uniqueList.map(toProduct);
     } catch (e) {
       console.error(e);
       return [];
     }
+  }
+
+  /* ---------------- Conversão de resultado TMDB em produto da loja ---------------- */
+  function toProduct(item) {
+    const p = {
+      id: 'anime-' + item.id,
+      animeId: item.id,
+      mediaType: item.media_type,
+      name: item.name || item.title || item.original_name || 'Anime',
+      author: 'Alive Studio',
+      tagline: ((item.first_air_date || item.release_date || '').slice(0, 4) || '2026') + ' · Overlay sob demanda',
+      description: item.overview || 'Overlay completo com banner e tela de espera pronto para o Alive.',
+      category: 'tema',
+      price: 0,
+      badge: 'new',
+      size: '4 MB',
+      version: '1.0',
+      image: item.backdropUrl || item.posterUrl || (item.backdrop_path ? `${IMG_BASE}original${item.backdrop_path}` : null),
+      isAnime: true,
+      posterUrl: item.poster_path ? `${IMG_BASE}w500${item.poster_path}` : null,
+      backdropUrl: item.backdrop_path ? `${IMG_BASE}original${item.backdrop_path}` : null,
+      includes: [
+        'Todos os assets originais em .zip',
+        'Tema do Alive Studio · versão 1.0',
+        'Standby em vídeo: "Aguarde um momento"',
+        '3 widget(s): Banner, Fila de Músicas, Logo Oficial',
+        'Compatível com Alive App'
+      ]
+    };
+    p.themeInfo = createAnimeThemeInfo(p, 'celular', 'bottom');
+    return p;
+  }
+
+  /* ---------------- Catálogo estendido (discover TMDB por popularidade) ----------------
+     A aba Alive começa com os presets curados e é complementada pelos animes mais
+     populares do TMDB, em paralelo, para o grid não ficar limitado a 10 itens.        */
+  const DISCOVER_CACHE_PREFIX = 'alive.store.anime.discover.v1:';
+  const DISCOVER_TTL_MS = 6 * 60 * 60 * 1000; // 6 horas
+
+  function discoverUrl(page, country) {
+    const lang = I ? I.tmdbLang() : 'pt-BR';
+    let url = `${TMDB_BASE}/discover/tv?api_key=${TMDB_API_KEY}` +
+      `&with_genres=16&sort_by=popularity.desc&page=${page}&language=${lang}&include_adult=false`;
+    if (country) url += `&with_origin_country=${country}`;
+    return url;
+  }
+
+  // Títulos sem nenhuma letra latina (ex.: クレヨンしんちゃん) ficariam ilegíveis no card
+  function hasReadableName(name) {
+    return /[A-Za-z]{2}/.test(name || '');
+  }
+
+  async function fetchDiscoverList() {
+    const lang = I ? I.tmdbLang() : 'pt-BR';
+    const cacheKey = DISCOVER_CACHE_PREFIX + lang;
+    try {
+      const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+      if (cached && Array.isArray(cached.items) && cached.items.length &&
+          (Date.now() - (cached.at || 0)) < DISCOVER_TTL_MS) {
+        return cached.items;
+      }
+    } catch (e) {}
+
+    const requests = [
+      discoverUrl(1, 'JP'), discoverUrl(2, 'JP'), discoverUrl(3, 'JP'),
+      discoverUrl(1, null)
+    ];
+    const responses = await Promise.all(requests.map(function (url) {
+      return fetch(url)
+        .then(function (res) { return res && res.ok ? res.json() : null; })
+        .catch(function () { return null; });
+    }));
+
+    const seen = new Set();
+    const list = [];
+    for (const data of responses) {
+      if (!data || !Array.isArray(data.results)) continue;
+      for (const raw of data.results) {
+        if (!raw) continue;
+        const item = Object.assign({}, raw, { media_type: 'tv' });
+        if (!isAnimeOrCartoon(item)) continue;
+        const name = item.name || item.original_name || '';
+        if (!hasReadableName(name)) continue;
+        const norm = name.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (seen.has(item.id) || (norm && seen.has(norm))) continue;
+        seen.add(item.id);
+        if (norm) seen.add(norm);
+        list.push(item);
+      }
+    }
+
+    if (list.length) {
+      try { localStorage.setItem(cacheKey, JSON.stringify({ at: Date.now(), items: list })); } catch (e) {}
+    }
+    return list;
   }
 
   async function fetchLogosAndBackdrops(mediaType, id) {
@@ -264,7 +331,18 @@
 
   function tmdbThumb(url, size) {
     if (!url) return '';
+    // SVG logos do not have smaller variants on TMDB; keep as original
+    if (url.endsWith('.svg')) return url;
     return String(url).replace('/t/p/original/', '/t/p/' + (size || 'w300') + '/');
+  }
+
+  function proxyThumb(url, size) {
+    const thumb = tmdbThumb(url, size);
+    if (!thumb) return '';
+    if (thumb.startsWith('https://image.tmdb.org/') || thumb.startsWith('http://image.tmdb.org/')) {
+      return '/api/proxy-image?url=' + encodeURIComponent(thumb);
+    }
+    return thumb;
   }
 
   /* ---------------- Render do Banner (Canvas) ---------------- */
@@ -510,10 +588,10 @@
       ctx.fillText(t('standby_wait'), 960, centerY);
       ctx.shadowBlur = 0;
 
-      // Rodapé Alive Studio
+      // Rodapé (sem branding "ALIVE STUDIO")
       ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
       ctx.font = '600 16px Sora, Inter, sans-serif';
-      ctx.fillText('ALIVE STUDIO · ' + t('anime_btn_standby').toUpperCase(), 960, 1010);
+      ctx.fillText(t('anime_btn_standby').toUpperCase(), 960, 1010);
     }
 
     // Renderiza frame inicial
@@ -872,7 +950,7 @@
     const shown = list.slice(0, 10);
     setGroupCount(backdropGroup, shown.length);
     backdropsRow.innerHTML = shown.map((url, i) => `
-      <div class="backdrop-pick ${STATE.activeBackdropUrl === url ? 'active' : ''}" style="background-image:url('${tmdbThumb(url, 'w300')}')" data-url="${url}" title="Banner ${i + 1}"></div>
+      <div class="backdrop-pick ${STATE.activeBackdropUrl === url ? 'active' : ''}" style="background-image:url('${proxyThumb(url, 'w300')}')" data-url="${url}" title="Banner ${i + 1}"></div>
     `).join('') + (isLoading ? `<span class="seg-loading-pill">${t('modal_loading_opts')}</span>` : '');
 
     backdropsRow.querySelectorAll('.backdrop-pick').forEach(item => {
@@ -899,7 +977,7 @@
     setGroupCount(standbyGroup, shown.length);
 
     const listHtml = shown.map((url, i) => `
-      <div class="backdrop-pick ${STATE.activeStandbyUrl === url ? 'active' : ''}" style="background-image:url('${tmdbThumb(url, 'w300')}')" data-url="${url}" data-mode="custom" title="Arte de espera ${i + 1}"></div>
+      <div class="backdrop-pick ${STATE.activeStandbyUrl === url ? 'active' : ''}" style="background-image:url('${proxyThumb(url, 'w300')}')" data-url="${url}" data-mode="custom" title="Arte de espera ${i + 1}"></div>
     `).join('');
 
     standbyRow.innerHTML = sameBtn + listHtml + (isLoading ? `<span class="seg-loading-pill">${t('modal_loading_opts')}</span>` : '') + noneBtn;
@@ -937,7 +1015,7 @@
 
     const noneBtn = `<button type="button" class="logo-pick logo-pick-none ${!STATE.activeLogoUrl ? 'active' : ''}" data-url="">${t('anime_btn_no_logo')}</button>`;
     const listHtml = shown.map((url, i) => `
-      <img class="logo-pick ${STATE.activeLogoUrl === url ? 'active' : ''}" src="${tmdbThumb(url, 'w300')}" data-url="${url}" alt="Logo ${i + 1}">
+      <img class="logo-pick ${STATE.activeLogoUrl === url ? 'active' : ''}" src="${proxyThumb(url, 'w300')}" data-url="${url}" alt="Logo ${i + 1}">
     `).join('');
     const emptyHint = (!isLoading && !shown.length)
       ? `<span class="seg-loading-pill">${t('modal_no_logos')}</span>`
@@ -1003,7 +1081,8 @@
           </div>
         `;
       } else {
-        const bgUrl = STATE.activeStandbyUrl || STATE.activeBackdropUrl || p.backdropUrl || p.posterUrl || p.image || '';
+        const bgRaw = STATE.activeStandbyUrl || STATE.activeBackdropUrl || p.backdropUrl || p.posterUrl || p.image || '';
+        const bgUrl = getProxiedImageUrl(bgRaw);
         standbyBody = `
           <div class="anime-standby-stage" style="background-image:linear-gradient(to bottom, rgba(0,0,0,0.45), rgba(0,0,0,0.85)), url('${bgUrl}');width:100%;height:100%;">
             <div class="standby-center-box">
@@ -1034,7 +1113,13 @@
 
     const extraContainer = document.getElementById('modalExtra');
     if (extraContainer && window.ALIVE_UI && window.ALIVE_UI.themeExtraHtml) {
-      extraContainer.innerHTML = window.ALIVE_UI.themeExtraHtml(p);
+      // Falha num helper de UI jamais pode abortar o modal (senão os seletores ficam presos em "carregando")
+      try {
+        extraContainer.innerHTML = window.ALIVE_UI.themeExtraHtml(p);
+      } catch (e) {
+        if (window.console) console.warn('themeExtraHtml:', e);
+        extraContainer.innerHTML = '';
+      }
     }
   }
 
@@ -1128,37 +1213,94 @@
     if (note) note.style.display = 'none';
   }
 
-  /* ---------------- Inicialização e API Global ---------------- */
+  /* ---------------- Inicialização e API Global ----------------
+     Carregamento sob demanda: o grid pinta com os presets curados assim que
+     eles chegam; o catálogo popular (discover) é buscado depois, em background,
+     e entra na lista pelo evento `alive:anime-more`.                              */
   let CACHED_PRESETS = null;
+  let searchMode = false;     // usuário está com busca ativa (não mexer na lista)
+  let discoverLoading = false;
+  let discoverDone = false;
+
+  function appendUnique(target, item) {
+    if (!item) return false;
+    const norm = (item.name || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    for (const existing of target) {
+      if (existing.id === item.id) return false;
+      const existingNorm = (existing.name || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (existingNorm && existingNorm === norm) return false;
+    }
+    target.push(item);
+    return true;
+  }
+
+  function notifyMoreItems() {
+    try {
+      document.dispatchEvent(new CustomEvent('alive:anime-more'));
+    } catch (e) {
+      const ev = document.createEvent('Event');
+      ev.initEvent('alive:anime-more', false, false);
+      document.dispatchEvent(ev);
+    }
+  }
 
   async function loadPresets(forceRefresh) {
     if (!forceRefresh && CACHED_PRESETS && CACHED_PRESETS.length) {
+      searchMode = false;
       STATE.items = CACHED_PRESETS.slice();
       return STATE.items;
     }
+
+    // 1) Só os presets curados primeiro → primeiro paint rápido do grid
+    const presetResults = await Promise.all(
+      PRESETS.slice(0, 10).map(function (name) { return searchAnimes(name); })
+    );
+
     const list = [];
-    const seen = new Set();
-    for (const name of PRESETS.slice(0, 10)) {
-      const res = await searchAnimes(name);
-      if (res && res[0]) {
-        const item = res[0];
-        const norm = (item.name || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-        if (!seen.has(item.id) && !seen.has(norm)) {
-          seen.add(item.id);
-          if (norm) seen.add(norm);
-          list.push(item);
-        }
-      }
+    for (const res of presetResults) {
+      if (res && res[0]) appendUnique(list, res[0]);
     }
-    if (list.length) {
-      CACHED_PRESETS = list.slice();
-    }
+
+    if (list.length) CACHED_PRESETS = list.slice();
+    searchMode = false;
     STATE.items = list;
+
+    // 2) Catálogo popular sob demanda (depois da pintura inicial)
+    scheduleDiscoverLoad();
+
     return list;
+  }
+
+  function scheduleDiscoverLoad() {
+    if (discoverLoading || discoverDone) return;
+    discoverLoading = true;
+    const run = function () {
+      loadMoreCatalog()
+        .catch(function (e) { if (window.console) console.warn('[anime] catálogo popular:', e); })
+        .then(function () { discoverLoading = false; });
+    };
+    if (window.requestIdleCallback) window.requestIdleCallback(run, { timeout: 2500 });
+    else setTimeout(run, 350);
+  }
+
+  async function loadMoreCatalog() {
+    const discoverItems = await fetchDiscoverList().catch(function () { return []; });
+    discoverDone = true;
+    if (!discoverItems.length) return;
+
+    const merged = (CACHED_PRESETS || []).slice();
+    for (const item of discoverItems) appendUnique(merged, toProduct(item));
+    if (!merged.length) return;
+
+    CACHED_PRESETS = merged;
+    // Com busca ativa, a lista visível é resultado de busca: só o cache cresce
+    if (!searchMode) STATE.items = CACHED_PRESETS.slice();
+    notifyMoreItems();
   }
 
   function resetToPresets() {
     if (CACHED_PRESETS && CACHED_PRESETS.length) {
+      searchMode = false;
       STATE.items = CACHED_PRESETS.slice();
       return true;
     }
@@ -1213,7 +1355,7 @@
     resetToPresets: resetToPresets,
     search: searchAnimes,
     getItems: function () { return STATE.items; },
-    setItems: function (list) { STATE.items = list; },
+    setItems: function (list) { searchMode = true; STATE.items = list; },
     setupModalForAnime: setupModalForAnime,
     resetModalForStandard: resetModalForStandard,
     setModalView: function (v) {

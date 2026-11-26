@@ -807,12 +807,14 @@ async function handleStoreApi(req, res, u, p) {
       try {
         const memKey = 'img:' + targetUrl;
         let buf = memGet(memKey);
-        let mime = 'image/png';
+        // O MIME precisa ser derivado da URL também no cache-hit: senão imagens viram "image/png" e o browser pode recusar renderizar.
+        let mime = mimeOf(targetUrl.split('?')[0]);
         if (!buf) {
           const r = await fetch(targetUrl);
           if (!r.ok) return json(res, 404, { error: 'imagem não encontrada' });
           buf = Buffer.from(await r.arrayBuffer());
-          mime = r.headers.get('content-type') || (targetUrl.endsWith('.jpg') || targetUrl.endsWith('.jpeg') ? 'image/jpeg' : 'image/png');
+          const upstream = r.headers.get('content-type');
+          if (upstream && upstream.startsWith('image/')) mime = upstream;
           memSet(memKey, buf);
         }
         res.writeHead(200, {

@@ -166,24 +166,26 @@
 
     wrap.innerHTML =
       '<div class="modal-backdrop" data-close-rp></div>' +
-      '<div class="modal-panel" style="width:min(440px,calc(100% - 28px));padding:26px 24px 24px">' +
+      '<div class="modal-panel" style="width:min(440px,calc(100% - 28px))">' +
         '<button type="button" class="modal-close" data-close-rp aria-label="' + U.esc(t('aria_close')) + '">' +
           '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>' +
         '</button>' +
-        '<div style="display:flex;flex-direction:column;gap:12px">' +
-          '<div>' +
-            '<h3 id="rpTitle" class="display" style="margin:0 36px 6px 0;font-size:20px">' + U.esc(t('report_title')) + '</h3>' +
-            '<p class="muted" style="margin:0;font-size:13.5px">' + U.esc(t('report_sub')) + '</p>' +
+        '<div class="modal-scroll-wrap">' +
+          '<div style="display:flex;flex-direction:column;gap:12px;padding:26px 24px 24px">' +
+            '<div>' +
+              '<h3 id="rpTitle" class="display" style="margin:0 36px 6px 0;font-size:20px">' + U.esc(t('report_title')) + '</h3>' +
+              '<p class="muted" style="margin:0;font-size:13.5px">' + U.esc(t('report_sub')) + '</p>' +
+            '</div>' +
+            '<div class="seg-group">' +
+              '<span class="seg-label">' + U.esc(t('report_reason_label')) + '</span>' +
+              '<div class="seg-row" id="rpReasonRow">' + reasonsHtml + '</div>' +
+            '</div>' +
+            '<label style="font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:6px">' +
+              U.esc(t('report_details_label')) +
+              '<textarea id="rpDetails" rows="3" maxlength="400" placeholder="' + U.esc(t('report_details_ph')) + '" style="padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,255,255,0.14);font-size:13.5px;resize:vertical;font-family:inherit"></textarea>' +
+            '</label>' +
+            '<button class="btn btn-primary btn-block btn-lg" id="rpSubmit" type="button">' + U.esc(t('report_submit')) + '</button>' +
           '</div>' +
-          '<div class="seg-group">' +
-            '<span class="seg-label">' + U.esc(t('report_reason_label')) + '</span>' +
-            '<div class="seg-row" id="rpReasonRow">' + reasonsHtml + '</div>' +
-          '</div>' +
-          '<label style="font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:6px">' +
-            U.esc(t('report_details_label')) +
-            '<textarea id="rpDetails" rows="3" maxlength="400" placeholder="' + U.esc(t('report_details_ph')) + '" style="padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,255,255,0.14);font-size:13.5px;resize:vertical;font-family:inherit"></textarea>' +
-          '</label>' +
-          '<button class="btn btn-primary btn-block btn-lg" id="rpSubmit" type="button">' + U.esc(t('report_submit')) + '</button>' +
         '</div>' +
       '</div>';
     document.body.appendChild(wrap);

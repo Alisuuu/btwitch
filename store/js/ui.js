@@ -126,9 +126,9 @@
      DETALHES DO TEMA (lidos do theme.json)
      ------------------------------------------------------------------ */
   function themeExtraHtml(p) {
-    var t = p.themeInfo;
-    if (!t) return '';
-    var widgets = t.widgets || [];
+    var theme = p.themeInfo;
+    if (!theme) return '';
+    var widgets = theme.widgets || [];
 
     var rows = widgets.map(function (w) {
       return '<li>' +
@@ -141,30 +141,18 @@
 
     // Standby box apenas para temas de comunidade que não possuem o palco chaveado no topo
     var standby = '';
-    if (t.standby && t.standby.enabled && !p.isAnime) {
+    if (theme.standby && theme.standby.enabled && !p.isAnime) {
       standby =
         '<div class="standby-box">' +
           '<span class="card-cat">' + esc(t('standby_aria')) + '</span>' +
-          '<b>' + esc(t.standby.title || '—') + '</b>' +
-          '<span>' + esc(t.standby.subtitle || '') + '</span>' +
-          '<span class="tag">' + esc(t.standby.type || '') + '</span>' +
+          '<b>' + esc(theme.standby.title || '—') + '</b>' +
+          '<span>' + esc(theme.standby.subtitle || '') + '</span>' +
+          '<span class="tag">' + esc(theme.standby.type || '') + '</span>' +
         '</div>';
     }
 
-    // Composição blueprint apenas se o topo já não for a própria composição interativa
-    var layout = (widgets.length && !p.isAnime)
-      ? '<div class="layout-box">' +
-          '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">' +
-            '<h4 style="margin:0">' + esc(t('theme_composition')) + '</h4>' +
-            '<button type="button" class="layout-standby-btn" id="layoutStandbyBtn">' +
-              '<span style="width:6px;height:6px;border-radius:50%;background:#00E5FF;display:inline-block"></span>' +
-              esc(t('theme_standby_btn')) +
-            '</button>' +
-          '</div>' +
-          window.AliveArt.layoutSvg(widgets, t.assetBase, t.viewport) +
-        '</div>'
-      : '';
-
+    // Composição NÃO é renderizada aqui: o topo do popup já exibe a própria
+    // composição interativa (com o alternador Composição / Tela de espera).
     return '' +
       '<details class="theme-details-accordion">' +
         '<summary class="theme-details-summary">' +
@@ -173,16 +161,15 @@
         '</summary>' +
         '<div class="theme-extra">' +
           '<div class="meta-grid">' +
-            '<div class="meta-item"><span>' + esc(t('meta_author')) + '</span><b>' + esc(t.author || '—') + '</b></div>' +
-            '<div class="meta-item"><span>' + esc(t('meta_version')) + '</span><b>' + esc(t.version || '—') + '</b></div>' +
-            '<div class="meta-item"><span>' + esc(t('meta_widgets')) + '</span><b>' + (t.widgetCount || 0) + '</b></div>' +
-            '<div class="meta-item"><span>' + esc(t('meta_profile')) + '</span><b>' + esc(t.target_profile || '—') + '</b></div>' +
+            '<div class="meta-item"><span>' + esc(t('meta_author')) + '</span><b>' + esc(theme.author || '—') + '</b></div>' +
+            '<div class="meta-item"><span>' + esc(t('meta_version')) + '</span><b>' + esc(theme.version || '—') + '</b></div>' +
+            '<div class="meta-item"><span>' + esc(t('meta_widgets')) + '</span><b>' + (theme.widgetCount || 0) + '</b></div>' +
+            '<div class="meta-item"><span>' + esc(t('meta_profile')) + '</span><b>' + esc(theme.target_profile || '—') + '</b></div>' +
             '<div class="meta-item"><span>' + esc(t('meta_border')) + '</span><b>' +
-              (t.frame && t.frame.enabled ? esc(t.frame.border_color || t('meta_border_yes')) : esc(t('meta_border_off'))) + '</b></div>' +
-            '<div class="meta-item"><span>ID</span><b>' + esc(String(t.themeId || '—').slice(0, 8)) + '</b></div>' +
+              (theme.frame && theme.frame.enabled ? esc(theme.frame.border_color || t('meta_border_yes')) : esc(t('meta_border_off'))) + '</b></div>' +
+            '<div class="meta-item"><span>ID</span><b>' + esc(String(theme.themeId || '—').slice(0, 8)) + '</b></div>' +
           '</div>' +
           standby +
-          layout +
           (rows ? '<div><h4>' + esc(t('meta_layers')) + '</h4><ul class="widget-list">' + rows + '</ul></div>' : '') +
         '</div>' +
       '</details>';
