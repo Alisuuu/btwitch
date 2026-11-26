@@ -23,8 +23,8 @@
           '<stop offset="1" stop-color="' + esc(t.bg2 || '#070711') + '"/>' +
         '</linearGradient>' +
         '<linearGradient id="ac' + uid + '" x1="0" y1="0" x2="1" y2="0">' +
-          '<stop offset="0" stop-color="' + esc(t.a1 || '#8b5cf6') + '"/>' +
-          '<stop offset="1" stop-color="' + esc(t.a2 || '#22d3ee') + '"/>' +
+          '<stop offset="0" stop-color="' + esc(t.a1 || '#ffffff') + '"/>' +
+          '<stop offset="1" stop-color="' + esc(t.a2 || '#a1a1aa') + '"/>' +
         '</linearGradient>' +
         '<filter id="gl' + uid + '" x="-60%" y="-60%" width="220%" height="220%">' +
           '<feGaussianBlur stdDeviation="7" result="b"/>' +
@@ -45,7 +45,7 @@
     t = t || {};
     return '' +
       '<g transform="translate(24,22)">' +
-        '<rect width="86" height="30" rx="9" fill="rgba(6,6,12,.72)" stroke="' + esc(t.a1 || '#8b5cf6') + '" stroke-opacity=".65"/>' +
+        '<rect width="86" height="30" rx="9" fill="rgba(6,6,12,.72)" stroke="' + esc(t.a1 || '#ffffff') + '" stroke-opacity=".65"/>' +
         '<circle cx="17" cy="15" r="5" fill="#fb7185"/>' +
         '<text x="30" y="20" font-size="13" font-weight="800" fill="#fff" letter-spacing="1.5">LIVE</text>' +
       '</g>' +
@@ -57,7 +57,7 @@
 
   function camFrame(uid, t, x, y, w, h) {
     t = t || {};
-    var a1 = t.a1 || '#8b5cf6', a2 = t.a2 || '#22d3ee';
+    var a1 = t.a1 || '#ffffff', a2 = t.a2 || '#a1a1aa';
     return '' +
       '<g filter="url(#gl' + uid + ')">' +
         '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="14" fill="rgba(8,8,16,.72)" stroke="url(#ac' + uid + ')" stroke-width="3"/>' +
@@ -69,7 +69,7 @@
 
   function chatPanel(uid, t) {
     t = t || {};
-    var a1 = t.a1 || '#8b5cf6', a2 = t.a2 || '#22d3ee';
+    var a1 = t.a1 || '#ffffff', a2 = t.a2 || '#a1a1aa';
     var lines = [
       { w: 96, c: a1 }, { w: 72, c: 'rgba(255,255,255,.35)' },
       { w: 108, c: a2 }, { w: 64, c: 'rgba(255,255,255,.3)' },
@@ -88,7 +88,7 @@
 
   function alertBanner(uid, t) {
     t = t || {};
-    var a2 = t.a2 || '#22d3ee';
+    var a2 = t.a2 || '#a1a1aa';
     return '' +
       '<g transform="translate(180,66)" filter="url(#gl' + uid + ')">' +
         '<rect width="280" height="74" rx="16" fill="rgba(8,8,16,.86)" stroke="url(#ac' + uid + ')" stroke-width="2.5"/>' +
@@ -132,7 +132,7 @@
         '</g>' + watermark();
     },
     molduras: function (uid, p) {
-      var t = (p && (p.theme || p.themeInfo)) || {}, a1 = t.a1 || '#8b5cf6', a2 = t.a2 || '#22d3ee';
+      var t = (p && (p.theme || p.themeInfo)) || {}, a1 = t.a1 || '#ffffff', a2 = t.a2 || '#a1a1aa';
       return '' +
         camFrame(uid, t, 130, 74, 380, 212) +
         '<rect x="118" y="62" width="404" height="236" rx="20" fill="none" stroke="rgba(255,255,255,.16)" stroke-dasharray="4 8"/>' +
@@ -236,20 +236,20 @@
       var vy = Math.max(0, Math.min(H - vh, vcy - vh / 2));
 
       out += '<g class="layout-viewport-cut">';
-      out += '<rect x="' + vx + '" y="' + vy + '" width="' + vw + '" height="' + vh + '" fill="rgba(0, 229, 255, 0.05)" stroke="#00E5FF" stroke-width="3" stroke-dasharray="12 8"/>';
+      out += '<rect x="' + vx + '" y="' + vy + '" width="' + vw + '" height="' + vh + '" fill="rgba(255, 255, 255, 0.05)" stroke="#ffffff" stroke-width="3" stroke-dasharray="12 8"/>';
 
       // Cantos técnicos (HUD crosshairs)
       var arm = 28;
-      out += '<path d="M ' + (vx + 4) + ' ' + (vy + arm) + ' L ' + (vx + 4) + ' ' + (vy + 4) + ' L ' + (vx + arm) + ' ' + (vy + 4) + '" stroke="#00E5FF" stroke-width="3.5" fill="none"/>';
-      out += '<path d="M ' + (vx + vw - arm) + ' ' + (vy + 4) + ' L ' + (vx + vw - 4) + ' ' + (vy + 4) + ' L ' + (vx + vw - 4) + ' ' + (vy + arm) + '" stroke="#00E5FF" stroke-width="3.5" fill="none"/>';
-      out += '<path d="M ' + (vx + 4) + ' ' + (vy + vh - arm) + ' L ' + (vx + 4) + ' ' + (vy + vh - 4) + ' L ' + (vx + arm) + ' ' + (vy + vh - 4) + '" stroke="#00E5FF" stroke-width="3.5" fill="none"/>';
-      out += '<path d="M ' + (vx + vw - arm) + ' ' + (vy + vh - 4) + ' L ' + (vx + vw - 4) + ' ' + (vy + vh - 4) + ' L ' + (vx + vw - 4) + ' ' + (vy + vh - arm) + '" stroke="#00E5FF" stroke-width="3.5" fill="none"/>';
+      out += '<path d="M ' + (vx + 4) + ' ' + (vy + arm) + ' L ' + (vx + 4) + ' ' + (vy + 4) + ' L ' + (vx + arm) + ' ' + (vy + 4) + '" stroke="#ffffff" stroke-width="3.5" fill="none"/>';
+      out += '<path d="M ' + (vx + vw - arm) + ' ' + (vy + 4) + ' L ' + (vx + vw - 4) + ' ' + (vy + 4) + ' L ' + (vx + vw - 4) + ' ' + (vy + arm) + '" stroke="#ffffff" stroke-width="3.5" fill="none"/>';
+      out += '<path d="M ' + (vx + 4) + ' ' + (vy + vh - arm) + ' L ' + (vx + 4) + ' ' + (vy + vh - 4) + ' L ' + (vx + arm) + ' ' + (vy + vh - 4) + '" stroke="#ffffff" stroke-width="3.5" fill="none"/>';
+      out += '<path d="M ' + (vx + vw - arm) + ' ' + (vy + vh - 4) + ' L ' + (vx + vw - 4) + ' ' + (vy + vh - 4) + ' L ' + (vx + vw - 4) + ' ' + (vy + vh - arm) + '" stroke="#ffffff" stroke-width="3.5" fill="none"/>';
 
       var vLabel = 'Transmissão (Jogo / Câmera) · ' + Math.round(vw) + '×' + Math.round(vh) + ' · Escala ' + Math.round(scX * 100) + '%×' + Math.round(scY * 100) + '%';
       var vTw = Math.min(vw - 24, 30 + vLabel.length * 13);
       var vBadgeY = (vy + 40 < H - 20) ? vy + 40 : vy + vh - 20;
-      out += '<rect x="' + (vx + 16) + '" y="' + (vBadgeY - 26) + '" width="' + vTw + '" height="34" rx="6" fill="rgba(0, 0, 0, 0.9)" stroke="#00E5FF" stroke-width="1.5"/>';
-      out += '<text x="' + (vx + 28) + '" y="' + (vBadgeY - 3) + '" font-size="19" font-weight="800" fill="#00E5FF" letter-spacing="1">' + esc(vLabel) + '</text>';
+      out += '<rect x="' + (vx + 16) + '" y="' + (vBadgeY - 26) + '" width="' + vTw + '" height="34" rx="6" fill="rgba(0, 0, 0, 0.9)" stroke="#ffffff" stroke-width="1.5"/>';
+      out += '<text x="' + (vx + 28) + '" y="' + (vBadgeY - 3) + '" font-size="19" font-weight="800" fill="#ffffff" letter-spacing="1">' + esc(vLabel) + '</text>';
       out += '</g>';
     }
 
@@ -310,20 +310,20 @@
         defs(uid, { a1: '#ffffff', a2: '#a1a1aa', bg1: '#070710', bg2: '#030308' }) +
         '<rect width="640" height="360" fill="#07070d"/>' +
         // 1. Área da Transmissão (80% superior = 288px)
-        '<rect x="0" y="0" width="640" height="288" fill="rgba(0,229,255,0.02)"/>' +
+        '<rect x="0" y="0" width="640" height="288" fill="rgba(255, 255, 255,0.02)"/>' +
         (bgImg ? '<image href="' + esc(bgImg) + '" xlink:href="' + esc(bgImg) + '" width="640" height="288" preserveAspectRatio="xMidYMid slice" opacity="0.45"/>' : '') +
         '<rect width="640" height="288" fill="url(#gr' + uid + ')"/>' +
         // Marcadores de corte sutis nos cantos
-        '<path d="M 14 30 L 14 14 L 30 14" stroke="#00E5FF" stroke-width="2" fill="none" opacity="0.8"/>' +
-        '<path d="M 626 30 L 626 14 L 610 14" stroke="#00E5FF" stroke-width="2" fill="none" opacity="0.8"/>' +
-        '<path d="M 14 258 L 14 274 L 30 274" stroke="#00E5FF" stroke-width="2" fill="none" opacity="0.8"/>' +
-        '<path d="M 626 258 L 626 274 L 610 274" stroke="#00E5FF" stroke-width="2" fill="none" opacity="0.8"/>' +
+        '<path d="M 14 30 L 14 14 L 30 14" stroke="#ffffff" stroke-width="2" fill="none" opacity="0.8"/>' +
+        '<path d="M 626 30 L 626 14 L 610 14" stroke="#ffffff" stroke-width="2" fill="none" opacity="0.8"/>' +
+        '<path d="M 14 258 L 14 274 L 30 274" stroke="#ffffff" stroke-width="2" fill="none" opacity="0.8"/>' +
+        '<path d="M 626 258 L 626 274 L 610 274" stroke="#ffffff" stroke-width="2" fill="none" opacity="0.8"/>' +
         // 2. Banner Oficial (20% inferior = 72px)
         '<g transform="translate(0, 288)">' +
           '<rect width="640" height="72" fill="rgba(6,6,12,0.96)"/>' +
           (bgImg ? '<image href="' + esc(bgImg) + '" xlink:href="' + esc(bgImg) + '" width="640" height="72" preserveAspectRatio="xMidYMid slice" opacity="0.8"/>' : '') +
           '<rect width="640" height="72" fill="linear-gradient(to right, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.88) 100%)"/>' +
-          '<line x1="0" y1="0" x2="640" y2="0" stroke="#00E5FF" stroke-width="2.5"/>' +
+          '<line x1="0" y1="0" x2="640" y2="0" stroke="#ffffff" stroke-width="2.5"/>' +
         '</g>' +
       '</svg>';
   }

@@ -288,7 +288,7 @@ button, input, select { font: inherit; color: inherit; }
   text-overflow: ellipsis;
 }
 .card-author span {
-  color: #00E5FF;
+  color: #ffffff;
   font-weight: 600;
 }
 .card-tag { font-size: 12.5px; color: var(--muted); margin: 0; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -452,7 +452,7 @@ html.modal-open, body.modal-open {
 .seg-count {
   font-size: 10.5px;
   font-weight: 600;
-  color: #00E5FF;
+  color: #ffffff;
   letter-spacing: 0.02em;
   text-transform: none;
 }
@@ -494,9 +494,9 @@ html.modal-open, body.modal-open {
   background: rgba(255, 255, 255, 0.06); border: 1px solid var(--border); color: var(--muted);
 }
 .tag-cyan {
-  color: #00E5FF;
-  background: rgba(0, 229, 255, 0.1);
-  border-color: rgba(0, 229, 255, 0.3);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 .tag-ok {
   color: #00FF9D;
@@ -932,9 +932,9 @@ html.modal-open, body.modal-open {
   height: 32px;
   padding: 0 8px;
   border-radius: 999px;
-  background: rgba(0, 229, 255, 0.12);
-  color: #00E5FF;
-  border: 1px solid rgba(0, 229, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
   font-weight: 700;
   font-size: 11.5px;
   display: inline-flex;
@@ -951,9 +951,9 @@ html.modal-open, body.modal-open {
   overflow: hidden;
 }
 .btn-publish:hover {
-  background: rgba(0, 229, 255, 0.22);
-  border-color: #00E5FF;
-  box-shadow: 0 0 16px rgba(0, 229, 255, 0.25);
+  background: rgba(255, 255, 255, 0.22);
+  border-color: #ffffff;
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.25);
 }
 .btn-publish svg {
   width: 12px;
@@ -1129,8 +1129,8 @@ html.modal-open, body.modal-open {
   transform: translateY(-1px);
 }
 .backdrop-pick.active {
-  border-color: #00E5FF;
-  box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+  border-color: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
 }
 
 /* Seletor de Logo Oficial */
@@ -1144,9 +1144,9 @@ html.modal-open, body.modal-open {
 }
 .logo-pick:hover { border-color: var(--border-strong); }
 .logo-pick.active {
-  border-color: #00E5FF;
-  background: rgba(0, 229, 255, 0.08);
-  box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 .logo-pick-none {
   display: flex;
@@ -1161,8 +1161,8 @@ html.modal-open, body.modal-open {
 .logo-pick-none:hover { color: #fff; }
 .logo-pick-none.active {
   color: #fff;
-  border-color: #00E5FF;
-  background: rgba(0, 229, 255, 0.12);
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 /* Botões do Seletor de Tela de Espera */
@@ -1191,10 +1191,10 @@ html.modal-open, body.modal-open {
   transform: translateY(-1px);
 }
 .standby-pick-btn.active {
-  border-color: #00E5FF;
-  color: #00E5FF;
-  background: rgba(0, 229, 255, 0.08);
-  box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+  border-color: #ffffff;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 
 /* Composição Dinâmica em Tempo Real — Alive Stream Simulator */
@@ -1284,9 +1284,9 @@ html.modal-open, body.modal-open {
   position: absolute;
   z-index: 4;
   background: rgba(10, 10, 18, 0.84);
-  border: 1.5px solid #00E5FF;
+  border: 1.5px solid #ffffff;
   border-radius: 8px;
-  box-shadow: 0 0 12px rgba(0, 229, 255, 0.25);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.25);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1302,7 +1302,7 @@ html.modal-open, body.modal-open {
   gap: 4px;
 }
 .comp-cam-inner svg {
-  color: rgba(0, 229, 255, 0.8);
+  color: rgba(255, 255, 255, 0.8);
 }
 .comp-cam-label {
   font-size: 8.5px;
@@ -1353,7 +1353,7 @@ html.modal-open, body.modal-open {
 }
 .comp-eq-bars .eq-bar {
   width: 2.5px;
-  background: #00E5FF;
+  background: #ffffff;
   border-radius: 1px;
 }
 .comp-eq-bars .b1 { animation: eqBounce1 0.75s ease-in-out infinite; }
@@ -1433,10 +1433,10 @@ html.modal-open, body.modal-open {
 .comp-banner-sub {
   font-size: 9.5px;
   font-weight: 800;
-  color: #00E5FF;
+  color: #ffffff;
   letter-spacing: 0.1em;
   white-space: nowrap;
-  text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
 /* Posições: Celular Rodapé */
@@ -1445,7 +1445,7 @@ html.modal-open, body.modal-open {
 }
 .comp-cel-bottom .comp-banner {
   bottom: 0; left: 0; width: 100%; height: 18%;
-  border-top: 3px solid #00E5FF;
+  border-top: 3px solid #ffffff;
 }
 .comp-cel-bottom .comp-webcam {
   top: 42px; right: 12px; width: 106px; height: 64px;
@@ -1463,7 +1463,7 @@ html.modal-open, body.modal-open {
 }
 .comp-cel-top .comp-banner {
   top: 0; left: 0; width: 100%; height: 18%;
-  border-bottom: 3px solid #00E5FF;
+  border-bottom: 3px solid #ffffff;
 }
 .comp-cel-top .comp-webcam {
   bottom: 12px; right: 12px; width: 106px; height: 64px;
@@ -1481,7 +1481,7 @@ html.modal-open, body.modal-open {
 }
 .comp-tab-left .comp-banner {
   top: 0; left: 0; width: 20%; height: 100%;
-  border-right: 3px solid #00E5FF;
+  border-right: 3px solid #ffffff;
   flex-direction: column; justify-content: center; text-align: center; gap: 8px; padding: 12px 6px;
 }
 .comp-tab-left .comp-webcam {
@@ -1500,7 +1500,7 @@ html.modal-open, body.modal-open {
 }
 .comp-tab-right .comp-banner {
   top: 0; right: 0; width: 20%; height: 100%;
-  border-left: 3px solid #00E5FF;
+  border-left: 3px solid #ffffff;
   flex-direction: column; justify-content: center; text-align: center; gap: 8px; padding: 12px 6px;
 }
 .comp-tab-right .comp-webcam {
@@ -1560,22 +1560,22 @@ html.modal-open, body.modal-open {
   background: rgba(5, 5, 10, 0.75);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1.5px solid rgba(0, 229, 255, 0.4);
-  box-shadow: 0 0 25px rgba(0, 229, 255, 0.25);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.25);
   padding: 14px 28px;
   border-radius: 40px;
   animation: standbyPulse 3s ease-in-out infinite;
 }
 @keyframes standbyPulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(0, 229, 255, 0.2); }
-  50% { transform: scale(1.02); box-shadow: 0 0 32px rgba(0, 229, 255, 0.45); }
+  0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 255, 255, 0.2); }
+  50% { transform: scale(1.02); box-shadow: 0 0 32px rgba(255, 255, 255, 0.45); }
 }
 .standby-pulse-dot {
   width: 6px;
   height: 6px;
-  background: #00E5FF;
+  background: #ffffff;
   border-radius: 50%;
-  box-shadow: 0 0 8px #00E5FF;
+  box-shadow: 0 0 8px #ffffff;
 }
 .standby-footer-tag {
   position: absolute;
@@ -1700,9 +1700,9 @@ html.modal-open, body.modal-open {
   color: #fff;
 }
 .art-switch-btn.active {
-  background: #00E5FF;
+  background: #ffffff;
   color: #07070a;
-  box-shadow: 0 0 12px rgba(0, 229, 255, 0.45);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.45);
 }
 
 /* Botão Tela de espera dentro do bloco de Composição */
@@ -1711,9 +1711,9 @@ html.modal-open, body.modal-open {
   font-size: 11px;
   font-weight: 700;
   border-radius: 6px;
-  background: rgba(0, 229, 255, 0.08);
-  border: 1px solid rgba(0, 229, 255, 0.35);
-  color: #00E5FF;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #ffffff;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -1721,9 +1721,9 @@ html.modal-open, body.modal-open {
   transition: all 0.15s ease;
 }
 .layout-standby-btn:hover {
-  background: rgba(0, 229, 255, 0.18);
-  border-color: #00E5FF;
-  box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
+  background: rgba(255, 255, 255, 0.18);
+  border-color: #ffffff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
 }
 
 /* Card Em Breve (Aba Pagos) */
@@ -1749,9 +1749,9 @@ html.modal-open, body.modal-open {
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #00E5FF;
-  background: rgba(0, 229, 255, 0.1);
-  border: 1px solid rgba(0, 229, 255, 0.3);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 .coming-soon-title {
   font-size: 20px;
@@ -1828,14 +1828,14 @@ button, .btn, .tab-btn, .seg-item, .standby-pick-btn, .layout-standby-btn, .art-
   gap: 12px;
 }
 .publish-dropzone:hover, .publish-dropzone.drag-over {
-  border-color: #00E5FF;
-  background: rgba(0, 229, 255, 0.06);
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
 }
 .dropzone-icon {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: rgba(0, 229, 255, 0.12);
+  background: rgba(255, 255, 255, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1870,9 +1870,9 @@ button, .btn, .tab-btn, .seg-item, .standby-pick-btn, .layout-standby-btn, .art-
   color: #ff6b6b;
 }
 .publish-status-box.info {
-  background: rgba(0, 229, 255, 0.12);
-  border: 1px solid rgba(0, 229, 255, 0.3);
-  color: #00E5FF;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
 }
 .publish-status-box.success {
   background: rgba(0, 255, 157, 0.12);

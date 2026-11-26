@@ -125,7 +125,7 @@
       version: '1.0',
       widgetCount: widgets.length,
       target_profile: 'custom',
-      frame: { enabled: false, border_color: '#00E5FF' },
+      frame: { enabled: false, border_color: '#ffffff' },
       viewport: viewport,
       standby: {
         enabled: STATE.standbyEnabled,
@@ -397,7 +397,7 @@
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, width, height);
 
-        ctx.fillStyle = '#00E5FF';
+        ctx.fillStyle = '#ffffff';
         const lineY = pos === 'bottom' ? 0 : height - 4;
         ctx.fillRect(0, lineY, width, 4);
       } else {
@@ -409,7 +409,7 @@
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, width, height);
 
-        ctx.fillStyle = '#00E5FF';
+        ctx.fillStyle = '#ffffff';
         const lineX = pos === 'left' ? width - 4 : 0;
         ctx.fillRect(lineX, 0, 4, height);
       }
@@ -506,7 +506,7 @@
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#ffffff';
-    ctx.shadowColor = 'rgba(0, 229, 255, 0.8)';
+    ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
     ctx.shadowBlur = 18;
     ctx.font = '900 48px Sora, Inter, sans-serif';
 
@@ -572,8 +572,8 @@
       // Ponto ciano pulsante
       const pulse = 0.5 + 0.5 * Math.sin((progress || 0) * Math.PI * 2);
       ctx.shadowBlur = 14;
-      ctx.shadowColor = 'rgba(0, 229, 255, 0.9)';
-      ctx.fillStyle = '#00E5FF';
+      ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+      ctx.fillStyle = '#ffffff';
       ctx.globalAlpha = 0.6 + 0.4 * pulse;
       ctx.beginPath();
       ctx.arc(960, centerY - 60, 7 + 2 * pulse, 0, Math.PI * 2);
@@ -581,7 +581,7 @@
       ctx.globalAlpha = 1.0;
 
       // Texto simples estrito: "Aguarde um momento" / "Please wait a moment"
-      ctx.shadowColor = 'rgba(0, 229, 255, 0.55)';
+      ctx.shadowColor = 'rgba(255, 255, 255, 0.55)';
       ctx.shadowBlur = 20;
       ctx.fillStyle = '#ffffff';
       ctx.font = '700 52px Sora, Inter, sans-serif';
@@ -883,7 +883,7 @@
         },
         background: { enabled: false, file: '', fit_mode: 'crop', opacity: 1.0 },
         frame: {
-          border_color: '#00E5FF', border_width: 3.0, corner_radius: 0.0,
+          border_color: '#ffffff', border_width: 3.0, corner_radius: 0.0,
           enabled: false, file: '', fit_mode: 'stretch', glow: false, opacity: 1.0
         },
         viewport: viewport,
@@ -1361,6 +1361,21 @@
     setModalView: function (v) {
       STATE.modalView = v;
       updateModalArtPreview();
+    },
+    getComposerUrl: function (p) {
+      const target = p || STATE.activeProduct;
+      if (!target) return 'composer.html';
+      const qs = new URLSearchParams();
+      if (I && I.lang) qs.set('lang', I.lang);
+      qs.set('tmdbType', target.mediaType === 'movie' ? 'movie' : 'tv');
+      qs.set('tmdbId', String(target.animeId || ''));
+      qs.set('name', target.name || '');
+      qs.set('device', STATE.device || 'celular');
+      qs.set('pos', STATE.bannerPosition || 'bottom');
+      if (STATE.activeBackdropUrl) qs.set('backdrop', STATE.activeBackdropUrl);
+      if (STATE.activeLogoUrl) qs.set('logo', STATE.activeLogoUrl);
+      if (STATE.activeStandbyUrl) qs.set('standby', STATE.activeStandbyUrl);
+      return 'composer.html?' + qs.toString();
     }
   };
 

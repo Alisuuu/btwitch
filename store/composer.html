@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>Alive Studio — Canvas Composer</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23000000' stroke='%23ffffff' stroke-width='4'/%3E%3Ctext x='32' y='44' font-family='Arial' font-size='34' font-weight='800' text-anchor='middle' fill='%23ffffff'%3EA%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/composer.css?v=15">
+</head>
+<body>
+
+  <!-- ============================ TOPBAR MINIMALISTA ============================ -->
+  <header class="studio-topbar">
+    <div class="topbar-left">
+      <a class="back-link" href="./" title="Voltar para a Loja">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        <span data-i18n="comp_store">Loja</span>
+      </a>
+      <span class="studio-brand-title" id="topbarThemeTitle">Alive Studio</span>
+    </div>
+
+    <div class="topbar-right">
+      <span class="mono-stat" id="exportStatusText" data-i18n="comp_ready">Pronto</span>
+      <button type="button" class="btn-export" id="btnExportZip">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span data-i18n="comp_export_zip">Exportar .zip</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============================ PALCO CENTRAL ÚNICO (MODELO CANVAS DO APP) ============================ -->
+  <main class="stage-center">
+    <!-- Barra de Controle acima do Canvas (igual ao app) -->
+    <div class="canvas-topbar">
+      <div class="stage-mode-switch">
+        <button type="button" class="smode active" data-mode="composition" data-i18n="comp_live">AO VIVO</button>
+        <button type="button" class="smode" data-mode="standby" data-i18n="comp_standby">ESPERA</button>
+      </div>
+
+      <div class="canvas-top-actions">
+        <label class="toggle-chip">
+          <input type="checkbox" id="chkShowGrid" checked>
+          <span data-i18n="comp_grid">Grade</span>
+        </label>
+        <label class="toggle-chip">
+          <input type="checkbox" id="chkShowViewport" checked>
+          <span data-i18n="comp_cut">Corte</span>
+        </label>
+        <button type="button" class="btn-tool-pill" id="btnOpenPresets" data-i18n="comp_presets_btn">Presets</button>
+        <button type="button" class="btn-tool-pill" id="btnOpenGallery">
+          <span data-i18n="comp_dock_imgs">Imagens</span>
+        </button>
+        <button type="button" class="btn-tool-pill is-solid" id="btnOpenInspector">
+          <span data-i18n="btn_edit">Editar</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Canvas 16:9 -->
+    <div class="stage-viewport" id="stageViewport">
+      <div class="canvas-frame" id="canvasFrame">
+        <div class="stage-bg-layer" id="stageBgLayer"></div>
+        <div class="stage-grid-overlay" id="stageGridOverlay"></div>
+
+        <div class="stage-live-cut" id="stageLiveCut">
+          <span class="live-cut-badge" id="liveCutBadge">Transmissão · 1920×864</span>
+        </div>
+
+        <div class="stage-layers-host" id="stageLayersHost"></div>
+
+        <!-- Overlay de Standby integrado ao Canvas -->
+        <div class="stage-standby-preview" id="stageStandbyPreview" hidden>
+          <div class="standby-bg" id="standbyPreviewBg"></div>
+          <div class="standby-scrim"></div>
+          <div class="standby-center">
+            <img id="standbyPreviewLogo" class="standby-logo-img" alt="" hidden>
+            <div class="standby-dot" id="standbyPreviewDot"></div>
+            <div class="standby-title" id="standbyPreviewTitle">Aguarde um momento</div>
+            <div class="standby-sub" id="standbyPreviewSub"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra Horizontal de Camadas + Botão Nova Camada -->
+    <div class="canvas-bottom-bar">
+      <div class="layer-chips-bar" id="layerChipsBar"></div>
+      <button type="button" class="btn-add-layer-chip" id="btnAddImageLayer" title="Adicionar camada de imagem">
+        + <span data-i18n="comp_image_btn">Imagem</span>
+      </button>
+    </div>
+  </main>
+
+  <!-- ============================ POPUP 1: GALERIA DE IMAGENS ============================ -->
+  <div class="studio-modal" id="galleryModal" hidden>
+    <div class="studio-modal-backdrop" data-close-modal="galleryModal"></div>
+    <div class="studio-modal-sheet is-wide">
+      <div class="studio-modal-head">
+        <div>
+          <h3 data-i18n="comp_gallery">Galeria de Imagens</h3>
+        </div>
+        <div class="modal-head-actions">
+          <label class="btn-upload-mini" title="Carregar imagem do dispositivo">
+            <input type="file" id="localImgInput" accept="image/*" hidden>
+            <span data-i18n="comp_file_btn">+ Arquivo</span>
+          </label>
+          <button type="button" class="studio-modal-close" data-close-modal="galleryModal" aria-label="Fechar">×</button>
+        </div>
+      </div>
+
+      <div class="studio-modal-body">
+        <form class="tmdb-search-form" id="tmdbSearchForm">
+          <input type="search" id="tmdbQueryInput" data-i18n-placeholder="comp_search_ph" placeholder="Buscar tema, anime ou série..." value="Solo Leveling" autocomplete="off">
+          <button type="submit" class="btn-search" data-i18n="comp_search_btn">Buscar</button>
+        </form>
+
+        <div class="quick-chips" id="tmdbQuickChips">
+          <button type="button" class="qchip" data-q="Solo Leveling">Solo Leveling</button>
+          <button type="button" class="qchip" data-q="Naruto Shippuden">Naruto</button>
+          <button type="button" class="qchip" data-q="Demon Slayer">Demon Slayer</button>
+          <button type="button" class="qchip" data-q="Jujutsu Kaisen">Jujutsu</button>
+          <button type="button" class="qchip" data-q="Cyberpunk Edgerunners">Cyberpunk</button>
+          <button type="button" class="qchip" data-q="One Piece">One Piece</button>
+        </div>
+
+        <div class="tmdb-results-strip" id="tmdbTitleResults"></div>
+
+        <div class="asset-filter-tabs" id="assetKindTabs">
+          <button type="button" class="akind active" data-kind="backdrops"><span data-i18n="comp_tab_bg">Fundos</span> <span id="cntBackdrops">0</span></button>
+          <button type="button" class="akind" data-kind="logos"><span data-i18n="comp_tab_logos">Logos</span> <span id="cntLogos">0</span></button>
+          <button type="button" class="akind" data-kind="posters"><span data-i18n="comp_tab_posters">Posters</span> <span id="cntPosters">0</span></button>
+        </div>
+
+        <div class="tmdb-asset-grid" id="tmdbAssetGrid">
+          <div class="empty-hint">Busque um título acima para carregar imagens.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================ POPUP 2: EDITAR CAMADA & RECORTE ============================ -->
+  <div class="studio-modal" id="inspectorModal" hidden>
+    <div class="studio-modal-backdrop" data-close-modal="inspectorModal"></div>
+    <div class="studio-modal-sheet">
+      <div class="studio-modal-head">
+        <div>
+          <div class="inspector-eyebrow" data-i18n="comp_active_layer">Camada ativa</div>
+          <h3 id="inspectorLayerName">Banner Principal</h3>
+        </div>
+        <div class="modal-head-actions">
+          <button type="button" class="btn-danger-mini" id="btnRemoveLayer" hidden data-i18n="comp_remove">Remover</button>
+          <button type="button" class="studio-modal-close" data-close-modal="inspectorModal" aria-label="Fechar">×</button>
+        </div>
+      </div>
+
+      <div class="studio-modal-body" id="inspectorBody">
+        <section class="insp-section" id="secLayerVisible">
+          <label class="switch-line">
+            <span data-i18n="comp_layer_enabled">Camada ativada</span>
+            <input type="checkbox" id="inpLayerEnabled" checked>
+          </label>
+        </section>
+
+        <!-- Editor Visual de Recorte da Imagem -->
+        <section class="insp-section" id="secCropEditor">
+          <div class="sec-title-row">
+            <h4 data-i18n="comp_crop_title">Recorte &amp; Enquadramento</h4>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <button type="button" class="btn-link" id="btnPickImageForLayer" data-i18n="comp_dock_imgs">Imagens</button>
+              <button type="button" class="btn-link" id="btnClearLayerImage" data-i18n="comp_remove_img">Remover imagem</button>
+              <button type="button" class="btn-link" id="btnResetCrop" data-i18n="comp_reset_crop">Resetar corte</button>
+            </div>
+          </div>
+
+          <div class="crop-box-wrap">
+            <div class="crop-stage" id="cropStage" title="Arraste a área de corte sobre a imagem inteira">
+              <img id="cropPreviewImg" alt="" draggable="false">
+              <div class="crop-frame-box" id="cropFrameBox"></div>
+              <div class="crop-empty" id="cropEmptyHint" data-i18n="comp_crop_empty">Escolha uma imagem da galeria ou arquivo local</div>
+            </div>
+            <div class="crop-help" data-i18n="comp_crop_help">Arraste a moldura sobre a imagem inteira e clique em Aplicar Corte</div>
+          </div>
+
+          <div class="crop-actions-row">
+            <button type="button" class="btn-apply-crop" id="btnApplyCrop" data-i18n="comp_apply_crop">Aplicar Corte</button>
+          </div>
+
+          <div class="slider-field">
+            <div class="slider-lbl"><span data-i18n="comp_zoom">Zoom do corte</span><b class="mono-val" id="valCropZoom">100%</b></div>
+            <input type="range" id="inpCropZoom" min="100" max="320" step="2" value="100">
+          </div>
+          <div class="grid-2">
+            <div class="slider-field">
+              <div class="slider-lbl"><span>Pan X</span><b class="mono-val" id="valCropX">0%</b></div>
+              <input type="range" id="inpCropX" min="-100" max="100" step="1" value="0">
+            </div>
+            <div class="slider-field">
+              <div class="slider-lbl"><span>Pan Y</span><b class="mono-val" id="valCropY">0%</b></div>
+              <input type="range" id="inpCropY" min="-100" max="100" step="1" value="0">
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="slider-field">
+              <div class="slider-lbl"><span data-i18n="comp_dim">Escurecer</span><b class="mono-val" id="valImgDim">25%</b></div>
+              <input type="range" id="inpImgDim" min="0" max="85" step="1" value="25">
+            </div>
+            <div class="slider-field">
+              <div class="slider-lbl"><span data-i18n="comp_radius">Raio Borda</span><b class="mono-val" id="valImgRadius">0px</b></div>
+              <input type="range" id="inpImgRadius" min="0" max="80" step="2" value="0">
+            </div>
+          </div>
+          <label class="switch-line" style="margin-top:6px;">
+            <span data-i18n="comp_flip">Espelhar horizontalmente</span>
+            <input type="checkbox" id="inpImgFlip">
+          </label>
+        </section>
+
+        <!-- Textos & Logo do Standby -->
+        <section class="insp-section" id="secStandbyText" hidden>
+          <div class="sec-title-row">
+            <h4 data-i18n="comp_standby_sec">Texto &amp; Logo da Tela de Espera</h4>
+          </div>
+          <label class="num-field" style="margin-bottom:8px;">
+            <span data-i18n="comp_standby_title_lbl">Título principal (deixe vazio para ocultar)</span>
+            <input type="text" id="inpStandbyTitle" value="Aguarde um momento" placeholder="Ex: Aguarde um momento" maxlength="60">
+          </label>
+          <label class="num-field" style="margin-bottom:10px;">
+            <span data-i18n="comp_standby_sub_lbl">Subtítulo</span>
+            <input type="text" id="inpStandbySub" value="" placeholder="ex: Voltamos já!" maxlength="80">
+          </label>
+
+          <div class="grid-2" style="margin-bottom:10px;">
+            <div class="slider-field">
+              <div class="slider-lbl"><span data-i18n="comp_standby_font">Tam. Texto</span><b class="mono-val" id="valStandbyFontSize">54px</b></div>
+              <input type="range" id="inpStandbyFontSize" min="24" max="96" step="2" value="54">
+            </div>
+            <div class="color-line" style="align-self:center;">
+              <span data-i18n="comp_standby_color">Cor texto</span>
+              <input type="color" id="inpStandbyColor" value="#ffffff">
+            </div>
+          </div>
+
+          <div class="sec-title-row" style="margin-top:6px;">
+            <h4 data-i18n="comp_standby_logo_sec">Logo na Tela de Espera</h4>
+            <button type="button" class="btn-link" id="btnStandbyClearLogo" data-i18n="comp_standby_no_logo">Sem logo</button>
+          </div>
+          <div class="standby-logo-actions">
+            <button type="button" class="btn-ghost" id="btnStandbyUseThemeLogo" style="flex:1;justify-content:center;" data-i18n="comp_standby_use_logo">Usar Logo do Tema</button>
+            <label class="btn-ghost" style="flex:1;justify-content:center;cursor:pointer;">
+              <input type="file" id="inpStandbyLogoFile" accept="image/*" hidden>
+              <span data-i18n="comp_standby_up_logo">Subir Logo</span>
+            </label>
+          </div>
+          <div class="slider-field" style="margin-top:10px;">
+            <div class="slider-lbl"><span data-i18n="comp_standby_logo_size">Tamanho do Logo</span><b class="mono-val" id="valStandbyLogoScale">65%</b></div>
+            <input type="range" id="inpStandbyLogoScale" min="20" max="150" step="2" value="65">
+          </div>
+        </section>
+
+        <!-- Posição & Tamanho no Palco 1920x1080 -->
+        <section class="insp-section" id="secTransform">
+          <div class="sec-title-row">
+            <h4 data-i18n="comp_pos_sec">Posição &amp; Escala no Palco</h4>
+          </div>
+          <div class="grid-2">
+            <label class="num-field">
+              <span data-i18n="comp_width">Largura (px)</span>
+              <input type="number" id="inpLayerW" min="40" max="1920" step="2">
+            </label>
+            <label class="num-field">
+              <span data-i18n="comp_height">Altura (px)</span>
+              <input type="number" id="inpLayerH" min="30" max="1080" step="2">
+            </label>
+            <label class="num-field">
+              <span>Pos X (0–1)</span>
+              <input type="number" id="inpLayerX" min="0" max="1" step="0.01">
+            </label>
+            <label class="num-field">
+              <span>Pos Y (0–1)</span>
+              <input type="number" id="inpLayerY" min="0" max="1" step="0.01">
+            </label>
+          </div>
+          <div class="grid-2" style="margin-top:8px;">
+            <div class="slider-field">
+              <div class="slider-lbl"><span data-i18n="comp_scale">Escala</span><b class="mono-val" id="valLayerScale">100%</b></div>
+              <input type="range" id="inpLayerScale" min="20" max="200" step="1" value="100">
+            </div>
+            <div class="slider-field">
+              <div class="slider-lbl"><span data-i18n="comp_opacity">Opacidade</span><b class="mono-val" id="valLayerOpacity">100%</b></div>
+              <input type="range" id="inpLayerOpacity" min="10" max="100" step="1" value="100">
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================ POPUP 3: PRESETS & CORTE DA TRANSMISSÃO ============================ -->
+  <div class="studio-modal" id="presetsModal" hidden>
+    <div class="studio-modal-backdrop" data-close-modal="presetsModal"></div>
+    <div class="studio-modal-sheet">
+      <div class="studio-modal-head">
+        <div>
+          <h3 data-i18n="comp_vp_sec">Corte da Transmissão &amp; Borda</h3>
+        </div>
+        <button type="button" class="studio-modal-close" data-close-modal="presetsModal" aria-label="Fechar">×</button>
+      </div>
+      <div class="studio-modal-body">
+        <div class="preset-pills-wrap" id="viewportPresets">
+          <button type="button" class="pill-btn active" data-preset="celular-bottom"><span data-i18n="device_phone">Celular</span> · <span data-i18n="pos_bottom">Rodapé</span></button>
+          <button type="button" class="pill-btn" data-preset="celular-top"><span data-i18n="device_phone">Celular</span> · <span data-i18n="pos_top">Topo</span></button>
+          <button type="button" class="pill-btn" data-preset="tablet-left"><span data-i18n="device_tablet">Tablet</span> · <span data-i18n="pos_left">Esquerda</span></button>
+          <button type="button" class="pill-btn" data-preset="tablet-right"><span data-i18n="device_tablet">Tablet</span> · <span data-i18n="pos_right">Direita</span></button>
+          <button type="button" class="pill-btn" data-preset="fullscreen" data-i18n="pos_none">Sem banner</button>
+        </div>
+
+        <section class="insp-section">
+          <div class="grid-2">
+            <div class="slider-field">
+              <div class="slider-lbl"><span data-i18n="comp_scale_x">Escala X</span><b class="mono-val" id="valVpScaleX">100%</b></div>
+              <input type="range" id="inpVpScaleX" min="40" max="100" step="1" value="100">
+            </div>
+            <div class="slider-field">
+              <div class="slider-lbl"><span data-i18n="comp_scale_y">Escala Y</span><b class="mono-val" id="valVpScaleY">80%</b></div>
+              <input type="range" id="inpVpScaleY" min="40" max="100" step="1" value="80">
+            </div>
+            <div class="slider-field">
+              <div class="slider-lbl"><span data-i18n="comp_offset_x">Offset X</span><b class="mono-val" id="valVpOffX">0%</b></div>
+              <input type="range" id="inpVpOffX" min="-50" max="50" step="1" value="0">
+            </div>
+            <div class="slider-field">
+              <div class="slider-lbl"><span data-i18n="comp_offset_y">Offset Y</span><b class="mono-val" id="valVpOffY">-10%</b></div>
+              <input type="range" id="inpVpOffY" min="-50" max="50" step="1" value="-10">
+            </div>
+          </div>
+          <div class="color-line" style="margin-top:8px;">
+            <span data-i18n="comp_accent_color">Cor de acento / linha</span>
+            <input type="color" id="inpAccentColor" value="#ffffff">
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================ POPUP 4: ONDE APLICAR ESTA IMAGEM? ============================ -->
+  <div class="studio-modal" id="imageTargetModal" hidden style="z-index: 120;">
+    <div class="studio-modal-backdrop" id="imageTargetBackdrop"></div>
+    <div class="studio-modal-sheet is-compact">
+      <div class="studio-modal-head">
+        <h3 data-i18n="comp_target_title">Onde aplicar esta imagem?</h3>
+        <button type="button" class="studio-modal-close" id="btnCloseTargetModal" aria-label="Fechar">×</button>
+      </div>
+      <div class="studio-modal-body">
+        <div class="target-modal-preview">
+          <img id="targetModalPreviewImg" alt="">
+        </div>
+        <div class="target-modal-list" id="targetModalList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================ POPUP 5: SALVAR / EXPORTAR .ZIP ============================ -->
+  <div class="studio-modal" id="exportModal" hidden>
+    <div class="studio-modal-backdrop" data-close-modal="exportModal"></div>
+    <div class="studio-modal-sheet is-compact">
+      <div class="studio-modal-head">
+        <h3 data-i18n="comp_export_zip">Exportar .zip</h3>
+        <button type="button" class="studio-modal-close" data-close-modal="exportModal" aria-label="Fechar">×</button>
+      </div>
+      <div class="studio-modal-body">
+        <label class="num-field">
+          <span data-i18n="comp_theme_name">Nome do Tema</span>
+          <input type="text" id="themeNameInput" value="Meu Tema Alive" placeholder="Nome do tema" maxlength="48">
+        </label>
+        <label class="num-field">
+          <span data-i18n="comp_theme_author">Autor</span>
+          <input type="text" id="themeAuthorInput" value="Alive Studio" placeholder="Autor" maxlength="32">
+        </label>
+        <button type="button" class="btn-apply-crop" id="btnConfirmExport" data-i18n="comp_export_zip">Exportar .zip</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/i18n.js?v=9"></script>
+  <script src="js/jszip.min.js"></script>
+  <script src="js/composer.js?v=17"></script>
+</body>
+</html>

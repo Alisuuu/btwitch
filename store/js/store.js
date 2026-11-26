@@ -187,6 +187,13 @@
       if (note) note.style.display = 'none';
       var repBtn = document.getElementById('modalReport');
       if (repBtn) repBtn.style.display = 'none';
+      var editBtn = document.getElementById('modalEditComposer');
+      if (editBtn) {
+        editBtn.style.display = '';
+        editBtn.onclick = function () {
+          window.location.href = window.ALIVE_ANIME.getComposerUrl(p);
+        };
+      }
 
       window.ALIVE_ANIME.setupModalForAnime(p);
     } else {
@@ -243,6 +250,11 @@
       var buyBtn = document.getElementById('modalBuy');
       buyBtn.textContent = t('btn_download');
       buyBtn.className = 'btn btn-lg btn-primary';
+      var editBtn2 = document.getElementById('modalEditComposer');
+      if (editBtn2) {
+        editBtn2.style.display = 'none';
+        editBtn2.onclick = null;
+      }
       buyBtn.onclick = function () {
         U.isFree(p) ? A.download(p) : A.buy(p, { button: buyBtn });
       };

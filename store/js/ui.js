@@ -236,7 +236,7 @@
     var art = document.getElementById('modalArt');
     if (art) {
       art.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      art.style.boxShadow = '0 0 24px rgba(0, 229, 255, 0.45)';
+      art.style.boxShadow = '0 0 24px rgba(255, 255, 255, 0.45)';
       setTimeout(function () { art.style.boxShadow = ''; }, 1200);
     }
   });
