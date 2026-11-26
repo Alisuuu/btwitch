@@ -1,11 +1,13 @@
 // Alive Bot Service Worker (PWA)
-const CACHE_NAME = 'alive-bot-v1.3.0';
+const CACHE_NAME = 'alive-bot-v1.3.1';
 
 const OFFLINE_URLS = [
   '/',
   '/index.html',
   '/css/panel.css',
   '/js/panel.js',
+  '/js/i18n.js',
+  '/js/panel-i18n.js',
   '/js/icons.js',
   '/js/state.js',
   '/js/store.js',

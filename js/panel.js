@@ -1315,10 +1315,11 @@ function renderNow(s) {
   }
 
   if (!now) {
+    const l = getCurrentLang();
     $('#nowThumb').removeAttribute('src');
-    $('#nowKicker').textContent = 'SEM MÚSICA';
-    $('#nowTitle').textContent = 'Nada tocando';
-    $('#nowSub').textContent = 'Peça uma música com !play no chat ou use a busca';
+    $('#nowKicker').textContent = pt(l, 'now_kicker_idle');
+    $('#nowTitle').textContent = pt(l, 'now_title_idle');
+    $('#nowSub').textContent = pt(l, 'now_sub_idle');
     $('#nowFill').style.width = '0%';
     $('#nowCur').textContent = '0:00';
     $('#nowDur').textContent = '0:00';
@@ -1326,11 +1327,12 @@ function renderNow(s) {
     return;
   }
 
+  const l = getCurrentLang();
   const thumb = now.thumb || thumbFor(now.id);
   if ($('#nowThumb').getAttribute('src') !== thumb) $('#nowThumb').src = thumb;
-  $('#nowKicker').textContent = now.paused ? 'PAUSADO' : 'TOCANDO AGORA';
+  $('#nowKicker').textContent = now.paused ? pt(l, 'now_kicker_paused') : pt(l, 'now_kicker_playing');
   $('#nowTitle').textContent = now.title;
-  $('#nowSub').textContent = [now.channel, now.requestedBy ? 'pedido por ' + now.requestedBy : '']
+  $('#nowSub').textContent = [now.channel, now.requestedBy ? pt(l, 'now_requested_by') + now.requestedBy : '']
     .filter(Boolean).join(' · ');
 
   if (posCache.id !== now.id || posCache.pos !== now.position) {
@@ -1373,10 +1375,12 @@ function renderQueue(s) {
   if (sig === queueSig) return;
   queueSig = sig;
 
+  const l = getCurrentLang();
   $('#queueCount').textContent = String(s.queue.length);
   const list = $('#queueList');
   if (!s.queue.length) {
-    list.innerHTML = '<li class="empty">Fila vazia — envie !play no chat ou adicione pela busca.</li>';
+    list.innerHTML = `<li class="empty">${esc(pt(l, 'queue_empty'))}</li>`;
+    renderHistory(s);
     return;
   }
   list.innerHTML = s.queue.map((x, i) => `
@@ -1385,7 +1389,7 @@ function renderQueue(s) {
       <img class="q-thumb" src="${esc(x.thumb || thumbFor(x.id))}" alt="" loading="lazy">
       <div class="q-main">
         <div class="q-title">${esc(x.title)}</div>
-        <div class="q-sub">${esc(x.channel || '')} · pedido por <b>${esc(x.requestedBy)}</b>${x.duration ? ' · ' + fmtTime(x.duration) : ''}</div>
+        <div class="q-sub">${esc(x.channel || '')} · ${esc(pt(l, 'now_requested_by'))}<b>${esc(x.requestedBy)}</b>${x.duration ? ' · ' + fmtTime(x.duration) : ''}</div>
       </div>
       <div class="q-acts">
         <button data-act="up" data-i="${i}" title="Subir">${icon('chevron-up', { size: 13 })}</button>
@@ -1399,9 +1403,10 @@ function renderQueue(s) {
 function renderHistory(s) {
   const el = $('#historyList');
   if (!el) return;
+  const l = getCurrentLang();
   const hist = s.history || [];
   if (!hist.length) {
-    el.innerHTML = '<li class="empty">Nenhuma música tocada ainda nesta sessão.</li>';
+    el.innerHTML = `<li class="empty">${esc(pt(l, 'history_empty'))}</li>`;
     return;
   }
   el.innerHTML = hist.slice(-8).reverse().map((x, idx) => `
@@ -1409,7 +1414,7 @@ function renderHistory(s) {
       <img class="q-thumb" src="${esc(x.thumb || thumbFor(x.id))}" alt="" loading="lazy">
       <div class="q-main">
         <div class="q-title">${esc(x.title)}</div>
-        <div class="q-sub">${esc(x.channel || '')} · pedido por <b>${esc(x.requestedBy)}</b></div>
+        <div class="q-sub">${esc(x.channel || '')} · ${esc(pt(l, 'now_requested_by'))}<b>${esc(x.requestedBy)}</b></div>
       </div>
       <div class="q-acts">
         <button class="btn ghost small" data-readd="${idx}" title="Tocar novamente">${icon('plus', { size: 12 })}</button>
@@ -2326,7 +2331,8 @@ function syncConfigForm(s) {
     if ($('#cfgSecret')) $('#cfgSecret').value = localStorage.getItem(LS_SECRET) || '';
   } catch { /* storage indisponível */ }
 
-  const curLang = normalizeLang(c.language || localStorage.getItem('alive.lang') || 'pt');
+  const storedLang = (() => { try { return localStorage.getItem('alive.lang'); } catch { return ''; } })();
+  const curLang = normalizeLang(storedLang || c.language || 'pt');
   if ($('#cfgLang')) $('#cfgLang').value = curLang;
   if ($('#cfgLangTop')) $('#cfgLangTop').value = curLang;
   applyPanelI18n(curLang);
@@ -2407,6 +2413,14 @@ function saveConfig() {
   toast(pt(selectedLang, 'cfg_saved_toast'));
 }
 
+function getCurrentLang() {
+  try {
+    const stored = localStorage.getItem('alive.lang');
+    if (stored) return normalizeLang(stored);
+  } catch { /* */ }
+  return normalizeLang($('#cfgLang')?.value || $('#cfgLangTop')?.value || store?.state?.config?.language || 'pt');
+}
+
 function setLanguagePreference(rawLang) {
   const l = normalizeLang(rawLang);
   try { localStorage.setItem('alive.lang', l); } catch { /* */ }
@@ -2419,6 +2433,11 @@ function setLanguagePreference(rawLang) {
       s.config.language = l;
     });
     store.flush();
+    queueSig = '';
+    try { renderNow(store.state); } catch { /* */ }
+    try { renderQueue(store.state); } catch { /* */ }
+    try { renderHistory(store.state); } catch { /* */ }
+    try { updateAiStatusBadge(!!store.state?.config?.ai?.enabled); } catch { /* */ }
   }
 }
 
@@ -2447,13 +2466,14 @@ let isEditingAiPrompt = false;
 function updateAiStatusBadge(enabled) {
   const badge = $('#aiStatusBadge');
   if (!badge) return;
+  const l = getCurrentLang();
   if (enabled) {
-    badge.textContent = '● ATIVA NO CHAT';
+    badge.textContent = pt(l, 'ai_active');
     badge.style.background = 'rgba(0, 243, 255, 0.15)';
     badge.style.color = '#00f3ff';
     badge.style.borderColor = 'rgba(0, 243, 255, 0.35)';
   } else {
-    badge.textContent = '○ DESATIVADA';
+    badge.textContent = pt(l, 'ai_inactive');
     badge.style.background = 'rgba(239, 68, 68, 0.15)';
     badge.style.color = '#f87171';
     badge.style.borderColor = 'rgba(239, 68, 68, 0.35)';

@@ -78,7 +78,6 @@
       U.isFree(p) ? A.download(p) : A.buy(p, { button: buyBtn });
     };
 
-    $('detailShare').onclick = function () { A.share(p); };
     var repBtn = $('detailReport');
     if (repBtn) {
       repBtn.style.display = p.isAnime ? 'none' : '';

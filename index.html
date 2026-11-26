@@ -232,7 +232,7 @@
         </div>
         <button class="dropdown-item danger" id="btnLogout" type="button">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
-          Sair da Conta
+          <span data-i18n="logout_btn">Sair da Conta</span>
         </button>
       </div>
     </div>
@@ -256,10 +256,10 @@
         </div>
         <div class="now-meta">
           <div class="kicker-row">
-            <span class="kicker" id="nowKicker">TOCANDO AGORA</span>
+            <span class="kicker" id="nowKicker" data-i18n="now_kicker_playing">TOCANDO AGORA</span>
           </div>
-          <div class="now-title" id="nowTitle">Nada tocando</div>
-          <div class="now-sub" id="nowSub">Peça com !play no chat ou adicione abaixo</div>
+          <div class="now-title" id="nowTitle" data-i18n="now_title_idle">Nada tocando</div>
+          <div class="now-sub" id="nowSub" data-i18n="now_sub_idle">Peça com !play no chat ou adicione abaixo</div>
           <div class="bar"><div class="fill" id="nowFill"></div></div>
           <div class="times"><span id="nowCur">0:00</span><span id="nowDur">0:00</span></div>
         </div>
@@ -290,24 +290,24 @@
         <div class="quick-add-grid">
           <div class="quick-input-group">
             <span class="quick-icon" data-icon="search" data-size="14"></span>
-            <input type="search" id="searchInput" placeholder="Buscar música no YouTube (digite e aperte Enter)...">
-            <button class="btn primary small" id="btnSearch">Buscar</button>
+            <input type="search" id="searchInput" data-i18n-placeholder="search_ph" placeholder="Buscar música no YouTube (digite e aperte Enter)...">
+            <button class="btn primary small" id="btnSearch" data-i18n="search_btn">Buscar</button>
           </div>
           <div class="quick-input-group">
             <span class="quick-icon" data-icon="link" data-size="14"></span>
-            <input type="url" id="urlInput" placeholder="Ou cole link direto de vídeo / playlist...">
-            <button class="btn small" id="btnAddUrl">Adicionar</button>
+            <input type="url" id="urlInput" data-i18n-placeholder="url_ph" placeholder="Ou cole link direto de vídeo / playlist...">
+            <button class="btn small" id="btnAddUrl" data-i18n="url_add_btn">Adicionar</button>
           </div>
         </div>
 
         <!-- Resultados da Busca Diretamente na Tela Inicial -->
         <div class="search-results-box" id="searchResultsBox" hidden>
           <div class="search-results-head">
-            <span id="searchStatusText">Resultados da pesquisa:</span>
-            <button class="btn ghost small" id="btnCloseSearch">Fechar busca</button>
+            <span id="searchStatusText" data-i18n="search_results_head">Resultados da pesquisa:</span>
+            <button class="btn ghost small" id="btnCloseSearch" data-i18n="search_close_btn">Fechar busca</button>
           </div>
           <div class="results" id="results">
-            <p class="hint">Digite na barra de busca para pesquisar faixas no YouTube.</p>
+            <p class="hint" data-i18n="search_empty_hint">Digite na barra de busca para pesquisar faixas no YouTube.</p>
           </div>
         </div>
       </div>
@@ -317,23 +317,23 @@
         <div class="queue-head">
           <h2>
             <span data-icon="list-music" data-size="16"></span>
-            Próximas Músicas na Fila
+            <span data-i18n="queue_title">Próximas Músicas na Fila</span>
             <span class="count" id="queueCount">0</span>
           </h2>
           <div class="queue-actions">
             <button class="btn small ghost" id="btnShuffle" title="Embaralhar ordem da fila">
               <span data-icon="shuffle" data-size="13"></span>
-              Sortear
+              <span data-i18n="queue_shuffle">Sortear</span>
             </button>
             <button class="btn small ghost" id="btnClear" title="Limpar todas as próximas músicas">
               <span data-icon="trash-2" data-size="13"></span>
-              Limpar fila
+              <span data-i18n="queue_clear">Limpar fila</span>
             </button>
           </div>
         </div>
 
         <ul class="queue" id="queueList">
-          <li class="empty">Fila vazia — use o chat com !play ou o campo de busca acima.</li>
+          <li class="empty" data-i18n="queue_empty">Fila vazia — use o chat com !play ou o campo de busca acima.</li>
         </ul>
       </div>
 
@@ -347,11 +347,11 @@
         <div class="box-head">
           <h2>
             <span data-icon="clock" data-size="15"></span>
-            Últimas Tocadas
+            <span data-i18n="history_title">Últimas Tocadas</span>
           </h2>
         </div>
         <ul class="queue" id="historyList">
-          <li class="empty">Nenhuma música tocada ainda nesta sessão.</li>
+          <li class="empty" data-i18n="history_empty">Nenhuma música tocada ainda nesta sessão.</li>
         </ul>
       </div>
 
@@ -360,7 +360,7 @@
         <div class="box-head">
           <h2>
             <span data-icon="activity" data-size="15"></span>
-            Log de Ações &amp; Comandos
+            <span data-i18n="events_title">Log de Ações &amp; Comandos</span>
           </h2>
           <span class="hint" id="syncInfo"></span>
         </div>
@@ -380,13 +380,13 @@
     <div class="box">
       <h2>
         <span data-icon="terminal" data-size="16"></span>
-        Comandos do Chat
+        <span data-i18n="cmds_title">Comandos do Chat</span>
       </h2>
-      <p class="hint">Ligue ou desligue comandos e escolha quem tem permissão para usar cada um no chat.</p>
+      <p class="hint" data-i18n="cmds_hint">Ligue ou desligue comandos e escolha quem tem permissão para usar cada um no chat.</p>
       <div class="table-wrap">
         <table class="cmds" id="cmdTable">
           <thead>
-            <tr><th>Comando</th><th>Descrição</th><th>Quem pode usar</th><th>Estado</th></tr>
+            <tr><th data-i18n="cmds_col_cmd">Comando</th><th data-i18n="cmds_col_desc">Descrição</th><th data-i18n="cmds_col_perm">Quem pode usar</th><th data-i18n="cmds_col_state">Estado</th></tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -397,26 +397,26 @@
     <div class="box">
       <h2>
         <span data-icon="sparkles" data-size="16"></span>
-        Comandos Personalizados
+        <span data-i18n="cc_title">Comandos Personalizados</span>
       </h2>
       <p class="hint">Variáveis suportadas: <code>{user}</code> <code>{canal}</code> <code>{np}</code> <code>{fila}</code> <code>{tocadas}</code></p>
       
       <div class="custom-cmd-form">
         <div class="row">
-          <input type="text" id="ccName" placeholder="nome (ex: redes)" maxlength="20">
+          <input type="text" id="ccName" data-i18n-placeholder="cc_name_ph" placeholder="nome (ex: redes)" maxlength="20">
           <input type="number" id="ccCd" placeholder="cd (s)" min="0" max="600" value="10" class="narrow">
           <select id="ccPerm" class="narrow-select" title="Quem pode usar este comando">
-            <option value="all">Todos</option>
-            <option value="sub">Inscritos (Subs)</option>
-            <option value="vip">VIPs e Mods</option>
-            <option value="mod">Apenas Mods</option>
+            <option value="all" data-i18n="cc_perm_all">Todos</option>
+            <option value="sub" data-i18n="cc_perm_sub">Inscritos (Subs)</option>
+            <option value="vip" data-i18n="cc_perm_vip">VIPs e Mods</option>
+            <option value="mod" data-i18n="cc_perm_mod">Apenas Mods</option>
           </select>
         </div>
         <div class="row">
-          <input type="text" id="ccText" placeholder="resposta (ex: Siga @canal no Instagram! {user})">
+          <input type="text" id="ccText" data-i18n-placeholder="cc_text_ph" placeholder="resposta (ex: Siga @canal no Instagram! {user})">
           <button class="btn primary" id="btnAddCmd">
             <span data-icon="plus" data-size="14"></span>
-            Criar comando
+            <span data-i18n="cc_add_btn">Criar comando</span>
           </button>
         </div>
       </div>
@@ -435,17 +435,17 @@
     <div class="box highlight">
       <h2>
         <span data-icon="tv" data-size="16"></span>
-        Fonte Navegador para OBS Studio
+        <span data-i18n="w_title">Fonte Navegador para OBS Studio</span>
       </h2>
       <div class="url-row">
         <input type="text" id="widgetUrl" readonly value="">
         <button class="btn primary" id="btnCopyWidget2">
           <span data-icon="link" data-size="14"></span>
-          Copiar Link
+          <span data-i18n="w_copy_btn">Copiar Link</span>
         </button>
         <button class="btn ghost" id="btnWidgetPreview">
           <span data-icon="external-link" data-size="14"></span>
-          Abrir
+          <span data-i18n="w_open_btn">Abrir</span>
         </button>
       </div>
       <ol class="steps">
@@ -463,9 +463,9 @@
         <div class="widget-preview-header">
           <span>
             <span data-icon="eye" data-size="14"></span>
-            Prévia Ao Vivo do Widget (Simulador OBS)
+            <span data-i18n="w_preview_title">Prévia Ao Vivo do Widget (Simulador OBS)</span>
           </span>
-          <button class="btn ghost small" id="btnToggleDemoPreview" type="button">
+          <button class="btn ghost small" id="btnToggleDemoPreview" type="button" data-i18n="w_preview_toggle">
             Alternar Prévia: Música / Fila Vazia
           </button>
         </div>
@@ -493,14 +493,14 @@
     <div class="box">
       <h2>
         <span data-icon="settings" data-size="16"></span>
-        Personalização Visual do Widget
+        <span data-i18n="w_custom_title">Personalização Visual do Widget</span>
       </h2>
 
       <!-- 1. Formato / Estilo do Widget (Seletor Gráfico) -->
       <div class="visual-section">
         <div class="visual-section-label">
           <span data-icon="layout" data-size="14"></span>
-          Formato &amp; Estrutura do Widget (Selecione o Modelo)
+          <span data-i18n="w_layout_label">Formato &amp; Estrutura do Widget (Selecione o Modelo)</span>
         </div>
         <div class="visual-cards-grid" id="layoutPicker">
           <button type="button" class="visual-choice-card" data-layout="card">
@@ -607,7 +607,7 @@
       <div class="visual-section">
         <div class="visual-section-label">
           <span data-icon="palette" data-size="14"></span>
-          Tema de Fundo Base
+          <span data-i18n="w_theme_label">Tema de Fundo Base</span>
         </div>
         <div class="visual-cards-grid" id="themePicker">
           <button type="button" class="visual-choice-card" data-theme="minimal">
@@ -658,16 +658,16 @@
           <div>
             <div class="visual-section-label">
               <span data-icon="volume-2" data-size="14"></span>
-              Áudio no OBS / Widget
+              <span data-i18n="w_audio_label">Áudio no OBS / Widget</span>
             </div>
             <div class="audio-toggle-grid" id="audioPicker">
               <button type="button" class="audio-choice-btn" data-audio="1">
                 <span data-icon="volume-2" data-size="14"></span>
-                <span>Com Áudio</span>
+                <span data-i18n="w_audio_on">Com Áudio</span>
               </button>
               <button type="button" class="audio-choice-btn" data-audio="0">
                 <span data-icon="volume-x" data-size="14"></span>
-                <span>Silenciar OBS</span>
+                <span data-i18n="w_audio_off">Silenciar OBS</span>
               </button>
             </div>
           </div>
@@ -675,7 +675,7 @@
             <div class="visual-section-label" style="display: flex; justify-content: space-between;">
               <span>
                 <span data-icon="maximize" data-size="14"></span>
-                Tamanho / Escala
+                <span data-i18n="w_scale_label">Tamanho / Escala</span>
               </span>
               <b id="wScaleLabel" style="color: var(--white);">100%</b>
             </div>
@@ -688,25 +688,25 @@
       <div style="margin-top: 16px;">
         <span style="font-size: 12.5px; font-weight: 700; color: var(--white); display: flex; align-items: center; gap: 6px;">
           <span data-icon="sparkles" data-size="14"></span>
-          Seletores de Cores &amp; Transparência Real
+          <span data-i18n="w_colors_title">Seletores de Cores &amp; Transparência Real</span>
         </span>
         <div class="color-picker-row">
           <div class="color-field">
-            <label>Cor de Destaque</label>
+            <label data-i18n="w_color_accent">Cor de Destaque</label>
             <div class="color-input-wrap">
               <input type="color" id="wAccentColor" value="#ffffff">
               <span class="color-val-text" id="valAccent">#ffffff</span>
             </div>
           </div>
           <div class="color-field">
-            <label>Cor do Fundo</label>
+            <label data-i18n="w_color_bg">Cor do Fundo</label>
             <div class="color-input-wrap">
               <input type="color" id="wBgColor" value="#0a0a0c">
               <span class="color-val-text" id="valBg">#0a0a0c</span>
             </div>
           </div>
           <div class="color-field">
-            <label>Cor do Texto</label>
+            <label data-i18n="w_color_text">Cor do Texto</label>
             <div class="color-input-wrap">
               <input type="color" id="wTextColor" value="#ffffff">
               <span class="color-val-text" id="valText">#ffffff</span>
@@ -714,7 +714,7 @@
           </div>
           <div class="color-field" style="grid-column: 1 / -1;">
             <label style="display: flex; justify-content: space-between;">
-              <span>Transparência do Fundo (Opacidade do Card)</span>
+              <span data-i18n="w_opacity_label">Transparência do Fundo (Opacidade do Card)</span>
               <b id="valOpacityLabel" style="color: var(--white);">65% (Translúcido)</b>
             </label>
             <input type="range" id="wBgOpacity" min="0" max="100" step="5" value="65" style="width: 100%;">
@@ -723,15 +723,15 @@
       </div>
 
       <div class="checks" style="margin-top: 14px;">
-        <label class="check"><input type="checkbox" id="wArt"> mostrar capa do vídeo</label>
-        <label class="check"><input type="checkbox" id="wEq"> equalizador animado</label>
-        <label class="check"><input type="checkbox" id="wProgress"> barra de progresso e minutos</label>
-        <label class="check"><input type="checkbox" id="wRequester"> nome de quem pediu (!play)</label>
-        <label class="check"><input type="checkbox" id="wQueue"> mostrar próximas da fila</label>
-        <label class="check"><input type="checkbox" id="wHint"> dica de comando !play</label>
-        <label class="check"><input type="checkbox" id="wLogo"> marca d'água Alive Bot</label>
-        <label class="check"><input type="checkbox" id="wHideIdle"> ocultar widget quando fila estiver vazia</label>
-        <label class="check"><input type="checkbox" id="wMarquee"> rolar títulos longos (Marquee)</label>
+        <label class="check"><input type="checkbox" id="wArt"> <span data-i18n="w_chk_art">mostrar capa do vídeo</span></label>
+        <label class="check"><input type="checkbox" id="wEq"> <span data-i18n="w_chk_eq">equalizador animado</span></label>
+        <label class="check"><input type="checkbox" id="wProgress"> <span data-i18n="w_chk_progress">barra de progresso e minutos</span></label>
+        <label class="check"><input type="checkbox" id="wRequester"> <span data-i18n="w_chk_requester">nome de quem pediu (!play)</span></label>
+        <label class="check"><input type="checkbox" id="wQueue"> <span data-i18n="w_chk_queue">mostrar próximas da fila</span></label>
+        <label class="check"><input type="checkbox" id="wHint"> <span data-i18n="w_chk_hint">dica de comando !play</span></label>
+        <label class="check"><input type="checkbox" id="wLogo"> <span data-i18n="w_chk_logo">marca d'água Alive Bot</span></label>
+        <label class="check"><input type="checkbox" id="wHideIdle"> <span data-i18n="w_chk_hide_idle">ocultar widget quando fila estiver vazia</span></label>
+        <label class="check"><input type="checkbox" id="wMarquee"> <span data-i18n="w_chk_marquee">rolar títulos longos (Marquee)</span></label>
       </div>
     </div>
 
@@ -747,11 +747,11 @@
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
         <h2>
           <span data-icon="clock" data-size="16"></span>
-          Mensagens Periódicas no Chat
+          <span data-i18n="timers_title">Mensagens Periódicas no Chat</span>
         </h2>
         <span class="count" id="timersCount">0</span>
       </div>
-      <p class="hint">O bot envia estas mensagens automaticamente no chat nos intervalos configurados, respeitando o movimento da live.</p>
+      <p class="hint" data-i18n="timers_hint">O bot envia estas mensagens automaticamente no chat nos intervalos configurados, respeitando o movimento da live.</p>
       
       <div class="timers-list" id="timerList">
         <!-- Renderizado dinamicamente -->
@@ -762,35 +762,35 @@
     <div class="box">
       <h2 id="timerFormTitle">
         <span data-icon="sparkles" data-size="16"></span>
-        Criar Novo Temporizador
+        <span data-i18n="timers_form_title">Criar Novo Temporizador</span>
       </h2>
       <p class="hint">Variáveis automáticas aceitas: <code>{np}</code> (música atual), <code>{canal}</code>, <code>{fila}</code>, <code>{tocadas}</code></p>
       
       <form class="timer-form" id="timerForm" onsubmit="return false;">
         <input type="hidden" id="timerEditId" value="">
         
-        <label>Nome / Identificador
-          <input type="text" id="timerName" placeholder="ex: Redes Sociais, Discord, Pix, Regras..." maxlength="35" required>
+        <label><span data-i18n="timers_name_lbl">Nome / Identificador</span>
+          <input type="text" id="timerName" data-i18n-placeholder="timers_name_ph" placeholder="ex: Redes Sociais, Discord, Pix, Regras..." maxlength="35" required>
         </label>
 
         <div class="grid-2-timer">
-          <label>Intervalo (minutos)
+          <label><span data-i18n="timers_interval_lbl">Intervalo (minutos)</span>
             <input type="number" id="timerInterval" min="1" max="360" value="15" required>
           </label>
-          <label title="Número de mensagens necessárias no chat para disparar o aviso">Mínimo de linhas no chat
+          <label title="Número de mensagens necessárias no chat para disparar o aviso"><span data-i18n="timers_minlines_lbl">Mínimo de linhas no chat</span>
             <input type="number" id="timerMinLines" min="0" max="100" value="2" required>
           </label>
         </div>
 
-        <label>Mensagem a ser enviada no chat
-          <textarea id="timerMessage" rows="3" placeholder="ex: Siga @canal no Instagram e Twitter! Links na tela." maxlength="450" required></textarea>
+        <label><span data-i18n="timers_msg_lbl">Mensagem a ser enviada no chat</span>
+          <textarea id="timerMessage" rows="3" data-i18n-placeholder="timers_msg_ph" placeholder="ex: Siga @canal no Instagram e Twitter! Links na tela." maxlength="450" required></textarea>
         </label>
 
         <div class="row" style="margin-top: 14px; justify-content: flex-end; gap: 8px;">
-          <button class="btn ghost small" id="btnCancelTimer" type="button" hidden>Cancelar</button>
+          <button class="btn ghost small" id="btnCancelTimer" type="button" hidden data-i18n="timers_cancel">Cancelar</button>
           <button class="btn primary" id="btnSaveTimer" type="button">
             <span data-icon="plus" data-size="14"></span>
-            <span id="btnSaveTimerText">Criar Temporizador</span>
+            <span id="btnSaveTimerText" data-i18n="timers_save">Criar Temporizador</span>
           </button>
         </div>
       </form>
@@ -885,21 +885,21 @@
       <div class="bot-info">
         <h2>
           <span>Alive IA Studio</span>
-          <span class="badge" id="aiStatusBadge" style="font-size:11px; padding:2px 8px; border-radius:4px; font-weight:700; background:rgba(0,243,255,0.15); color:#00f3ff; border:1px solid rgba(0,243,255,0.3);">
+          <span class="badge" id="aiStatusBadge" style="font-size:11px; padding:2px 8px; border-radius:4px; font-weight:700; background:rgba(0,243,255,0.15); color:#00f3ff; border:1px solid rgba(0,243,255,0.3);" data-i18n="ai_active">
             ● ATIVA NO CHAT
           </span>
         </h2>
-        <p>A assistente inteligente residente do seu canal. Responde espectadores e streamer via comando <code>!ia &lt;pergunta&gt;</code>, gerencia músicas e interage com personalidade única.</p>
+        <p data-i18n="ai_desc">A assistente inteligente residente do seu canal. Responde espectadores e streamer via comando !ia &lt;pergunta&gt;, gerencia músicas e interage com personalidade única.</p>
       </div>
     </div>
     <div class="bot-actions" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
       <label class="check" style="cursor: pointer; background: rgba(255, 255, 255, 0.04); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line);">
         <input type="checkbox" id="cfgAiEnabled" style="cursor: pointer;">
-        <span style="font-weight: 600;">Habilitar IA no Chat</span>
+        <span style="font-weight: 600;" data-i18n="ai_enable">Habilitar IA no Chat</span>
       </label>
       <button class="btn primary" id="btnSaveAiTop" type="button">
         <span data-icon="save" data-size="14"></span>
-        Salvar IA
+        <span data-i18n="ai_save">Salvar IA</span>
       </button>
     </div>
   </div>
@@ -911,12 +911,12 @@
       <div class="box">
         <h2>
           <span data-icon="sparkles" data-size="16"></span>
-          Personalidade da IA
+          <span data-i18n="ai_personality_title">Personalidade da IA</span>
         </h2>
-        <p class="hint">Escolha um estilo pronto com 1 clique ou escreva instruções personalizadas de como a IA deve conversar e agir com o streamer e com o chat.</p>
+        <p class="hint" data-i18n="ai_personality_hint">Escolha um estilo pronto com 1 clique ou escreva instruções personalizadas de como a IA deve conversar e agir com o streamer e com o chat.</p>
 
         <div style="margin-top: 14px; margin-bottom: 10px;">
-          <div style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;" data-i18n="ai_presets_title">
             Modelos Rápidos de Personalidade (Presets)
           </div>
           <div class="ai-presets-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px;">
@@ -960,7 +960,7 @@
 
         <div style="margin-top: 14px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <label for="cfgAiSystem" style="font-size: 12px; font-weight: 700;">Instruções de Personalidade (Prompt Livre)</label>
+            <label for="cfgAiSystem" style="font-size: 12px; font-weight: 700;" data-i18n="ai_prompt_label">Instruções de Personalidade (Prompt Livre)</label>
             <span id="aiPromptCharCount" style="font-size: 11px; color: var(--muted);">0 / 4000</span>
           </div>
           <textarea id="cfgAiSystem" rows="7" style="width: 100%; border-radius: 8px; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--line); color: var(--white); font-size: 13px; line-height: 1.45; resize: vertical; box-sizing: border-box; font-family: inherit;" placeholder="Ex: Você é doce e super amigável com todos, usa gírias de streamer, trata quem pede músicas com muito carinho e adora animes..."></textarea>
@@ -972,9 +972,9 @@
         <div class="row" style="margin-top: 16px; gap: 10px; justify-content: space-between; flex-wrap: wrap;">
           <button class="btn primary" id="btnSaveAi" type="button">
             <span data-icon="save" data-size="14"></span>
-            Salvar Personalidade
+            <span data-i18n="ai_save_personality">Salvar Personalidade</span>
           </button>
-          <button class="btn ghost small" id="btnClearAiPrompt" type="button">
+          <button class="btn ghost small" id="btnClearAiPrompt" type="button" data-i18n="ai_restore_default">
             Restaurar Padrão
           </button>
         </div>
@@ -990,23 +990,23 @@
       <div class="box">
         <h2>
           <span data-icon="terminal" data-size="16"></span>
-          Simulador &amp; Teste de Chat
+          <span data-i18n="ai_sim_title">Simulador &amp; Teste de Chat</span>
         </h2>
-        <p class="hint">Faça uma pergunta de teste para ver como a IA responderá no chat ao vivo com a personalidade atual.</p>
+        <p class="hint" data-i18n="ai_sim_hint">Faça uma pergunta de teste para ver como a IA responderá no chat ao vivo com a personalidade atual.</p>
 
         <div style="margin-top: 12px; display: flex; gap: 8px;">
           <input type="text" id="aiTestPrompt" placeholder="Ex: Quem é você? Me recomende um som legal!" style="flex: 1;" value="Quem é você e o que faz na live?">
           <button class="btn secondary" id="btnTestAi" type="button" style="white-space: nowrap;">
             <span data-icon="sparkles" data-size="14"></span>
-            Testar
+            <span data-i18n="ai_sim_btn">Testar</span>
           </button>
         </div>
 
         <!-- Balão de Simulação do Chat da Twitch -->
         <div id="aiChatSimulator" style="margin-top: 14px; background: #0e0e10; border: 1px solid #26262c; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; min-height: 80px;">
           <div style="font-size: 10.5px; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between;">
-            <span>Prévia no Chat da Twitch</span>
-            <span id="aiSimStatus">Pronto</span>
+            <span data-i18n="ai_sim_preview">Prévia no Chat da Twitch</span>
+            <span id="aiSimStatus" data-i18n="ai_sim_ready">Pronto</span>
           </div>
           <div id="aiTestResultWrapper" style="display: flex; gap: 8px; align-items: flex-start;">
             <span style="font-weight: 700; color: #a970ff; font-size: 13px; flex: 0 0 auto;">@alivebot1:</span>
@@ -1019,18 +1019,18 @@
       <div class="box">
         <h2>
           <span data-icon="cpu" data-size="16"></span>
-          Provedor &amp; Conexão de IA
+          <span data-i18n="ai_conn_title">Provedor &amp; Conexão de IA</span>
         </h2>
         <p class="hint">Por padrão, o Alive Bot utiliza a infraestrutura de ultra-baixa latência da Groq. Você também pode conectar sua própria chave e escolher o modelo de linguagem.</p>
 
         <div class="form-grid" style="margin-top: 12px;">
-          <label>URL Base da API
+          <label><span data-i18n="ai_conn_base">URL Base da API</span>
             <input type="text" id="cfgAiBaseUrl" placeholder="https://api.groq.com/openai/v1" autocomplete="off" spellcheck="false">
           </label>
-          <label>Modelo LLM
+          <label><span data-i18n="ai_conn_model">Modelo LLM</span>
             <input type="text" id="cfgAiModel" placeholder="qwen/qwen3.8-27b" autocomplete="off" spellcheck="false">
           </label>
-          <label style="grid-column: 1 / -1;">Chave de API Própria (Opcional)
+          <label style="grid-column: 1 / -1;"><span data-i18n="ai_conn_key">Chave de API Própria (Opcional)</span>
             <input type="password" id="cfgAiApiKey" placeholder="Deixe em branco para usar a chave padrão do servidor" autocomplete="off" spellcheck="false">
           </label>
         </div>
@@ -1038,7 +1038,7 @@
         <div style="margin-top: 12px; display: flex; justify-content: flex-end;">
           <button class="btn secondary" id="btnSaveAiAdvanced" type="button">
             <span data-icon="save" data-size="14"></span>
-            Salvar Parâmetros
+            <span data-i18n="ai_conn_save">Salvar Parâmetros</span>
           </button>
         </div>
       </div>
@@ -1060,16 +1060,16 @@
       <img class="bot-avatar-lg" src="/img/ic_splash_logo.webp" alt="Alive Bot">
       <div class="bot-info">
         <h2>
-          <span>Discord Bot Oficial</span>
+          <span data-i18n="dc_title">Discord Bot Oficial</span>
           <span style="font-size:11px;background:#3f3f46;padding:2px 6px;border-radius:4px;color:#e4e4e7;">APP OFICIAL</span>
         </h2>
-        <p>Avisos automáticos de live no seu servidor do Discord com banner, status e menções configuráveis.</p>
+        <p data-i18n="dc_desc">Avisos automáticos de live no seu servidor do Discord com banner, status e menções configuráveis.</p>
       </div>
     </div>
     <div>
       <a class="btn-invite-discord" href="https://discord.com/oauth2/authorize?client_id=1563908440638759004&permissions=8&scope=bot%20applications.commands" target="_blank" rel="noopener">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
-        <span>Adicionar Bot ao Discord</span>
+        <span data-i18n="dc_invite">Adicionar Bot ao Discord</span>
       </a>
     </div>
   </div>
@@ -1449,17 +1449,17 @@ Transmissão: {url}</textarea>
 <aside class="floating-status-bar" id="floatingStatusBar" aria-label="Status do Bot">
   <div class="status" id="status" data-state="off" title="Conexão com o chat da Twitch (clique para reconectar)">
     <span class="pill-dot"></span>
-    <span id="statusText">desconectado</span>
+    <span id="statusText" data-i18n="status_disconnected">desconectado</span>
   </div>
 
   <div class="server-bot-badge" id="serverBotBadge" title="Status do serviço no Node.js" hidden>
     <span data-icon="server" data-size="13"></span>
-    <span id="serverBotText">servidor: inativo</span>
+    <span id="serverBotText" data-i18n="server_inactive">servidor: inativo</span>
   </div>
 </aside>
 
 <div class="toast" id="toast" hidden></div>
 
-<script type="module" src="/js/panel.js?v=1.2.1"></script>
+<script type="module" src="/js/panel.js?v=1.3.1"></script>
 </body>
 </html>

@@ -172,11 +172,6 @@
     var badgeEl = document.getElementById('modalBadge');
     if (badgeEl) badgeEl.innerHTML = U.badgeHtml(p);
 
-    var shareBtn = document.getElementById('modalShare');
-    if (shareBtn) {
-      shareBtn.onclick = function () { A.share(p); };
-    }
-
     if (p.isAnime && window.ALIVE_ANIME) {
       document.getElementById('modalCat').textContent = 'Alive Studio';
       document.getElementById('modalName').textContent = p.name;
