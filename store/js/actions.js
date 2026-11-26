@@ -154,46 +154,56 @@
     wrap.setAttribute('role', 'dialog');
     wrap.setAttribute('aria-modal', 'true');
     wrap.setAttribute('aria-labelledby', 'rpTitle');
+    var reasons = [
+      t('report_r_inappropriate'),
+      t('report_r_copyright'),
+      t('report_r_broken'),
+      t('report_r_other')
+    ];
+    var reasonsHtml = reasons.map(function (r, idx) {
+      return '<button type="button" class="seg-item rp-reason-btn' + (idx === 0 ? ' active' : '') + '" data-reason="' + U.esc(r) + '" style="flex:1 1 calc(50% - 6px);text-align:center">' + U.esc(r) + '</button>';
+    }).join('');
+
     wrap.innerHTML =
       '<div class="modal-backdrop" data-close-rp></div>' +
-      '<div class="modal-panel" style="width:min(440px,calc(100% - 28px))">' +
-        '<button class="btn-icon modal-close" data-close-rp aria-label="' + U.esc(t('aria_close')) + '">' +
+      '<div class="modal-panel" style="width:min(440px,calc(100% - 28px));padding:26px 24px 24px">' +
+        '<button type="button" class="modal-close" data-close-rp aria-label="' + U.esc(t('aria_close')) + '">' +
           '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>' +
         '</button>' +
-        '<div class="modal-content" style="padding:26px 24px 24px">' +
-          '<h3 id="rpTitle" class="display" style="margin:0 0 6px;font-size:20px">' + U.esc(t('report_title')) + '</h3>' +
-          '<p class="muted" style="margin:0 0 14px;font-size:13.5px">' + U.esc(t('report_sub')) + '</p>' +
-          '<div style="display:flex;flex-direction:column;gap:10px">' +
-            '<label style="font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:6px">' +
-              U.esc(t('report_reason_label')) +
-              '<select id="rpReason" style="padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,255,255,0.14);font-size:14px">' +
-                '<option value="' + U.esc(t('report_r_inappropriate')) + '">' + U.esc(t('report_r_inappropriate')) + '</option>' +
-                '<option value="' + U.esc(t('report_r_copyright')) + '">' + U.esc(t('report_r_copyright')) + '</option>' +
-                '<option value="' + U.esc(t('report_r_broken')) + '">' + U.esc(t('report_r_broken')) + '</option>' +
-                '<option value="' + U.esc(t('report_r_other')) + '">' + U.esc(t('report_r_other')) + '</option>' +
-              '</select>' +
-            '</label>' +
-            '<label style="font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:6px">' +
-              U.esc(t('report_details_label')) +
-              '<textarea id="rpDetails" rows="3" maxlength="400" placeholder="' + U.esc(t('report_details_ph')) + '" style="padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,255,255,0.14);font-size:13.5px;resize:vertical"></textarea>' +
-            '</label>' +
-            '<button class="btn btn-primary btn-block btn-lg" id="rpSubmit" type="button" style="margin-top:4px">' + U.esc(t('report_submit')) + '</button>' +
+        '<div style="display:flex;flex-direction:column;gap:12px">' +
+          '<div>' +
+            '<h3 id="rpTitle" class="display" style="margin:0 36px 6px 0;font-size:20px">' + U.esc(t('report_title')) + '</h3>' +
+            '<p class="muted" style="margin:0;font-size:13.5px">' + U.esc(t('report_sub')) + '</p>' +
           '</div>' +
+          '<div class="seg-group">' +
+            '<span class="seg-label">' + U.esc(t('report_reason_label')) + '</span>' +
+            '<div class="seg-row" id="rpReasonRow">' + reasonsHtml + '</div>' +
+          '</div>' +
+          '<label style="font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:6px">' +
+            U.esc(t('report_details_label')) +
+            '<textarea id="rpDetails" rows="3" maxlength="400" placeholder="' + U.esc(t('report_details_ph')) + '" style="padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,255,255,0.14);font-size:13.5px;resize:vertical;font-family:inherit"></textarea>' +
+          '</label>' +
+          '<button class="btn btn-primary btn-block btn-lg" id="rpSubmit" type="button">' + U.esc(t('report_submit')) + '</button>' +
         '</div>' +
       '</div>';
     document.body.appendChild(wrap);
     rpModal = wrap;
 
     wrap.addEventListener('click', function (e) {
-      if (e.target.closest('[data-close-rp]')) closeReport();
+      if (e.target.closest('[data-close-rp]')) { closeReport(); return; }
+      var rBtn = e.target.closest('.rp-reason-btn');
+      if (rBtn) {
+        wrap.querySelectorAll('.rp-reason-btn').forEach(function (b) { b.classList.remove('active'); });
+        rBtn.classList.add('active');
+      }
     });
 
     document.getElementById('rpSubmit').addEventListener('click', function () {
       if (!rpTarget) return;
       var btn = document.getElementById('rpSubmit');
-      var reasonEl = document.getElementById('rpReason');
+      var activeReason = wrap.querySelector('.rp-reason-btn.active');
       var detailsEl = document.getElementById('rpDetails');
-      var reason = reasonEl ? reasonEl.value : 'other';
+      var reason = activeReason ? activeReason.getAttribute('data-reason') : 'other';
       var details = detailsEl ? detailsEl.value.trim() : '';
 
       var idMatch = /\/api\/themes\/([^/]+)\//i.exec(rpTarget.downloadUrl || '');

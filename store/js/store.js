@@ -126,8 +126,34 @@
     } else {
       if (window.ALIVE_ANIME) window.ALIVE_ANIME.resetModalForStandard();
 
-      document.getElementById('modalArt').innerHTML =
-        U.previewHtml(p, { controls: true }) + U.badgeHtml(p);
+      var artEl = document.getElementById('modalArt');
+      var hasComp = !!(p.themeInfo && p.themeInfo.widgets && p.themeInfo.widgets.length && window.AliveArt);
+      var stdView = 'composition';
+
+      function renderStandardArt() {
+        if (!hasComp) {
+          artEl.innerHTML = U.previewHtml(p, { controls: true }) + U.badgeHtml(p);
+          return;
+        }
+        var switcher =
+          '<div class="modal-art-switcher">' +
+            '<button type="button" class="art-switch-btn' + (stdView === 'composition' ? ' active' : '') + '" data-view="composition">' + U.esc(t('anime_btn_composition')) + '</button>' +
+            '<button type="button" class="art-switch-btn' + (stdView === 'standby' ? ' active' : '') + '" data-view="standby">' + U.esc(t('anime_btn_standby')) + '</button>' +
+          '</div>';
+        var body = stdView === 'composition'
+          ? window.AliveArt.layoutSvg(p.themeInfo.widgets, p.themeInfo.assetBase, p.themeInfo.viewport)
+          : U.previewHtml(p, { controls: true });
+        artEl.innerHTML = '<div class="anime-art-wrapper">' + switcher + body + '</div>' + U.badgeHtml(p);
+        artEl.querySelectorAll('.art-switch-btn').forEach(function (b) {
+          b.addEventListener('click', function (e) {
+            e.stopPropagation();
+            stdView = b.getAttribute('data-view');
+            renderStandardArt();
+          });
+        });
+      }
+
+      renderStandardArt();
       document.getElementById('modalCat').textContent = t('tab_community');
       document.getElementById('modalName').textContent = p.name;
       document.getElementById('modalTag').textContent = p.tagline || t('modal_tag_community_default');
