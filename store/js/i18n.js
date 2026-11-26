@@ -175,7 +175,21 @@
       cat_molduras: 'Molduras de cam',
       cat_alertas: 'Alertas',
       cat_pacote: 'Pacotes',
-      cat_favoritos: 'Favoritos'
+      cat_favoritos: 'Favoritos',
+      btn_report: 'Denunciar',
+      report_title: 'Denunciar Tema',
+      report_sub: 'Se este tema viola direitos autorais ou contém conteúdo impróprio, avise os moderadores.',
+      report_reason_label: 'Motivo da denúncia',
+      report_r_inappropriate: 'Conteúdo impróprio ou ofensivo',
+      report_r_copyright: 'Violação de direitos autorais',
+      report_r_broken: 'Arquivo corrompido ou spam',
+      report_r_other: 'Outro motivo',
+      report_details_label: 'Detalhes (opcional)',
+      report_details_ph: 'Descreva brevemente o problema…',
+      report_submit: 'Enviar denúncia',
+      report_sending: 'Enviando…',
+      report_sent: 'Denúncia enviada aos moderadores!',
+      report_err: 'Não foi possível enviar a denúncia agora'
     },
     en: {
       meta_desc_store: 'Alive live-streaming overlays and themes store.',
@@ -324,7 +338,21 @@
       cat_molduras: 'Webcam frames',
       cat_alertas: 'Alerts',
       cat_pacote: 'Bundles',
-      cat_favoritos: 'Favorites'
+      cat_favoritos: 'Favorites',
+      btn_report: 'Report',
+      report_title: 'Report Theme',
+      report_sub: 'If this theme violates copyright or contains inappropriate content, notify the moderators.',
+      report_reason_label: 'Reason',
+      report_r_inappropriate: 'Inappropriate or offensive content',
+      report_r_copyright: 'Copyright infringement',
+      report_r_broken: 'Broken file or spam',
+      report_r_other: 'Other',
+      report_details_label: 'Details (optional)',
+      report_details_ph: 'Briefly describe the issue…',
+      report_submit: 'Submit report',
+      report_sending: 'Sending…',
+      report_sent: 'Report sent to moderators!',
+      report_err: 'Could not send report right now'
     }
   };
 

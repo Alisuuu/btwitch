@@ -79,6 +79,11 @@
     };
 
     $('detailShare').onclick = function () { A.share(p); };
+    var repBtn = $('detailReport');
+    if (repBtn) {
+      repBtn.style.display = p.isAnime ? 'none' : '';
+      repBtn.onclick = function () { A.openReport(p); };
+    }
 
     // relacionados (inclui temas, se o storage devolveu algum)
     var rel = window.ALIVE_HELPERS.related(p.id, 3);

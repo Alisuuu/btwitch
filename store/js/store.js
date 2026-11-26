@@ -119,6 +119,8 @@
 
       var note = document.getElementById('modalNote');
       if (note) note.style.display = 'none';
+      var repBtn = document.getElementById('modalReport');
+      if (repBtn) repBtn.style.display = 'none';
 
       window.ALIVE_ANIME.setupModalForAnime(p);
     } else {
@@ -144,6 +146,11 @@
       buyBtn.onclick = function () {
         U.isFree(p) ? A.download(p) : A.buy(p, { button: buyBtn });
       };
+      var repBtn = document.getElementById('modalReport');
+      if (repBtn) {
+        repBtn.style.display = '';
+        repBtn.onclick = function () { A.openReport(p); };
+      }
     }
 
     modal.classList.add('open');

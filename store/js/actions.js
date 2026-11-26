@@ -142,10 +142,110 @@
     U.toast(t('share_copied'), 'ok');
   }
 
+  /* ---------------- Denunciar ---------------- */
+  var rpModal = null;
+  var rpTarget = null;
+
+  function ensureReportModal() {
+    if (rpModal) return rpModal;
+    var wrap = document.createElement('div');
+    wrap.className = 'modal';
+    wrap.id = 'reportModal';
+    wrap.setAttribute('role', 'dialog');
+    wrap.setAttribute('aria-modal', 'true');
+    wrap.setAttribute('aria-labelledby', 'rpTitle');
+    wrap.innerHTML =
+      '<div class="modal-backdrop" data-close-rp></div>' +
+      '<div class="modal-panel" style="width:min(440px,calc(100% - 28px))">' +
+        '<button class="btn-icon modal-close" data-close-rp aria-label="' + U.esc(t('aria_close')) + '">' +
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>' +
+        '</button>' +
+        '<div class="modal-content" style="padding:26px 24px 24px">' +
+          '<h3 id="rpTitle" class="display" style="margin:0 0 6px;font-size:20px">' + U.esc(t('report_title')) + '</h3>' +
+          '<p class="muted" style="margin:0 0 14px;font-size:13.5px">' + U.esc(t('report_sub')) + '</p>' +
+          '<div style="display:flex;flex-direction:column;gap:10px">' +
+            '<label style="font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:6px">' +
+              U.esc(t('report_reason_label')) +
+              '<select id="rpReason" style="padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,255,255,0.14);font-size:14px">' +
+                '<option value="' + U.esc(t('report_r_inappropriate')) + '">' + U.esc(t('report_r_inappropriate')) + '</option>' +
+                '<option value="' + U.esc(t('report_r_copyright')) + '">' + U.esc(t('report_r_copyright')) + '</option>' +
+                '<option value="' + U.esc(t('report_r_broken')) + '">' + U.esc(t('report_r_broken')) + '</option>' +
+                '<option value="' + U.esc(t('report_r_other')) + '">' + U.esc(t('report_r_other')) + '</option>' +
+              '</select>' +
+            '</label>' +
+            '<label style="font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:6px">' +
+              U.esc(t('report_details_label')) +
+              '<textarea id="rpDetails" rows="3" maxlength="400" placeholder="' + U.esc(t('report_details_ph')) + '" style="padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,255,255,0.14);font-size:13.5px;resize:vertical"></textarea>' +
+            '</label>' +
+            '<button class="btn btn-primary btn-block btn-lg" id="rpSubmit" type="button" style="margin-top:4px">' + U.esc(t('report_submit')) + '</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(wrap);
+    rpModal = wrap;
+
+    wrap.addEventListener('click', function (e) {
+      if (e.target.closest('[data-close-rp]')) closeReport();
+    });
+
+    document.getElementById('rpSubmit').addEventListener('click', function () {
+      if (!rpTarget) return;
+      var btn = document.getElementById('rpSubmit');
+      var reasonEl = document.getElementById('rpReason');
+      var detailsEl = document.getElementById('rpDetails');
+      var reason = reasonEl ? reasonEl.value : 'other';
+      var details = detailsEl ? detailsEl.value.trim() : '';
+
+      var idMatch = /\/api\/themes\/([^/]+)\//i.exec(rpTarget.downloadUrl || '');
+      var reportId = (idMatch && idMatch[1]) || (rpTarget.themeInfo && rpTarget.themeInfo.themeId) || rpTarget.id || 'unknown';
+      var author = rpTarget.author || (rpTarget.themeInfo && rpTarget.themeInfo.author) || '—';
+
+      btn.disabled = true;
+      btn.textContent = t('report_sending');
+      fetch('/api/themes/' + encodeURIComponent(reportId) + '/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          themeName: rpTarget.name || reportId,
+          author: author,
+          reason: reason,
+          details: details
+        })
+      }).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        U.toast(t('report_sent'), 'ok');
+        closeReport();
+      }).catch(function () {
+        U.toast(t('report_err'), 'err');
+      }).then(function () {
+        btn.disabled = false;
+        btn.textContent = t('report_submit');
+      });
+    });
+
+    return wrap;
+  }
+
+  function openReport(p) {
+    rpTarget = p;
+    var m = ensureReportModal();
+    var detailsEl = document.getElementById('rpDetails');
+    if (detailsEl) detailsEl.value = '';
+    m.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeReport() {
+    if (rpModal) rpModal.classList.remove('open');
+    if (!document.querySelector('.modal.open')) document.body.style.overflow = '';
+  }
+
   window.ALIVE_ACTIONS = {
     buy: buy,
     download: download,
     share: share,
+    openReport: openReport,
+    closeReport: closeReport,
     openFallback: openFallback,
     closeFallback: closeFallback
   };

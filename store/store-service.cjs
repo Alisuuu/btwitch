@@ -944,6 +944,68 @@ async function handleStoreApi(req, res, u, p) {
       return json(res, 200, { count: themes.length, themes: themes });
     }
 
+    /* denúncia de tema → marca membros/admins do grupo no Telegram */
+    if (/^\/api\/themes\/[^/]+\/report$/.test(p) && req.method === 'POST') {
+      if (!chatId) return json(res, 503, { ok: false, error: 'grupo ainda não conectado' });
+      const rawId = decodeURIComponent(p.split('/')[3] || '');
+      const rawBody = await readBody(req, 64 * 1024);
+      let payload = {};
+      try { payload = JSON.parse(rawBody.toString('utf8') || '{}'); } catch (e) {}
+
+      const entry = db.files.find(f => f.id === rawId || (f.theme && f.theme.themeId === rawId) || ('tema-' + (f.theme && f.theme.themeId)) === rawId || ('tema-' + f.id) === rawId);
+      const themeName = String((entry && entry.theme && entry.theme.name) || payload.themeName || rawId).slice(0, 120);
+      const authorName = String((entry && entry.theme && entry.theme.author) || payload.author || '—').slice(0, 80);
+      const reason = String(payload.reason || 'other').slice(0, 100);
+      const details = String(payload.details || '').trim().slice(0, 400);
+
+      const escTg = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+      let mentions = [];
+      try {
+        const admins = await tg('getChatAdministrators', { chat_id: chatId });
+        if (Array.isArray(admins)) {
+          for (const m of admins) {
+            const u = m && m.user;
+            if (!u || u.is_bot) continue;
+            if (u.username) {
+              mentions.push('@' + escTg(u.username));
+            } else {
+              const label = escTg(u.first_name || 'Admin');
+              mentions.push('<a href="tg://user?id=' + u.id + '">' + label + '</a>');
+            }
+          }
+        }
+      } catch (e) {}
+
+      if (Array.isArray(cfg.allowedUsers)) {
+        for (const uid of cfg.allowedUsers) {
+          if (!uid) continue;
+          const tag = '<a href="tg://user?id=' + Number(uid) + '">Mod</a>';
+          if (!mentions.some(x => x.includes('id=' + uid))) mentions.push(tag);
+        }
+      }
+
+      const mentionLine = mentions.length ? ('\n\n🔔 ' + mentions.join(' ')) : '';
+      const text =
+        '🚩 <b>DENÚNCIA DE TEMA</b>\n' +
+        '• <b>Tema:</b> ' + escTg(themeName) + ' (<code>' + escTg((entry && entry.id) || rawId) + '</code>)\n' +
+        '• <b>Autor:</b> ' + escTg(authorName) + '\n' +
+        '• <b>Motivo:</b> ' + escTg(reason) +
+        (details ? ('\n• <b>Detalhes:</b> ' + escTg(details)) : '') +
+        mentionLine;
+
+      const fields = { chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true };
+      const replyId = entry && (entry.manifestId || entry.messageId);
+      if (replyId) fields.reply_to_message_id = replyId;
+
+      try {
+        const msg = await tg('sendMessage', fields);
+        return json(res, 200, { ok: true, messageId: msg ? msg.message_id : null, tagged: mentions.length });
+      } catch (e) {
+        return json(res, 502, { ok: false, error: e.message, code: e.code || null });
+      }
+    }
+
     /* reenvia o aviso do tema no grupo */
     if (/^\/api\/themes\/[^/]+\/notify$/.test(p) && req.method === 'POST') {
       const entry = db.files.find(f => f.id === p.split('/')[3]);
