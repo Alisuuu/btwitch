@@ -300,6 +300,24 @@
     }
   });
 
+  /* ---------------- Bloqueio de scroll do fundo quando qualquer modal está aberto ---------------- */
+  function syncModalScrollLock() {
+    var hasOpen = !!document.querySelector('.modal.open');
+    document.documentElement.classList.toggle('modal-open', hasOpen);
+    document.body.classList.toggle('modal-open', hasOpen);
+  }
+  if (typeof MutationObserver !== 'undefined') {
+    new MutationObserver(syncModalScrollLock).observe(document.body, {
+      attributes: true, subtree: true, attributeFilter: ['class']
+    });
+  }
+  document.addEventListener('touchmove', function (e) {
+    if (!document.querySelector('.modal.open')) return;
+    if (e.target.closest('.modal-backdrop') || !e.target.closest('.modal-panel')) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+
   window.ALIVE_UI = {
     esc: esc, brl: brl, num: num, isFree: isFree,
     badgeHtml: badgeHtml, priceHtml: priceHtml,

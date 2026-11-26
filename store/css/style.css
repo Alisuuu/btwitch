@@ -316,17 +316,24 @@ button, input, select { font: inherit; color: inherit; }
 .related { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
 
 /* ============================ MODAL ============================ */
+html.modal-open, body.modal-open {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+  touch-action: none;
+}
 .modal {
   position: fixed; inset: 0; z-index: 100;
   display: none; align-items: center; justify-content: center;
+  overscroll-behavior: contain;
 }
-.modal.open { display: flex; }
+.modal.open { display: flex; touch-action: pan-y; }
 .modal-backdrop {
   position: absolute; inset: 0;
   background: rgba(0, 0, 0, 0.88);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   animation: fadeIn 0.2s ease;
+  touch-action: none;
 }
 .modal-panel {
   position: relative; z-index: 1;
