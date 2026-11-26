@@ -303,7 +303,7 @@
   function animeComposition(p) {
     var uid = 'a' + (++seq);
     var name = esc(p.name || 'ALIVE').toUpperCase();
-    var bgImg = p.backdropUrl || p.posterUrl || p.image || '';
+    var bgImg = (p.backdropUrl || p.posterUrl || p.image || '').replace('/t/p/original/', '/t/p/w500/');
 
     return '' +
       '<svg viewBox="0 0 640 360" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Overlay de ' + esc(p.name) + '">' +

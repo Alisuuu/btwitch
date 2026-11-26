@@ -235,6 +235,11 @@
     return url;
   }
 
+  function tmdbThumb(url, size) {
+    if (!url) return '';
+    return String(url).replace('/t/p/original/', '/t/p/' + (size || 'w300') + '/');
+  }
+
   /* ---------------- Render do Banner (Canvas) ---------------- */
   function loadImage(url) {
     return new Promise(resolve => {
@@ -825,7 +830,7 @@
     }
 
     backdropsRow.innerHTML = list.slice(0, 10).map((url, i) => `
-      <div class="backdrop-pick ${STATE.activeBackdropUrl === url ? 'active' : ''}" style="background-image:url('${url}')" data-url="${url}" title="Banner ${i + 1}"></div>
+      <div class="backdrop-pick ${STATE.activeBackdropUrl === url ? 'active' : ''}" style="background-image:url('${tmdbThumb(url, 'w300')}')" data-url="${url}" title="Banner ${i + 1}"></div>
     `).join('');
 
     backdropsRow.querySelectorAll('.backdrop-pick').forEach(item => {
@@ -850,7 +855,7 @@
     const list = (backdrops && backdrops.length) ? backdrops : (STATE.activeBackdropUrl ? [STATE.activeBackdropUrl] : []);
 
     const listHtml = list.slice(0, 8).map((url, i) => `
-      <div class="backdrop-pick ${STATE.activeStandbyUrl === url ? 'active' : ''}" style="background-image:url('${url}')" data-url="${url}" data-mode="custom" title="Arte de espera ${i + 1}"></div>
+      <div class="backdrop-pick ${STATE.activeStandbyUrl === url ? 'active' : ''}" style="background-image:url('${tmdbThumb(url, 'w300')}')" data-url="${url}" data-mode="custom" title="Arte de espera ${i + 1}"></div>
     `).join('');
 
     standbyRow.innerHTML = sameBtn + listHtml + noneBtn;
@@ -886,7 +891,7 @@
 
     const noneBtn = `<button type="button" class="logo-pick logo-pick-none ${!STATE.activeLogoUrl ? 'active' : ''}" data-url="">${t('anime_btn_no_logo')}</button>`;
     const listHtml = (logos || []).slice(0, 6).map((url, i) => `
-      <img class="logo-pick ${STATE.activeLogoUrl === url ? 'active' : ''}" src="${url}" data-url="${url}" alt="Logo ${i + 1}">
+      <img class="logo-pick ${STATE.activeLogoUrl === url ? 'active' : ''}" src="${tmdbThumb(url, 'w300')}" data-url="${url}" alt="Logo ${i + 1}">
     `).join('');
 
     logosRow.innerHTML = noneBtn + listHtml;
