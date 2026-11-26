@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=4">
+  <link rel="stylesheet" href="css/style.css?v=7">
 </head>
 <body>
 
@@ -71,9 +71,15 @@
         <div class="modal-grid">
           <div class="modal-art" id="modalArt"></div>
           <div class="modal-content">
-          <span class="card-cat" id="modalCat"></span>
-          <h2 class="display" id="modalName" style="margin:0;font-size:26px">—</h2>
-          <p class="muted" id="modalTag" style="margin:0"></p>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span class="card-cat" id="modalCat"></span>
+            <span id="modalBadge"></span>
+          </div>
+          <div>
+            <h2 class="display" id="modalName" style="margin:0 36px 2px 0;font-size:24px">—</h2>
+            <p class="modal-author-line" id="modalAuthor"></p>
+          </div>
+          <p class="muted" id="modalTag" style="margin:0;font-size:13.5px"></p>
 
           <div class="price-box" id="modalPriceBox"></div>
 
@@ -122,8 +128,9 @@
           </div>
 
           <div class="buy-row">
-            <button class="btn btn-primary btn-lg" id="modalBuy" data-i18n="btn_buy">Comprar</button>
+            <button class="btn btn-primary btn-lg" id="modalBuy" style="flex:1" data-i18n="btn_buy">Comprar</button>
             <button class="btn btn-lg" id="modalReport" type="button" style="display:none" data-i18n="btn_report">Denunciar</button>
+            <button class="btn-icon" id="modalShare" type="button" aria-label="Compartilhar" data-i18n-aria-label="aria_share" style="width:48px;height:48px;flex:none">↗</button>
           </div>
 
           <p class="note" id="modalNote" data-i18n="note_play_store">Compra segura via Google Play · entrega automática no app</p>
@@ -180,17 +187,17 @@
     </div>
   </div>
 
-  <script src="js/i18n.js?v=3"></script>
-  <script src="js/art.js?v=6"></script>
+  <script src="js/i18n.js?v=7"></script>
+  <script src="js/art.js?v=7"></script>
   <script src="js/catalog.js"></script>
   <script src="js/alive-bridge.js"></script>
-  <script src="js/ui.js?v=4"></script>
-  <script src="js/actions.js?v=3"></script>
-  <script src="js/themes.js?v=3"></script>
+  <script src="js/ui.js?v=7"></script>
+  <script src="js/actions.js?v=7"></script>
+  <script src="js/themes.js?v=7"></script>
   <script src="js/jszip.min.js"></script>
-  <script src="js/anime-overlay.js?v=6"></script>
-  <script src="js/store.js?v=3"></script>
-  <script src="js/publish.js?v=3"></script>
+  <script src="js/anime-overlay.js?v=7"></script>
+  <script src="js/store.js?v=7"></script>
+  <script src="js/publish.js?v=7"></script>
   <script>
     (function () {
       var m = /[?&]id=([^&]*)/.exec(location.search);

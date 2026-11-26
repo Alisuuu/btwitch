@@ -739,6 +739,7 @@ function findAsset(entry, rel) {
 
 const STORE_API_EXACT = new Set([
   '/api/proxy-image',
+  '/api/tmdb/images',
   '/api/status',
   '/api/discover',
   '/api/send',
@@ -776,6 +777,27 @@ async function handleStoreRequest(req, res, u) {
 
 async function handleStoreApi(req, res, u, p) {
   try {
+    if (p === '/api/tmdb/images') {
+      const type = u.searchParams.get('type') === 'movie' ? 'movie' : 'tv';
+      const id = String(u.searchParams.get('id') || '').replace(/[^0-9]/g, '');
+      if (!id) return json(res, 400, { error: 'id inválido' });
+      const tmdbKey = process.env.TMDB_API_KEY || '5e5da432e96174227b25086fe8637985';
+      const memKey = 'tmdb_imgs:' + type + ':' + id;
+      let cached = memGet(memKey);
+      if (cached) {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'public, max-age=3600' });
+        res.end(cached);
+        return true;
+      }
+      const r = await fetch(`https://api.themoviedb.org/3/${type}/${id}/images?api_key=${tmdbKey}`);
+      if (!r.ok) return json(res, r.status, { error: 'TMDB HTTP ' + r.status });
+      const txt = await r.text();
+      memSet(memKey, Buffer.from(txt, 'utf8'));
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'public, max-age=3600' });
+      res.end(txt);
+      return true;
+    }
+
     if (p === '/api/proxy-image') {
       const targetUrl = u.searchParams.get('url');
       if (!targetUrl || (!targetUrl.startsWith('https://image.tmdb.org/') && !targetUrl.startsWith('http://image.tmdb.org/'))) {

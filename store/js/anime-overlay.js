@@ -213,17 +213,44 @@
   }
 
   async function fetchLogosAndBackdrops(mediaType, id) {
+    const mType = mediaType === 'movie' ? 'movie' : 'tv';
+    if (!id) return { logos: [], backdrops: [] };
+    let d = null;
     try {
-      const res = await fetch(`${TMDB_BASE}/${mediaType}/${id}/images?api_key=${TMDB_API_KEY}`);
-      if (!res.ok) return { logos: [], backdrops: [] };
-      const d = await res.json();
-      return {
-        logos: (d.logos || []).map(l => `${IMG_BASE}original${l.file_path}`),
-        backdrops: (d.backdrops || []).map(b => `${IMG_BASE}original${b.file_path}`)
-      };
-    } catch (e) {
-      return { logos: [], backdrops: [] };
+      const res = await fetch(`${TMDB_BASE}/${mType}/${id}/images?api_key=${TMDB_API_KEY}`);
+      if (res.ok) d = await res.json();
+    } catch (e) {}
+
+    if (!d || (!Array.isArray(d.logos) && !Array.isArray(d.backdrops))) {
+      try {
+        const fallback = await fetch(`/api/tmdb/images?type=${encodeURIComponent(mType)}&id=${encodeURIComponent(id)}`);
+        if (fallback.ok) d = await fallback.json();
+      } catch (e2) {}
     }
+
+    if (!d) return { logos: [], backdrops: [] };
+
+    const seenLogos = new Set();
+    const rawLogos = (d.logos || []).slice().sort((a, b) => {
+      const rank = (x) => (x.iso_639_1 === 'en' ? 0 : x.iso_639_1 === 'pt' ? 1 : !x.iso_639_1 ? 2 : 3);
+      return rank(a) - rank(b);
+    });
+    const logos = [];
+    for (const l of rawLogos) {
+      if (!l || !l.file_path || seenLogos.has(l.file_path)) continue;
+      seenLogos.add(l.file_path);
+      logos.push(`${IMG_BASE}original${l.file_path}`);
+    }
+
+    const seenBd = new Set();
+    const backdrops = [];
+    for (const b of (d.backdrops || [])) {
+      if (!b || !b.file_path || seenBd.has(b.file_path)) continue;
+      seenBd.add(b.file_path);
+      backdrops.push(`${IMG_BASE}original${b.file_path}`);
+    }
+
+    return { logos, backdrops };
   }
 
   /* ---------------- Helpers de Proxy de Imagem ---------------- */
@@ -812,7 +839,20 @@
   }
 
   /* ---------------- Seletores e Controles do Modal de Personalização ---------------- */
-  function renderBackdropSelector(backdrops) {
+  function setGroupCount(groupEl, count) {
+    if (!groupEl) return;
+    const lbl = groupEl.querySelector('.seg-label');
+    if (!lbl) return;
+    let badge = lbl.querySelector('.seg-count');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'seg-count';
+      lbl.appendChild(badge);
+    }
+    badge.textContent = count > 0 ? t('modal_options_count', { n: count }) : '';
+  }
+
+  function renderBackdropSelector(backdrops, isLoading) {
     const backdropGroup = document.getElementById('segBackdropGroup');
     const backdropsRow = document.getElementById('modalBackdropsRow');
     if (!backdropGroup || !backdropsRow) return;
@@ -829,9 +869,11 @@
       return;
     }
 
-    backdropsRow.innerHTML = list.slice(0, 10).map((url, i) => `
+    const shown = list.slice(0, 10);
+    setGroupCount(backdropGroup, shown.length);
+    backdropsRow.innerHTML = shown.map((url, i) => `
       <div class="backdrop-pick ${STATE.activeBackdropUrl === url ? 'active' : ''}" style="background-image:url('${tmdbThumb(url, 'w300')}')" data-url="${url}" title="Banner ${i + 1}"></div>
-    `).join('');
+    `).join('') + (isLoading ? `<span class="seg-loading-pill">${t('modal_loading_opts')}</span>` : '');
 
     backdropsRow.querySelectorAll('.backdrop-pick').forEach(item => {
       item.addEventListener('click', () => {
@@ -843,7 +885,7 @@
     });
   }
 
-  function renderStandbySelector(backdrops) {
+  function renderStandbySelector(backdrops, isLoading) {
     const standbyGroup = document.getElementById('segStandbyGroup');
     const standbyRow = document.getElementById('modalStandbyRow');
     if (!standbyGroup || !standbyRow) return;
@@ -853,12 +895,14 @@
     const sameBtn = `<button type="button" class="standby-pick-btn ${!STATE.activeStandbyUrl && STATE.standbyEnabled ? 'active' : ''}" data-mode="same">${t('label_banner')}</button>`;
     const noneBtn = `<button type="button" class="standby-pick-btn ${!STATE.standbyEnabled ? 'active' : ''}" data-mode="none">${t('anime_btn_no_standby')}</button>`;
     const list = (backdrops && backdrops.length) ? backdrops : (STATE.activeBackdropUrl ? [STATE.activeBackdropUrl] : []);
+    const shown = list.slice(0, 8);
+    setGroupCount(standbyGroup, shown.length);
 
-    const listHtml = list.slice(0, 8).map((url, i) => `
+    const listHtml = shown.map((url, i) => `
       <div class="backdrop-pick ${STATE.activeStandbyUrl === url ? 'active' : ''}" style="background-image:url('${tmdbThumb(url, 'w300')}')" data-url="${url}" data-mode="custom" title="Arte de espera ${i + 1}"></div>
     `).join('');
 
-    standbyRow.innerHTML = sameBtn + listHtml + noneBtn;
+    standbyRow.innerHTML = sameBtn + listHtml + (isLoading ? `<span class="seg-loading-pill">${t('modal_loading_opts')}</span>` : '') + noneBtn;
 
     standbyRow.querySelectorAll('.standby-pick-btn, .backdrop-pick').forEach(item => {
       item.addEventListener('click', () => {
@@ -882,19 +926,24 @@
     });
   }
 
-  function renderLogoSelector(logos) {
+  function renderLogoSelector(logos, isLoading) {
     const logoGroup = document.getElementById('segLogoGroup');
     const logosRow = document.getElementById('modalLogosRow');
     if (!logoGroup || !logosRow) return;
 
     logoGroup.style.display = 'flex';
+    const shown = (logos || []).slice(0, 8);
+    setGroupCount(logoGroup, shown.length);
 
     const noneBtn = `<button type="button" class="logo-pick logo-pick-none ${!STATE.activeLogoUrl ? 'active' : ''}" data-url="">${t('anime_btn_no_logo')}</button>`;
-    const listHtml = (logos || []).slice(0, 6).map((url, i) => `
+    const listHtml = shown.map((url, i) => `
       <img class="logo-pick ${STATE.activeLogoUrl === url ? 'active' : ''}" src="${tmdbThumb(url, 'w300')}" data-url="${url}" alt="Logo ${i + 1}">
     `).join('');
+    const emptyHint = (!isLoading && !shown.length)
+      ? `<span class="seg-loading-pill">${t('modal_no_logos')}</span>`
+      : (isLoading ? `<span class="seg-loading-pill">${t('modal_loading_opts')}</span>` : '');
 
-    logosRow.innerHTML = noneBtn + listHtml;
+    logosRow.innerHTML = noneBtn + listHtml + emptyHint;
 
     logosRow.querySelectorAll('.logo-pick').forEach(item => {
       item.addEventListener('click', () => {
@@ -1032,11 +1081,11 @@
       buyBtn.onclick = downloadAnimeZip;
     }
 
-    // Renderiza seletores imediatamente com fallback local para exibição instantânea
+    // Renderiza seletores imediatamente com estado de carregamento
     const initialBackdrops = [STATE.activeBackdropUrl].filter(Boolean);
-    renderBackdropSelector(initialBackdrops);
-    renderStandbySelector(initialBackdrops);
-    renderLogoSelector([]);
+    renderBackdropSelector(initialBackdrops, true);
+    renderStandbySelector(initialBackdrops, true);
+    renderLogoSelector([], true);
 
     updateModalArtPreview();
 
@@ -1046,14 +1095,17 @@
 
     if (backdrops && backdrops.length) {
       STATE.activeBackdropUrl = backdrops[0];
-      renderBackdropSelector(backdrops);
-      renderStandbySelector(backdrops);
+      renderBackdropSelector(backdrops, false);
+      renderStandbySelector(backdrops, false);
+    } else {
+      renderBackdropSelector(initialBackdrops, false);
+      renderStandbySelector(initialBackdrops, false);
     }
 
     if (logos && logos.length) {
       STATE.activeLogoUrl = logos[0];
-      renderLogoSelector(logos);
     }
+    renderLogoSelector(logos || [], false);
 
     updateModalArtPreview();
   }

@@ -189,7 +189,11 @@
       report_submit: 'Enviar denúncia',
       report_sending: 'Enviando…',
       report_sent: 'Denúncia enviada aos moderadores!',
-      report_err: 'Não foi possível enviar a denúncia agora'
+      report_err: 'Não foi possível enviar a denúncia agora',
+      modal_free_pill: 'Gratuito',
+      modal_options_count: '{n} opções',
+      modal_loading_opts: 'Carregando opções…',
+      modal_no_logos: 'Sem logos extras'
     },
     en: {
       meta_desc_store: 'Alive live-streaming overlays and themes store.',
@@ -352,7 +356,11 @@
       report_submit: 'Submit report',
       report_sending: 'Sending…',
       report_sent: 'Report sent to moderators!',
-      report_err: 'Could not send report right now'
+      report_err: 'Could not send report right now',
+      modal_free_pill: 'Free',
+      modal_options_count: '{n} options',
+      modal_loading_opts: 'Loading options…',
+      modal_no_logos: 'No extra logos'
     }
   };
 

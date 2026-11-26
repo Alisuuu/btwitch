@@ -108,13 +108,28 @@
 
     lastFocused = document.activeElement;
 
+    var authorName = p.author || (p.themeInfo && p.themeInfo.author) || (p.theme && p.theme.author) || 'Alive Studio';
+    var authorEl = document.getElementById('modalAuthor');
+    if (authorEl) {
+      authorEl.innerHTML = U.esc(t('card_by')) + '<b>' + U.esc(authorName) + '</b>';
+    }
+    var badgeEl = document.getElementById('modalBadge');
+    if (badgeEl) badgeEl.innerHTML = U.badgeHtml(p);
+
+    var shareBtn = document.getElementById('modalShare');
+    if (shareBtn) {
+      shareBtn.onclick = function () { A.share(p); };
+    }
+
     if (p.isAnime && window.ALIVE_ANIME) {
       document.getElementById('modalCat').textContent = 'Alive Studio';
       document.getElementById('modalName').textContent = p.name;
       document.getElementById('modalTag').textContent = t('modal_subtitle_anime');
       document.getElementById('modalExtra').innerHTML = '';
       document.getElementById('modalPriceBox').innerHTML =
-        '<span class="tag tag-cyan">' + U.esc(t('modal_tag_ondemand')) + '</span><span class="muted" style="font-size:12.5px">' + U.esc(t('card_ready')) + '</span>';
+        '<span class="tag tag-cyan">' + U.esc(t('modal_tag_ondemand')) + '</span>' +
+        '<span class="info-chip"><strong>' + U.esc(t('modal_free_pill')) + '</strong></span>' +
+        '<span class="info-chip">' + U.esc(t('card_ready')) + '</span>';
       document.getElementById('modalIncludes').innerHTML = '';
 
       var note = document.getElementById('modalNote');
@@ -132,7 +147,7 @@
 
       function renderStandardArt() {
         if (!hasComp) {
-          artEl.innerHTML = U.previewHtml(p, { controls: true }) + U.badgeHtml(p);
+          artEl.innerHTML = U.previewHtml(p, { controls: true });
           return;
         }
         var switcher =
@@ -143,7 +158,7 @@
         var body = stdView === 'composition'
           ? window.AliveArt.layoutSvg(p.themeInfo.widgets, p.themeInfo.assetBase, p.themeInfo.viewport)
           : U.previewHtml(p, { controls: true });
-        artEl.innerHTML = '<div class="anime-art-wrapper">' + switcher + body + '</div>' + U.badgeHtml(p);
+        artEl.innerHTML = '<div class="anime-art-wrapper">' + switcher + body + '</div>';
         artEl.querySelectorAll('.art-switch-btn').forEach(function (b) {
           b.addEventListener('click', function (e) {
             e.stopPropagation();
@@ -162,8 +177,13 @@
         try { extraHtml = U.themeExtraHtml(p); } catch (e) { if (window.console) console.warn('themeExtraHtml:', e); }
       }
       document.getElementById('modalExtra').innerHTML = extraHtml;
+      var wCount = (p.themeInfo && p.themeInfo.widgetCount) || (p.themeInfo && p.themeInfo.widgets && p.themeInfo.widgets.length) || 0;
       document.getElementById('modalPriceBox').innerHTML =
-        '<span class="tag tag-cyan">' + U.esc(t('tab_community')) + '</span><span class="muted" style="font-size:12.5px">' + U.esc(t('card_ready')) + '</span>';
+        '<span class="tag tag-cyan">' + U.esc(t('tab_community')) + '</span>' +
+        '<span class="info-chip"><strong>' + U.esc(t('modal_free_pill')) + '</strong></span>' +
+        (p.version ? '<span class="info-chip">v' + U.esc(p.version) + '</span>' : '') +
+        (p.size ? '<span class="info-chip">' + U.esc(p.size) + '</span>' : '') +
+        (wCount ? '<span class="info-chip">' + wCount + ' widgets</span>' : '');
       document.getElementById('modalIncludes').innerHTML = '';
 
       var note = document.getElementById('modalNote');

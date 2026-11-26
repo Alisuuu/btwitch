@@ -419,10 +419,59 @@ html.modal-open, body.modal-open {
   stroke-width: 2.5;
 }
 
+.modal-author-line {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.modal-author-line b { color: #fff; font-weight: 600; }
+.info-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.info-chip strong { color: #fff; font-weight: 600; }
+#modalCustomOptions .seg-group {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+.seg-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.seg-count {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #00E5FF;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+.seg-loading-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed var(--border);
+  color: var(--muted);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.buy-row { display: flex; align-items: stretch; gap: 8px; }
 .price-box {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  padding: 8px 12px; background: var(--card-2);
-  border: 1px solid var(--border); border-radius: 9px;
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 9px 12px; background: var(--card-2);
+  border: 1px solid var(--border); border-radius: 11px;
 }
 .price-box .price { font-size: 24px; }
 
