@@ -825,7 +825,7 @@
     }
 
     backdropsRow.innerHTML = list.slice(0, 10).map((url, i) => `
-      <div class="backdrop-pick ${STATE.activeBackdropUrl === url ? 'active' : ''}" style="background-image:url('${getProxiedImageUrl(url)}')" data-url="${url}" title="Banner ${i + 1}"></div>
+      <div class="backdrop-pick ${STATE.activeBackdropUrl === url ? 'active' : ''}" style="background-image:url('${url}')" data-url="${url}" title="Banner ${i + 1}"></div>
     `).join('');
 
     backdropsRow.querySelectorAll('.backdrop-pick').forEach(item => {
@@ -850,7 +850,7 @@
     const list = (backdrops && backdrops.length) ? backdrops : (STATE.activeBackdropUrl ? [STATE.activeBackdropUrl] : []);
 
     const listHtml = list.slice(0, 8).map((url, i) => `
-      <div class="backdrop-pick ${STATE.activeStandbyUrl === url ? 'active' : ''}" style="background-image:url('${getProxiedImageUrl(url)}')" data-url="${url}" data-mode="custom" title="Arte de espera ${i + 1}"></div>
+      <div class="backdrop-pick ${STATE.activeStandbyUrl === url ? 'active' : ''}" style="background-image:url('${url}')" data-url="${url}" data-mode="custom" title="Arte de espera ${i + 1}"></div>
     `).join('');
 
     standbyRow.innerHTML = sameBtn + listHtml + noneBtn;
@@ -886,7 +886,7 @@
 
     const noneBtn = `<button type="button" class="logo-pick logo-pick-none ${!STATE.activeLogoUrl ? 'active' : ''}" data-url="">${t('anime_btn_no_logo')}</button>`;
     const listHtml = (logos || []).slice(0, 6).map((url, i) => `
-      <img class="logo-pick ${STATE.activeLogoUrl === url ? 'active' : ''}" src="${getProxiedImageUrl(url)}" data-url="${url}" alt="Logo ${i + 1}">
+      <img class="logo-pick ${STATE.activeLogoUrl === url ? 'active' : ''}" src="${url}" data-url="${url}" alt="Logo ${i + 1}">
     `).join('');
 
     logosRow.innerHTML = noneBtn + listHtml;
@@ -949,8 +949,7 @@
           </div>
         `;
       } else {
-        const rawBgUrl = STATE.activeStandbyUrl || STATE.activeBackdropUrl || p.backdropUrl || p.posterUrl || p.image || '';
-        const bgUrl = getProxiedImageUrl(rawBgUrl);
+        const bgUrl = STATE.activeStandbyUrl || STATE.activeBackdropUrl || p.backdropUrl || p.posterUrl || p.image || '';
         standbyBody = `
           <div class="anime-standby-stage" style="background-image:linear-gradient(to bottom, rgba(0,0,0,0.45), rgba(0,0,0,0.85)), url('${bgUrl}');width:100%;height:100%;">
             <div class="standby-center-box">

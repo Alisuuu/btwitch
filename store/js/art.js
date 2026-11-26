@@ -282,9 +282,6 @@
       }
 
       var imgHref = w.previewUrl || (assetBase && w.file ? (assetBase + encPath(w.file)) : null);
-      if (imgHref && (imgHref.indexOf('https://image.tmdb.org/') === 0 || imgHref.indexOf('http://image.tmdb.org/') === 0)) {
-        imgHref = '/api/proxy-image?url=' + encodeURIComponent(imgHref);
-      }
       if (imgHref) {
         out += '<image href="' + esc(imgHref) + '" xlink:href="' + esc(imgHref) + '" x="' + (x + 4) + '" y="' + (y + 4) +
           '" width="' + (dw - 8) + '" height="' + (dh - 8) + '" preserveAspectRatio="' + (isBanner ? 'xMidYMid slice' : 'xMidYMid meet') + '" opacity="0.65"/>';
@@ -306,11 +303,7 @@
   function animeComposition(p) {
     var uid = 'a' + (++seq);
     var name = esc(p.name || 'ALIVE').toUpperCase();
-    var rawBg = p.backdropUrl || p.posterUrl || p.image || '';
-    var bgImg = rawBg;
-    if (bgImg && (bgImg.indexOf('https://image.tmdb.org/') === 0 || bgImg.indexOf('http://image.tmdb.org/') === 0)) {
-      bgImg = '/api/proxy-image?url=' + encodeURIComponent(bgImg);
-    }
+    var bgImg = p.backdropUrl || p.posterUrl || p.image || '';
 
     return '' +
       '<svg viewBox="0 0 640 360" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Overlay de ' + esc(p.name) + '">' +
