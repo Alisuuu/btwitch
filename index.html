@@ -399,7 +399,7 @@
         <span data-icon="sparkles" data-size="16"></span>
         <span data-i18n="cc_title">Comandos Personalizados</span>
       </h2>
-      <p class="hint">Variáveis suportadas: <code>{user}</code> <code>{canal}</code> <code>{np}</code> <code>{fila}</code> <code>{tocadas}</code></p>
+      <p class="hint" data-i18n-html="cmd_vars_hint">Variáveis suportadas: <code>{user}</code> <code>{canal}</code> <code>{np}</code> <code>{fila}</code> <code>{tocadas}</code></p>
       
       <div class="custom-cmd-form">
         <div class="row">
@@ -449,13 +449,13 @@
         </button>
       </div>
       <ol class="steps">
-        <li>No OBS Studio: <b>Fontes → + → Navegador</b>.</li>
-        <li>Cole o link do widget no campo <b>URL</b>.</li>
-        <li><b>Tamanho recomendado no OBS:</b>
+        <li data-i18n-html="w_obs_step1">No OBS Studio: <b>Fontes → + → Navegador</b>.</li>
+        <li data-i18n-html="w_obs_step2">Cole o link do widget no campo <b>URL</b>.</li>
+        <li data-i18n-html="w_obs_step3"><b>Tamanho recomendado no OBS:</b>
           <br>• <b>Formato Dock / Banner (Fácil de posicionar):</b> Largura <b>600</b> px, Altura <b>160</b> px.
           <br>• <b>Overlay Tela Inteira:</b> Largura <b>1920</b> px, Altura <b>1080</b> px (fundo 100% transparente).</li>
-        <li>Marque <b>“Controlar áudio via OBS”</b> caso use a opção de tocar áudio no widget.</li>
-        <li>Marque <b>“Atualizar navegador ao ativar cena”</b> para recarregar automático se mudar de cena.</li>
+        <li data-i18n-html="w_obs_step4">Marque <b>“Controlar áudio via OBS”</b> caso use a opção de tocar áudio no widget.</li>
+        <li data-i18n-html="w_obs_step5">Marque <b>“Atualizar navegador ao ativar cena”</b> para recarregar automático se mudar de cena.</li>
       </ol>
 
       <!-- Live Preview Interativa do Widget no Painel -->
@@ -477,7 +477,7 @@
             <div class="meta" id="prevMeta">
               <div class="kicker"><span class="dot" id="prevDot"></span><span id="prevKicker">TOCANDO AGORA</span></div>
               <div class="title-wrap"><div class="title" id="prevTitle">Synthwave Beats &amp; Lofi Chill</div></div>
-              <div class="sub" id="prevSub">Canal Oficial · pedido por @vip_streamer</div>
+              <div class="sub" id="prevSub" data-i18n="w_preview_sub">Canal Oficial · pedido por @vip_streamer</div>
               <div class="progress" id="prevProgress"><div class="fill" id="prevFill" style="width: 45%;"></div></div>
               <div class="times" id="prevTimes"><span>1:24</span><span>3:10</span></div>
             </div>
@@ -513,7 +513,7 @@
               </div>
             </div>
             <div class="visual-choice-name">Card Studio</div>
-            <div class="visual-choice-desc">Capa 64px + barra cheia</div>
+            <div class="visual-choice-desc" data-i18n="w_layout_card_d">Capa 64px + barra cheia</div>
           </button>
 
           <button type="button" class="visual-choice-card" data-layout="pill">
@@ -524,8 +524,8 @@
                 <div class="mm-bar"></div>
               </div>
             </div>
-            <div class="visual-choice-name">Pílula Dock</div>
-            <div class="visual-choice-desc">Dock fino arredondado</div>
+            <div class="visual-choice-name" data-i18n="w_layout_pill_t">Pílula Dock</div>
+            <div class="visual-choice-desc" data-i18n="w_layout_pill_d">Dock fino arredondado</div>
           </button>
 
           <button type="button" class="visual-choice-card" data-layout="glass">
@@ -537,7 +537,7 @@
               </div>
             </div>
             <div class="visual-choice-name">Glass Vidro</div>
-            <div class="visual-choice-desc">Ultra translúcido &amp; blur</div>
+            <div class="visual-choice-desc" data-i18n="w_layout_glass_d">Ultra translúcido &amp; blur</div>
           </button>
 
           <button type="button" class="visual-choice-card" data-layout="ticker">
@@ -547,8 +547,8 @@
                 <div class="mm-line" style="width: 85%;"></div>
               </div>
             </div>
-            <div class="visual-choice-name">Barra Rodapé</div>
-            <div class="visual-choice-desc">Faixa horizontal de TV</div>
+            <div class="visual-choice-name" data-i18n="w_layout_ticker_t">Barra Rodapé</div>
+            <div class="visual-choice-desc" data-i18n="w_layout_ticker_d">Faixa horizontal de TV</div>
           </button>
 
           <button type="button" class="visual-choice-card" data-layout="minimal">
@@ -560,7 +560,7 @@
               </div>
             </div>
             <div class="visual-choice-name">B&amp;W Minimal</div>
-            <div class="visual-choice-desc">Preto e branco cirúrgico</div>
+            <div class="visual-choice-desc" data-i18n="w_layout_minimal_d">Preto e branco cirúrgico</div>
           </button>
 
           <button type="button" class="visual-choice-card" data-layout="neon">
@@ -573,7 +573,7 @@
               </div>
             </div>
             <div class="visual-choice-name">Cyber Neon</div>
-            <div class="visual-choice-desc">Glow vibrante gamer</div>
+            <div class="visual-choice-desc" data-i18n="w_layout_neon_d">Glow vibrante gamer</div>
           </button>
 
           <button type="button" class="visual-choice-card" data-layout="compact">
@@ -585,7 +585,7 @@
               </div>
             </div>
             <div class="visual-choice-name">Mini Badge HUD</div>
-            <div class="visual-choice-desc">Ultra-compacto p/ gameplay</div>
+            <div class="visual-choice-desc" data-i18n="w_layout_compact_d">Ultra-compacto p/ gameplay</div>
           </button>
 
           <button type="button" class="visual-choice-card" data-layout="vinyl">
@@ -597,8 +597,8 @@
                 <div class="mm-bar" style="background:#f59e0b;"></div>
               </div>
             </div>
-            <div class="visual-choice-name">Disco Vinil Retrô</div>
-            <div class="visual-choice-desc">Disco Lo-Fi giratório</div>
+            <div class="visual-choice-name" data-i18n="w_layout_vinyl_t">Disco Vinil Retrô</div>
+            <div class="visual-choice-desc" data-i18n="w_layout_vinyl_d">Disco Lo-Fi giratório</div>
           </button>
         </div>
       </div>
@@ -615,7 +615,7 @@
               <span class="theme-circle" style="background:#0a0a0c; border: 1.5px solid #3f3f46;"></span>
               <div>
                 <div class="visual-choice-name">Minimal Dark</div>
-                <div class="visual-choice-desc">Preto profundo</div>
+                <div class="visual-choice-desc" data-i18n="w_theme_minimal_d">Preto profundo</div>
               </div>
             </div>
           </button>
@@ -624,8 +624,8 @@
             <div class="theme-swatch-box">
               <span class="theme-circle" style="background:#18181b; border: 1.5px solid #52525b;"></span>
               <div>
-                <div class="visual-choice-name">Dark Grafite</div>
-                <div class="visual-choice-desc">Cinza grafite fosco</div>
+                <div class="visual-choice-name" data-i18n="w_theme_slate_t">Dark Grafite</div>
+                <div class="visual-choice-desc" data-i18n="w_theme_slate_d">Cinza grafite fosco</div>
               </div>
             </div>
           </button>
@@ -634,8 +634,8 @@
             <div class="theme-swatch-box">
               <span class="theme-circle" style="background:#000000; border: 2px solid #ffffff;"></span>
               <div>
-                <div class="visual-choice-name">Alto Contraste</div>
-                <div class="visual-choice-desc">Borda branca pura</div>
+                <div class="visual-choice-name" data-i18n="w_theme_contrast_t">Alto Contraste</div>
+                <div class="visual-choice-desc" data-i18n="w_theme_contrast_d">Borda branca pura</div>
               </div>
             </div>
           </button>
@@ -644,8 +644,8 @@
             <div class="theme-swatch-box">
               <span class="theme-circle checker-bg"></span>
               <div>
-                <div class="visual-choice-name">100% Transparente</div>
-                <div class="visual-choice-desc">Sem caixa de fundo</div>
+                <div class="visual-choice-name" data-i18n="w_theme_transp_t">100% Transparente</div>
+                <div class="visual-choice-desc" data-i18n="w_theme_transp_d">Sem caixa de fundo</div>
               </div>
             </div>
           </button>
@@ -764,7 +764,7 @@
         <span data-icon="sparkles" data-size="16"></span>
         <span data-i18n="timers_form_title">Criar Novo Temporizador</span>
       </h2>
-      <p class="hint">Variáveis automáticas aceitas: <code>{np}</code> (música atual), <code>{canal}</code>, <code>{fila}</code>, <code>{tocadas}</code></p>
+      <p class="hint" data-i18n-html="timers_vars_hint">Variáveis automáticas aceitas: <code>{np}</code> (música atual), <code>{canal}</code>, <code>{fila}</code>, <code>{tocadas}</code></p>
       
       <form class="timer-form" id="timerForm" onsubmit="return false;">
         <input type="hidden" id="timerEditId" value="">
@@ -963,8 +963,8 @@
             <label for="cfgAiSystem" style="font-size: 12px; font-weight: 700;" data-i18n="ai_prompt_label">Instruções de Personalidade (Prompt Livre)</label>
             <span id="aiPromptCharCount" style="font-size: 11px; color: var(--muted);">0 / 4000</span>
           </div>
-          <textarea id="cfgAiSystem" rows="7" style="width: 100%; border-radius: 8px; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--line); color: var(--white); font-size: 13px; line-height: 1.45; resize: vertical; box-sizing: border-box; font-family: inherit;" placeholder="Ex: Você é doce e super amigável com todos, usa gírias de streamer, trata quem pede músicas com muito carinho e adora animes..."></textarea>
-          <div style="font-size: 11px; color: var(--muted); margin-top: 4px;">
+          <textarea id="cfgAiSystem" rows="7" style="width: 100%; border-radius: 8px; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--line); color: var(--white); font-size: 13px; line-height: 1.45; resize: vertical; box-sizing: border-box; font-family: inherit;" data-i18n-placeholder="ai_prompt_ph" placeholder="Ex: Você é doce e super amigável com todos, usa gírias de streamer, trata quem pede músicas com muito carinho e adora animes..."></textarea>
+          <div style="font-size: 11px; color: var(--muted); margin-top: 4px;" data-i18n-html="ai_cmd_tip">
             Dica: Comandos como <code>!play</code>, <code>!skip</code>, <code>!pausar</code> e regras de controle já são integrados nativamente pelo bot. Defina aqui o tom, a atitude e como ela se comunica.
           </div>
         </div>
@@ -1021,7 +1021,7 @@
           <span data-icon="cpu" data-size="16"></span>
           <span data-i18n="ai_conn_title">Provedor &amp; Conexão de IA</span>
         </h2>
-        <p class="hint">Por padrão, o Alive Bot utiliza a infraestrutura de ultra-baixa latência da Groq. Você também pode conectar sua própria chave e escolher o modelo de linguagem.</p>
+        <p class="hint" data-i18n="ai_conn_desc">Por padrão, o Alive Bot utiliza a infraestrutura de ultra-baixa latência da Groq. Você também pode conectar sua própria chave e escolher o modelo de linguagem.</p>
 
         <div class="form-grid" style="margin-top: 12px;">
           <label><span data-i18n="ai_conn_base">URL Base da API</span>
@@ -1031,7 +1031,7 @@
             <input type="text" id="cfgAiModel" placeholder="qwen/qwen3.8-27b" autocomplete="off" spellcheck="false">
           </label>
           <label style="grid-column: 1 / -1;"><span data-i18n="ai_conn_key">Chave de API Própria (Opcional)</span>
-            <input type="password" id="cfgAiApiKey" placeholder="Deixe em branco para usar a chave padrão do servidor" autocomplete="off" spellcheck="false">
+            <input type="password" id="cfgAiApiKey" data-i18n-placeholder="ai_conn_key_ph" placeholder="Deixe em branco para usar a chave padrão do servidor" autocomplete="off" spellcheck="false">
           </label>
         </div>
 
@@ -1084,8 +1084,8 @@
         <div class="streamer-pill">
           <img id="dcStreamerAvatar" src="/img/ic_splash_logo.webp" alt="">
           <div>
-            <div style="font-size:11px;color:var(--muted)">Streamer Monitorado</div>
-            <strong id="dcStreamerName" style="color:#fff;font-size:13.5px">Não conectado</strong>
+            <div style="font-size:11px;color:var(--muted)" data-i18n="dc_monitored">Streamer Monitorado</div>
+            <strong id="dcStreamerName" style="color:#fff;font-size:13.5px" data-i18n="dc_not_connected">Não conectado</strong>
           </div>
         </div>
         <div class="live-indicator offline" id="dcBadgeLiveStatus">
@@ -1098,25 +1098,25 @@
       <div id="dcAuthNotice" class="card" style="padding:12px 14px;background:rgba(145,70,255,0.08);border:1px solid rgba(145,70,255,0.25);border-radius:var(--radius-sm);display:none;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
           <div>
-            <strong style="color:#fff;font-size:12.5px;">Conecte sua conta da Twitch</strong>
-            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">O Alive monitora automaticamente o canal do streamer autenticado.</div>
+            <strong style="color:#fff;font-size:12.5px;" data-i18n="dc_auth_title">Conecte sua conta da Twitch</strong>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;" data-i18n="dc_auth_desc">O Alive monitora automaticamente o canal do streamer autenticado.</div>
           </div>
           <a class="btn twitch-btn small btn-twitch-auth" id="btnTwitchDiscord" title="Entrar com a Twitch" href="#" onclick="handleTwitchLogin(event);">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
-            <span>Entrar com a Twitch</span>
+            <span data-i18n="dc_auth_btn">Entrar com a Twitch</span>
           </a>
         </div>
       </div>
 
       <div class="panel-section-title">
-        <span>Geral</span>
+        <span data-i18n="dc_general">Geral</span>
       </div>
 
       <!-- Ativação Geral -->
       <div class="toggle-row">
         <div>
-          <strong style="color:#fff;font-size:13px;">Ativar Notificações de Live</strong>
-          <div class="field-desc">Disparar anúncio no Discord automaticamente ao iniciar a live</div>
+          <strong style="color:#fff;font-size:13px;" data-i18n="dc_enable_title">Ativar Notificações de Live</strong>
+          <div class="field-desc" data-i18n="dc_enable_desc">Disparar anúncio no Discord automaticamente ao iniciar a live</div>
         </div>
         <label class="switch">
           <input type="checkbox" id="cfgDcEnabled" checked>
@@ -1127,28 +1127,28 @@
       <!-- Seletor de Canal do Discord (como outros bots) -->
       <div class="field channel-selector-card">
         <label for="cfgDcChannelSelect">
-          <span>Canal de Notificação do Discord</span>
-          <small style="color:var(--muted)">Onde o Alive enviará o aviso</small>
+          <span data-i18n="dc_channel_title">Canal de Notificação do Discord</span>
+          <small style="color:var(--muted)" data-i18n="dc_channel_sub">Onde o Alive enviará o aviso</small>
         </label>
         
         <!-- Seletor de Servidor onde o bot está presente -->
         <div id="rowDcGuildSelect" style="margin-bottom:10px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-            <label style="font-size:11.5px;color:var(--muted);display:block;">Servidor do Discord:</label>
-            <a href="javascript:void(0)" onclick="loadDiscordGuildsAndChannels();toast('Atualizando lista de servidores...');" style="font-size:11px;color:var(--primary);text-decoration:none;cursor:pointer;">↻ Atualizar</a>
+            <label style="font-size:11.5px;color:var(--muted);display:block;" data-i18n="dc_guild_lbl">Servidor do Discord:</label>
+            <a href="javascript:void(0)" onclick="loadDiscordGuildsAndChannels();toast(window.__aliveT ? window.__aliveT('toast_refreshing_guilds') : 'Refreshing...');" style="font-size:11px;color:var(--primary);text-decoration:none;cursor:pointer;" data-i18n="dc_refresh">↻ Atualizar</a>
           </div>
           <select id="cfgDcGuildSelect" class="btn secondary" style="width:100%;text-align:left;padding:8px 12px;cursor:pointer;">
-            <option value="">Selecione o Servidor...</option>
+            <option value="" data-i18n="dc_guild_select_ph">Selecione o Servidor...</option>
           </select>
         </div>
 
         <div class="channel-select-row">
           <div class="channel-prefix-box">
             <span class="channel-hash-icon">#</span>
-            <input type="text" id="cfgDcChannelName" placeholder="lives ou anúncios" autocomplete="off" spellcheck="false">
+            <input type="text" id="cfgDcChannelName" placeholder="lives / announcements" autocomplete="off" spellcheck="false">
           </div>
           <select id="cfgDcChannelSelect" class="btn secondary" style="width:auto;min-width:140px;cursor:pointer;">
-            <option value="">Selecione canal</option>
+            <option value="" data-i18n="dc_channel_select_ph">Selecione canal</option>
             <option value="lives">#lives</option>
             <option value="anúncios">#anúncios</option>
             <option value="ao-vivo">#ao-vivo</option>
@@ -1158,14 +1158,14 @@
           </select>
         </div>
         <div id="cfgDcAdvancedRow" style="display:none;margin-top:6px;">
-          <input type="text" id="cfgDcWebhook" placeholder="Cole o link do Webhook do Discord ou ID numérico do canal" autocomplete="off">
+          <input type="text" id="cfgDcWebhook" placeholder="Discord Webhook URL / Channel ID" autocomplete="off">
         </div>
       </div>
 
       <div class="panel-section-title">
-        <span>Canais Monitorados (Multiplataforma)</span>
+        <span data-i18n="dc_platforms_title">Canais Monitorados (Multiplataforma)</span>
       </div>
-      <p class="field-desc" style="margin-bottom:12px;margin-top:-6px;">Adicione seus canais para anunciar no Discord quando iniciar live na Twitch, YouTube, Kick ou TikTok.</p>
+      <p class="field-desc" style="margin-bottom:12px;margin-top:-6px;" data-i18n="dc_platforms_desc">Adicione seus canais para anunciar no Discord quando iniciar live na Twitch, YouTube, Kick ou TikTok.</p>
 
       <div class="platform-channels-grid">
         <!-- Twitch -->
@@ -1221,21 +1221,21 @@
       <div class="channels-action-bar">
         <button class="btn-save" id="btnSaveChannelsQuick" type="button">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          <span>Salvar Canais</span>
+          <span data-i18n="dc_save_channels">Salvar Canais</span>
         </button>
         <button class="btn-test" id="btnTestChannelsQuick" type="button">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          <span>Testar Notificação</span>
+          <span data-i18n="dc_test_notif">Testar Notificação</span>
         </button>
       </div>
 
       <div class="panel-section-title">
-        <span>Mensagem &amp; Menção</span>
+        <span data-i18n="dc_mention_title">Mensagem &amp; Menção</span>
       </div>
 
       <!-- Menção -->
       <div class="field">
-        <label>Menção no Servidor</label>
+        <label data-i18n="dc_mention_lbl">Menção no Servidor</label>
         <div class="mentions-grid">
           <label class="mention-card selected" id="dcMCardEveryone">
             <input type="radio" name="dcMentionType" value="everyone" checked>
@@ -1247,25 +1247,25 @@
           </label>
           <label class="mention-card" id="dcMCardRole">
             <input type="radio" name="dcMentionType" value="role">
-            <span>@Cargo</span>
+            <span data-i18n="dc_mention_role">@Cargo</span>
           </label>
           <label class="mention-card" id="dcMCardNone">
             <input type="radio" name="dcMentionType" value="none">
-            <span>Nenhum</span>
+            <span data-i18n="dc_mention_none">Nenhum</span>
           </label>
         </div>
       </div>
 
       <!-- Role ID (condicional) -->
       <div class="field" id="dcRowRoleId" style="display:none;">
-        <label for="cfgDcRoleId">ID do Cargo no Discord</label>
+        <label for="cfgDcRoleId" data-i18n="dc_role_id_lbl">ID do Cargo no Discord</label>
         <input type="text" id="cfgDcRoleId" placeholder="Ex: 987654321012345678">
-        <div class="field-desc">Clique com botão direito no cargo no Discord e escolha "Copiar ID".</div>
+        <div class="field-desc" data-i18n="dc_role_id_desc">Clique com botão direito no cargo no Discord e escolha "Copiar ID".</div>
       </div>
 
       <!-- Mensagem -->
       <div class="field">
-        <label for="cfgDcMessage">Texto da Notificação</label>
+        <label for="cfgDcMessage" data-i18n="dc_msg_lbl">Texto da Notificação</label>
         <textarea id="cfgDcMessage" rows="3">[LIVE] **{streamer}** está ao vivo na Twitch | **{game}**
 Transmissão: {url}</textarea>
         <div class="tags-row">
@@ -1280,12 +1280,12 @@ Transmissão: {url}</textarea>
       </div>
 
       <div class="panel-section-title">
-        <span>Personalização do Card Embed</span>
+        <span data-i18n="dc_embed_title_sec">Personalização do Card Embed</span>
       </div>
 
       <!-- Cor do Embed -->
       <div class="field">
-        <label>Cor da Barra Lateral do Embed</label>
+        <label data-i18n="dc_embed_color_lbl">Cor da Barra Lateral do Embed</label>
         <div class="color-picker-row">
           <input type="color" id="cfgDcEmbedColor" value="#9146FF">
           <span id="dcLabelColorHex" style="font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#fff;">#9146FF</span>
@@ -1302,42 +1302,42 @@ Transmissão: {url}</textarea>
 
       <!-- Título do Embed -->
       <div class="field">
-        <label for="cfgDcEmbedTitle">Título do Card Embed</label>
+        <label for="cfgDcEmbedTitle" data-i18n="dc_embed_title_lbl">Título do Card Embed</label>
         <input type="text" id="cfgDcEmbedTitle" value="▸ {title}">
       </div>
 
       <!-- Descrição do Embed -->
       <div class="field">
-        <label for="cfgDcEmbedDesc">Descrição do Card Embed</label>
+        <label for="cfgDcEmbedDesc" data-i18n="dc_embed_desc_lbl">Descrição do Card Embed</label>
         <textarea id="cfgDcEmbedDesc" rows="2">Transmissão iniciada. Venha interagir no chat e pedir músicas.</textarea>
       </div>
 
       <!-- Imagem de Capa da Live (Thumbnail) -->
       <div class="field">
-        <label>Imagem de Capa da Live (Thumbnail)</label>
+        <label data-i18n="dc_thumb_lbl">Imagem de Capa da Live (Thumbnail)</label>
         <div class="mentions-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); margin-bottom: 8px;">
           <label class="mention-card selected" id="dcThumbCardAuto">
             <input type="radio" name="dcThumbType" value="auto" checked>
-            <span>Captura Automática</span>
+            <span data-i18n="dc_thumb_auto">Captura Automática</span>
           </label>
           <label class="mention-card" id="dcThumbCardCustom">
             <input type="radio" name="dcThumbType" value="custom">
-            <span>Imagem Própria</span>
+            <span data-i18n="dc_thumb_custom">Imagem Própria</span>
           </label>
           <label class="mention-card" id="dcThumbCardNone">
             <input type="radio" name="dcThumbType" value="none">
-            <span>Sem Capa</span>
+            <span data-i18n="dc_thumb_none">Sem Capa</span>
           </label>
         </div>
 
         <div id="dcCustomThumbBox" style="display:none; margin-top:8px;">
           <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-            <input type="text" id="cfgDcCustomThumb" placeholder="Cole a URL da imagem (ex: https://i.imgur.com/capa.jpg)" style="flex:1; min-width:200px;">
+            <input type="text" id="cfgDcCustomThumb" placeholder="https://i.imgur.com/cover.jpg" style="flex:1; min-width:200px;">
             <input type="file" id="cfgDcThumbFileInput" accept="image/*" style="display:none;">
-            <button type="button" class="btn ghost small" id="btnUploadThumb" style="white-space:nowrap; padding:9px 12px;">Escolher Arquivo</button>
-            <button type="button" class="btn ghost small" id="btnClearCustomThumb" style="white-space:nowrap; padding:9px 12px; display:none;">Limpar</button>
+            <button type="button" class="btn ghost small" id="btnUploadThumb" style="white-space:nowrap; padding:9px 12px;" data-i18n="dc_thumb_choose">Escolher Arquivo</button>
+            <button type="button" class="btn ghost small" id="btnClearCustomThumb" style="white-space:nowrap; padding:9px 12px; display:none;" data-i18n="dc_thumb_clear">Limpar</button>
           </div>
-          <div class="field-desc">Use um banner fixo ou capa personalizada para anunciar suas transmissões.</div>
+          <div class="field-desc" data-i18n="dc_thumb_desc">Use um banner fixo ou capa personalizada para anunciar suas transmissões.</div>
         </div>
         <input type="checkbox" id="cfgDcIncludeThumb" checked style="display:none;">
       </div>
@@ -1346,15 +1346,15 @@ Transmissão: {url}</textarea>
       <div class="action-buttons-row">
         <button class="btn-save" id="btnSaveDiscordConfig" type="button">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          <span>Salvar Configuração</span>
+          <span data-i18n="dc_save_cfg">Salvar Configuração</span>
         </button>
         <button class="btn-test" id="btnTestDiscordWebhook" type="button">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          <span>Testar Notificação Agora</span>
+          <span data-i18n="dc_test_now">Testar Notificação Agora</span>
         </button>
         <button class="btn ghost small" id="btnCheckDiscordLive" type="button" style="margin-left:auto;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-          <span>Verificar Live</span>
+          <span data-i18n="dc_check_live">Verificar Live</span>
         </button>
       </div>
 
@@ -1368,7 +1368,7 @@ Transmissão: {url}</textarea>
             <span style="color:var(--discord-muted)">#</span>
             <span id="dcPreviewChannelName">lives</span>
           </div>
-          <div>Prévia em Tempo Real</div>
+          <div data-i18n="dc_realtime_preview">Prévia em Tempo Real</div>
         </div>
 
         <div class="discord-msg-body">
@@ -1377,40 +1377,40 @@ Transmissão: {url}</textarea>
             <div class="dc-author-line">
               <span class="dc-bot-name">Alive Bot</span>
               <span class="dc-bot-badge">APP</span>
-              <span class="dc-timestamp" id="dcPrevTimestamp">Hoje às 14:20</span>
+              <span class="dc-timestamp" id="dcPrevTimestamp" data-i18n="dc_prev_now">Hoje às 14:20</span>
             </div>
 
             <div class="dc-text" id="dcPrevContentText">
-              <span class="dc-mention" id="dcPrevMention">@everyone</span> [LIVE] <strong>Streamer</strong> está ao vivo na Twitch | Just Chatting
+              <span class="dc-mention" id="dcPrevMention">@everyone</span> [LIVE] <strong>Streamer</strong> | Just Chatting
             </div>
 
             <!-- Embed Card -->
             <div class="dc-embed" id="dcPrevEmbedBox" style="border-left-color: #9146FF;">
               <div class="dc-embed-author">
                 <img id="dcPrevAuthorAvatar" src="/img/ic_splash_logo.webp" alt="">
-                <span id="dcPrevAuthorName">Streamer • Ao Vivo na Twitch</span>
+                <span id="dcPrevAuthorName">Streamer • Twitch</span>
               </div>
 
               <a class="dc-embed-title" id="dcPrevEmbedTitle" href="#" target="_blank" rel="noopener">
-                ▸ Transmissão Ao Vivo • !play no chat
+                ▸ Live • !play
               </a>
 
               <div class="dc-embed-desc" id="dcPrevEmbedDesc">
-                Transmissão iniciada. Venha interagir no chat e pedir suas músicas favoritas.
+                ...
               </div>
 
               <div class="dc-embed-fields">
                 <div>
-                  <div class="dc-field-name">▸ Categoria</div>
+                  <div class="dc-field-name" data-i18n="dc_prev_category">▸ Categoria</div>
                   <div class="dc-field-val" id="dcPrevFieldGame">Just Chatting</div>
                 </div>
                 <div>
-                  <div class="dc-field-name">▸ Espectadores</div>
+                  <div class="dc-field-name" data-i18n="dc_prev_viewers">▸ Espectadores</div>
                   <div class="dc-field-val" id="dcPrevFieldViewers">120</div>
                 </div>
                 <div>
-                  <div class="dc-field-name">▸ Status</div>
-                  <div class="dc-field-val" style="color:#00a8fc">Assistir agora</div>
+                  <div class="dc-field-name" data-i18n="dc_prev_status">▸ Status</div>
+                  <div class="dc-field-val" style="color:#00a8fc" data-i18n="dc_prev_watch_now">Assistir agora</div>
                 </div>
               </div>
 
@@ -1418,7 +1418,7 @@ Transmissão: {url}</textarea>
 
               <div class="dc-embed-footer">
                 <img src="/img/ic_splash_logo.webp" alt="">
-                <span>Alive Bot • Notificação de Live</span>
+                <span data-i18n="dc_prev_footer">Alive Bot • Notificação de Live</span>
               </div>
             </div>
 
@@ -1426,7 +1426,7 @@ Transmissão: {url}</textarea>
             <div class="dc-preview-components">
               <a href="#" target="_blank" rel="noopener" id="dcPrevLiveBtn" class="dc-btn-component">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
-                <span>Assistir Live</span>
+                <span data-i18n="dc_prev_watch_btn">Assistir Live</span>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="opacity:0.75;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
               </a>
             </div>

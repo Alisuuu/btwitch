@@ -555,14 +555,15 @@ function switchTab(name) {
       } catch { /* */ }
     }
   });
+  const l = getCurrentLang();
   const tabTitles = {
-    fila: 'Estúdio & Fila',
-    widget: 'Widget de Música',
-    comandos: 'Comandos do Chat',
-    timers: 'Temporizadores',
-    ia: 'Inteligência Artificial',
-    config: 'Configuração Geral',
-    discord: 'Discord Live',
+    fila: pt(l, 'tab_fila_full'),
+    widget: pt(l, 'tab_widget'),
+    comandos: pt(l, 'tab_comandos_chat'),
+    timers: pt(l, 'tab_timers_full'),
+    ia: pt(l, 'tab_ia_full'),
+    config: pt(l, 'tab_config_full_title'),
+    discord: pt(l, 'tab_discord_full'),
   };
   const currentBadge = $('#topbarCurrentTabBadge');
   if (currentBadge && tabTitles[name]) {
@@ -703,7 +704,7 @@ function renderUserHeader() {
     const displayName = user?.display_name || user?.login || ch;
     if (nameLabel) nameLabel.textContent = displayName;
     if (dropdownUser) dropdownUser.textContent = '@' + displayName;
-    if (dropdownChannel) dropdownChannel.textContent = 'Canal: #' + ch;
+    if (dropdownChannel) dropdownChannel.textContent = pt(getCurrentLang(), 'dropdown_channel_prefix') + ch;
     if (avatar) {
       if (user?.profile_image_url) {
         avatar.src = user.profile_image_url;
@@ -871,7 +872,7 @@ function renderEvents(s) {
   }
   const syncInfo = $('#syncInfo');
   if (syncInfo) {
-    syncInfo.textContent = `rev ${s.rev} · sincronizado às ${new Date(s.updatedAt).toLocaleTimeString()}`;
+    syncInfo.textContent = `rev ${s.rev} · ${pt(getCurrentLang(), 'sync_rev_at')} ${new Date(s.updatedAt).toLocaleTimeString()}`;
   }
 }
 
@@ -1470,26 +1471,27 @@ $('#btnPause').addEventListener('click', () => {
 
 $('#btnSkip').addEventListener('click', () => {
   markUserInteracted();
-  if (!store.state.now) return toast('Nada tocando.');
+  if (!store.state.now) return toast(pt(getCurrentLang(), 'now_title_idle'));
   store.update((s) => advanceQueue(s));
   store.flush();
-  toast('Música pulada.');
+  toast(pt(getCurrentLang(), 'toast_skipped'));
 });
 
 $('#btnStop').addEventListener('click', () => {
   markUserInteracted();
-  if (!store.state.now && !store.state.queue.length) return toast('Já está parado.');
-  if (!confirm('Deseja parar a reprodução e limpar a fila?')) return;
+  const l = getCurrentLang();
+  if (!store.state.now && !store.state.queue.length) return toast(pt(l, 'toast_already_stopped'));
+  if (!confirm(pt(l, 'confirm_stop_queue'))) return;
   try { panelPlayer?.stopVideo?.(); } catch { /* */ }
   curPlayingId = null;
   store.update((s) => {
     s.now = null;
     s.queue = [];
     s.skip = null;
-    pushLog(s, 'stop', 'Reprodução interrompida pelo painel');
+    pushLog(s, 'stop', pt(l, 'toast_stopped'));
   });
   store.flush();
-  toast('Reprodução parada.');
+  toast(pt(l, 'toast_stopped'));
 });
 
 $('#btnShuffle').addEventListener('click', () => {
@@ -1659,26 +1661,28 @@ function renderCmds(s) {
   if (sig === cmdSig) return;
   cmdSig = sig;
 
+  const l = getCurrentLang();
   const perms = s.config.cmdPermissions || {};
 
   const tbody = $('#cmdTable tbody');
   if (tbody) {
     tbody.innerHTML = COMMANDS.map((c) => {
       const p = perms[c.id] || c.who || 'all';
+      const desc = pt(l, 'cmd_desc_' + c.id);
       return `
         <tr>
           <td><code>${esc(c.cmd)}</code>${c.aliases.length ? `<div class="hint">${c.aliases.map(esc).join(' ')}</div>` : ''}</td>
-          <td>${esc(c.desc)}${c.usage ? `<div class="hint"><code>${esc(c.usage)}</code></div>` : ''}</td>
+          <td>${esc(desc !== ('cmd_desc_' + c.id) ? desc : c.desc)}${c.usage ? `<div class="hint"><code>${esc(c.usage)}</code></div>` : ''}</td>
           <td>
-            <select class="cmd-perm-select" data-cmd-perm="${c.id}" title="Quem pode usar ${esc(c.cmd)}">
-              <option value="all" ${p === 'all' ? 'selected' : ''}>Todos</option>
-              <option value="sub" ${p === 'sub' ? 'selected' : ''}>Inscritos (Subs)</option>
-              <option value="vip" ${p === 'vip' ? 'selected' : ''}>VIPs e Mods</option>
-              <option value="mod" ${p === 'mod' ? 'selected' : ''}>Apenas Mods</option>
+            <select class="cmd-perm-select" data-cmd-perm="${c.id}" title="${esc(c.cmd)}">
+              <option value="all" ${p === 'all' ? 'selected' : ''}>${esc(pt(l, 'perm_all'))}</option>
+              <option value="sub" ${p === 'sub' ? 'selected' : ''}>${esc(pt(l, 'perm_sub'))}</option>
+              <option value="vip" ${p === 'vip' ? 'selected' : ''}>${esc(pt(l, 'perm_vip'))}</option>
+              <option value="mod" ${p === 'mod' ? 'selected' : ''}>${esc(pt(l, 'perm_mod'))}</option>
             </select>
           </td>
           <td>
-            <label class="switch" title="${s.config.commands[c.id] ? 'Desativar comando' : 'Ativar comando'}">
+            <label class="switch" title="${esc(s.config.commands[c.id] ? pt(l, 'cmd_disable_title') : pt(l, 'cmd_enable_title'))}">
               <input type="checkbox" data-cmd="${c.id}" ${s.config.commands[c.id] ? 'checked' : ''}>
               <span></span>
             </label>
@@ -1699,7 +1703,7 @@ function renderCmds(s) {
             <span class="cn">!${esc(name)}</span>
             <span class="ct">${esc(c.text)}</span>
             <span class="cm">cd ${Number(c.cd) || 0}s · ${esc(permLabel(p))}</span>
-            <button data-edit="${esc(name)}">editar</button>
+            <button data-edit="${esc(name)}">${esc(pt(l, 'cmd_edit_btn'))}</button>
             <button class="del" data-del="${esc(name)}">${icon('trash-2', { size: 11 })}</button>
           </li>
         `;
@@ -2114,7 +2118,8 @@ function syncWidgetForm(s) {
   if ($('#valText')) $('#valText').textContent = textColor;
   if ($('#wBgOpacity')) $('#wBgOpacity').value = opacity;
   if ($('#valOpacityLabel')) {
-    $('#valOpacityLabel').textContent = opacity === 0 ? '0% (100% Transparente)' : `${opacity}% ${opacity === 100 ? '(Sólido)' : '(Translúcido)'}`;
+    const l = getCurrentLang();
+    $('#valOpacityLabel').textContent = opacity === 0 ? `0% (${pt(l, 'w_opacity_transparent')})` : `${opacity}% (${opacity === 100 ? pt(l, 'w_opacity_solid') : pt(l, 'w_opacity_translucent')})`;
   }
 
   if ($('#wArt')) $('#wArt').checked = (w.showArt !== 0);
@@ -2225,7 +2230,8 @@ function bindWidgetForm() {
   $('#wBgOpacity')?.addEventListener('input', (e) => {
     const val = Number(e.target.value);
     if ($('#valOpacityLabel')) {
-      $('#valOpacityLabel').textContent = val === 0 ? '0% (100% Transparente)' : `${val}% ${val === 100 ? '(Sólido)' : '(Translúcido)'}`;
+      const l = getCurrentLang();
+      $('#valOpacityLabel').textContent = val === 0 ? `0% (${pt(l, 'w_opacity_transparent')})` : `${val}% (${val === 100 ? pt(l, 'w_opacity_solid') : pt(l, 'w_opacity_translucent')})`;
     }
     store.update((s) => {
       s.config.widget = s.config.widget || {};
@@ -2427,6 +2433,20 @@ function setLanguagePreference(rawLang) {
   if ($('#cfgLang')) $('#cfgLang').value = l;
   if ($('#cfgLangTop')) $('#cfgLangTop').value = l;
   applyPanelI18n(l);
+  if (typeof window !== 'undefined') window.__aliveT = (k) => pt(getCurrentLang(), k);
+  const activeTab = document.querySelector('.tab.active')?.dataset?.tab || 'fila';
+  const tabTitles = {
+    fila: pt(l, 'tab_fila_full'),
+    widget: pt(l, 'tab_widget'),
+    comandos: pt(l, 'tab_comandos_chat'),
+    timers: pt(l, 'tab_timers_full'),
+    ia: pt(l, 'tab_ia_full'),
+    config: pt(l, 'tab_config_full_title'),
+    discord: pt(l, 'tab_discord_full'),
+  };
+  if ($('#topbarCurrentTabBadge') && tabTitles[activeTab]) {
+    $('#topbarCurrentTabBadge').textContent = tabTitles[activeTab];
+  }
   if (typeof store !== 'undefined' && store?.update) {
     store.update((s) => {
       if (!s.config) s.config = {};
@@ -2434,9 +2454,11 @@ function setLanguagePreference(rawLang) {
     });
     store.flush();
     queueSig = '';
+    cmdSig = '';
     try { renderNow(store.state); } catch { /* */ }
     try { renderQueue(store.state); } catch { /* */ }
     try { renderHistory(store.state); } catch { /* */ }
+    try { renderCmds(store.state); } catch { /* */ }
     try { updateAiStatusBadge(!!store.state?.config?.ai?.enabled); } catch { /* */ }
   }
   const testInp = $('#aiTestPrompt');
