@@ -68,52 +68,64 @@ function saveConfig() {
   }
 }
 
-/* ---------------- índice local + backup remoto (kvdb) ---------------- */
-const KVDB_STORE_URL = 'https://kvdb.io/WFmviqxrR53HQjSYwnTmAQ/store_index_v1';
+/* ---------------- índice local + backup exclusivo no Telegram ---------------- */
+const TG_INDEX_FILENAME = 'alive-store-index.json';
 let db = readJson(INDEX_PATH, { files: [] });
-let kvSaveTimer = null;
+let tgSaveTimer = null;
+let lastPinnedIndexMsgId = null;
 
-async function kvdbLoadStore() {
+async function tgLoadIndex() {
+  if (!storeEnabled || !chatId) return null;
   try {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 4500);
-    const r = await fetch(KVDB_STORE_URL, {
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache' },
-      signal: ctrl.signal,
-    }).finally(() => clearTimeout(t));
-    if (r.ok) {
-      const data = await r.json().catch(() => null);
+    const chat = await tg('getChat', { chat_id: chatId });
+    const pin = chat && chat.pinned_message;
+    const doc = pin && pin.document;
+    if (pin && doc && doc.file_id && doc.file_name === TG_INDEX_FILENAME) {
+      lastPinnedIndexMsgId = pin.message_id;
+      const buf = await tgFile(doc.file_id);
+      const data = JSON.parse(buf.toString('utf8'));
       if (data && Array.isArray(data.files)) return data;
     }
   } catch (e) {
-    console.warn('! [store] kvdb load:', e.message);
+    console.warn('! [store] telegram index load:', e.message);
   }
   return null;
 }
 
-async function kvdbSaveStore(snapshot) {
+async function tgSaveIndex(snapshot) {
+  if (!storeEnabled || !chatId) return;
   try {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 5000);
-    await fetch(KVDB_STORE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(snapshot),
-      signal: ctrl.signal,
-    }).finally(() => clearTimeout(t));
+    const prevMsgId = lastPinnedIndexMsgId;
+    const jsonBuf = Buffer.from(JSON.stringify(snapshot), 'utf8');
+    const msg = await tg('sendDocument', {
+      chat_id: chatId,
+      document: { blob: new Blob([jsonBuf], { type: 'application/json' }), filename: TG_INDEX_FILENAME },
+      caption: '📦 Alive Store Index (' + snapshot.files.length + ')',
+      disable_notification: true
+    });
+    if (msg && msg.message_id) {
+      lastPinnedIndexMsgId = msg.message_id;
+      await tg('pinChatMessage', {
+        chat_id: chatId,
+        message_id: msg.message_id,
+        disable_notification: true
+      }).catch(() => {});
+      if (prevMsgId && prevMsgId !== msg.message_id) {
+        tg('deleteMessage', { chat_id: chatId, message_id: prevMsgId }).catch(() => {});
+      }
+    }
   } catch (e) {
-    console.warn('! [store] kvdb save:', e.message);
+    console.warn('! [store] telegram index save:', e.message);
   }
 }
 
 function saveDb() {
   writeJson(INDEX_PATH, db);
-  if (kvSaveTimer) clearTimeout(kvSaveTimer);
-  kvSaveTimer = setTimeout(() => {
-    kvSaveTimer = null;
-    kvdbSaveStore(db);
-  }, 400);
+  if (tgSaveTimer) clearTimeout(tgSaveTimer);
+  tgSaveTimer = setTimeout(() => {
+    tgSaveTimer = null;
+    tgSaveIndex(db);
+  }, 800);
 }
 
 /* ---------------- Telegram ---------------- */
@@ -1203,8 +1215,21 @@ function getStoreStatus() {
 
 /* ---------------- boot ---------------- */
 async function initStore() {
+  if (!storeEnabled) {
+    console.log('! [store] TELEGRAM_TOKEN não configurado — loja ativa apenas em modo estático');
+    return;
+  }
+
   try {
-    const remoteDb = await kvdbLoadStore();
+    const bot = await getBot();
+    console.log('✔ [store] bot conectado: @' + bot.username + ' (' + bot.first_name + ')');
+  } catch (e) {
+    console.error('✖ [store] token inválido ou sem internet (loja seguirá sem polling):', e.message);
+    return;
+  }
+
+  try {
+    const remoteDb = await tgLoadIndex();
     if (remoteDb && Array.isArray(remoteDb.files) && remoteDb.files.length) {
       const seen = new Set(db.files.map(f => f.id));
       let merged = 0;
@@ -1217,26 +1242,13 @@ async function initStore() {
       }
       if (merged > 0) {
         writeJson(INDEX_PATH, db);
-        console.log('✔ [store] restaurados ' + merged + ' tema(s) do kvdb');
+        console.log('✔ [store] restaurados ' + merged + ' tema(s) do índice no Telegram');
       }
-    } else if (db.files.length > 0) {
-      kvdbSaveStore(db);
+    } else if (db.files.length > 0 && chatId) {
+      tgSaveIndex(db);
     }
   } catch (e) {
-    console.warn('! [store] falha ao sincronizar kvdb:', e.message);
-  }
-
-  if (!storeEnabled) {
-    console.log('! [store] TELEGRAM_TOKEN não configurado — loja ativa apenas em modo estático');
-    return;
-  }
-
-  try {
-    const bot = await getBot();
-    console.log('✔ [store] bot conectado: @' + bot.username + ' (' + bot.first_name + ')');
-  } catch (e) {
-    console.error('✖ [store] token inválido ou sem internet (loja seguirá sem polling):', e.message);
-    return;
+    console.warn('! [store] falha ao sincronizar índice do Telegram:', e.message);
   }
 
   if (!chatId) {
