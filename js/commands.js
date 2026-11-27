@@ -871,14 +871,15 @@ export function createRunner({ store, send: rawSend, resolveUrl, searchQ, fetchA
 
     if (!res.ok) {
       console.warn('[alive ia] erro na consulta:', res.error);
-      if (res.status === 401 || (res.error && /unauthorized|api key|invalid/i.test(res.error))) {
+      // Só avisa no chat se o usuário configurou explicitamente uma chave própria inválida
+      if (aiCfg.apiKey && (res.status === 401 || (res.error && /unauthorized|api key|invalid/i.test(res.error)))) {
         return send(L(
           `@${msg.displayName} Chave de IA inválida ou não autorizada. Verifique no painel.`,
           `@${msg.displayName} Invalid or unauthorized AI API key. Check the panel.`,
           `@${msg.displayName} Clave de IA inválida o no autorizada. Revisa el panel.`
         ));
       }
-      // Silencia falhas transitórias e timeouts
+      // Silencia falhas transitórias, timeouts ou instâncias sem chave própria
       return;
     }
 

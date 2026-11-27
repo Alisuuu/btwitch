@@ -2439,6 +2439,13 @@ function setLanguagePreference(rawLang) {
     try { renderHistory(store.state); } catch { /* */ }
     try { updateAiStatusBadge(!!store.state?.config?.ai?.enabled); } catch { /* */ }
   }
+  const testInp = $('#aiTestPrompt');
+  if (testInp) {
+    const defaults = [pt('pt', 'ai_test_default_q'), pt('en', 'ai_test_default_q'), pt('es', 'ai_test_default_q')];
+    if (!testInp.value.trim() || defaults.includes(testInp.value.trim())) {
+      testInp.value = pt(l, 'ai_test_default_q');
+    }
+  }
 }
 
 if (typeof document !== 'undefined') {
@@ -2579,45 +2586,33 @@ function bindIaTabEvents() {
   };
 
   $('#btnPresetDefault')?.addEventListener('click', () => {
-    applyPreset(
-      'COM O STREAMER ([STREAMER / SEU MESTRE]): Puxe o saco dele descaradamente! Trate-o como um gênio perfeito, seja doce, bajuladora, leal e prestativa.\nCOM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas.',
-      'Padrão Oficial'
-    );
+    const l = getCurrentLang();
+    applyPreset(pt(l, 'ai_preset_def_p'), pt(l, 'ai_preset_def_t'));
   });
 
   $('#btnPresetSweet')?.addEventListener('click', () => {
-    applyPreset(
-      'Você é uma IA extremamente doce, carinhosa, fofa e gentil com todos do chat sem exceção. Seja acolhedora e trate todos com muito afeto, paciência e carinho.',
-      'Doce & Fofa'
-    );
+    const l = getCurrentLang();
+    applyPreset(pt(l, 'ai_preset_sweet_p'), pt(l, 'ai_preset_sweet_t'));
   });
 
   $('#btnPresetGamer')?.addEventListener('click', () => {
-    applyPreset(
-      'Você é uma IA gamer descontraída, cheia de energia, hype e zoeira de gameplay. Usa gírias de live (pog, gg, cringe, tankou, noob, focado), brinca com as jogadas e interage como uma amiga parceira da stream.',
-      'Gamer & Hype'
-    );
+    const l = getCurrentLang();
+    applyPreset(pt(l, 'ai_preset_gamer_p'), pt(l, 'ai_preset_gamer_t'));
   });
 
   $('#btnPresetSarcastic')?.addEventListener('click', () => {
-    applyPreset(
-      'Você é uma IA com humor ácido, ultra sarcástica e debochada com todo mundo. Dá respostas afiadas com ironia fina, deboche inteligente e piadas rápidas.',
-      '100% Sarcástica'
-    );
+    const l = getCurrentLang();
+    applyPreset(pt(l, 'ai_preset_sarc_p'), pt(l, 'ai_preset_sarc_t'));
   });
 
   $('#btnPresetInstructor')?.addEventListener('click', () => {
-    applyPreset(
-      'Você é a guia oficial da live. Educada, prestativa e atenciosa, você esclarece dúvidas sobre os jogos da live, passa dicas, ajuda os espectadores a pedirem músicas e mantém o chat animado e informado.',
-      'Guia da Live'
-    );
+    const l = getCurrentLang();
+    applyPreset(pt(l, 'ai_preset_inst_p'), pt(l, 'ai_preset_inst_t'));
   });
 
   $('#btnClearAiPrompt')?.addEventListener('click', () => {
-    applyPreset(
-      'COM O STREAMER ([STREAMER / SEU MESTRE]): Puxe o saco dele descaradamente! Trate-o como um gênio perfeito, seja doce, bajuladora, leal e prestativa.\nCOM OS ESPECTADORES ([ESPECTADOR]): Seja ácida, fria, debochada, sarcástica e sem paciência com perguntas bobas.',
-      'Padrão Oficial'
-    );
+    const l = getCurrentLang();
+    applyPreset(pt(l, 'ai_preset_def_p'), pt(l, 'ai_preset_def_t'));
   });
 
   $('#btnTestAi')?.addEventListener('click', async () => {
@@ -2625,12 +2620,13 @@ function bindIaTabEvents() {
     const statusEl = $('#aiSimStatus');
     const btn = $('#btnTestAi');
     const promptInput = $('#aiTestPrompt');
-    const prompt = (promptInput?.value || 'Quem é você e o que faz na live?').trim();
+    const l = getCurrentLang();
+    const prompt = (promptInput?.value || pt(l, 'ai_test_default_q')).trim();
 
     if (btn) btn.disabled = true;
-    if (statusEl) statusEl.textContent = 'Pensando...';
+    if (statusEl) statusEl.textContent = pt(l, 'ai_sim_thinking');
     if (resultEl) {
-      resultEl.textContent = 'Processando resposta no chat...';
+      resultEl.textContent = pt(l, 'ai_sim_processing');
       resultEl.style.color = '#a1a1aa';
     }
 
@@ -2645,8 +2641,9 @@ function bindIaTabEvents() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: `[Contexto da Live: Canal #${currentChannel || 'streamer'}] [STREAMER / SEU MESTRE] ${prompt}`,
+          prompt: `[Stream Context: #${currentChannel || 'streamer'}] ${prompt}`,
           channel: currentChannel,
+          lang: l,
           systemPrompt,
           model,
           apiKey,

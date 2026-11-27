@@ -1,5 +1,5 @@
 // Alive Bot Service Worker (PWA)
-const CACHE_NAME = 'alive-bot-v1.3.1';
+const CACHE_NAME = 'alive-bot-v1.3.2';
 
 const OFFLINE_URLS = [
   '/',
