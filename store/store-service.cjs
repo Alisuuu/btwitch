@@ -68,9 +68,53 @@ function saveConfig() {
   }
 }
 
-/* ---------------- índice local (só metadados) ---------------- */
+/* ---------------- índice local + backup remoto (kvdb) ---------------- */
+const KVDB_STORE_URL = 'https://kvdb.io/WFmviqxrR53HQjSYwnTmAQ/store_index_v1';
 let db = readJson(INDEX_PATH, { files: [] });
-function saveDb() { writeJson(INDEX_PATH, db); }
+let kvSaveTimer = null;
+
+async function kvdbLoadStore() {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 4500);
+    const r = await fetch(KVDB_STORE_URL, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' },
+      signal: ctrl.signal,
+    }).finally(() => clearTimeout(t));
+    if (r.ok) {
+      const data = await r.json().catch(() => null);
+      if (data && Array.isArray(data.files)) return data;
+    }
+  } catch (e) {
+    console.warn('! [store] kvdb load:', e.message);
+  }
+  return null;
+}
+
+async function kvdbSaveStore(snapshot) {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 5000);
+    await fetch(KVDB_STORE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(snapshot),
+      signal: ctrl.signal,
+    }).finally(() => clearTimeout(t));
+  } catch (e) {
+    console.warn('! [store] kvdb save:', e.message);
+  }
+}
+
+function saveDb() {
+  writeJson(INDEX_PATH, db);
+  if (kvSaveTimer) clearTimeout(kvSaveTimer);
+  kvSaveTimer = setTimeout(() => {
+    kvSaveTimer = null;
+    kvdbSaveStore(db);
+  }, 400);
+}
 
 /* ---------------- Telegram ---------------- */
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
@@ -1159,6 +1203,29 @@ function getStoreStatus() {
 
 /* ---------------- boot ---------------- */
 async function initStore() {
+  try {
+    const remoteDb = await kvdbLoadStore();
+    if (remoteDb && Array.isArray(remoteDb.files) && remoteDb.files.length) {
+      const seen = new Set(db.files.map(f => f.id));
+      let merged = 0;
+      for (const rf of remoteDb.files) {
+        if (rf && rf.id && !seen.has(rf.id)) {
+          db.files.push(rf);
+          seen.add(rf.id);
+          merged++;
+        }
+      }
+      if (merged > 0) {
+        writeJson(INDEX_PATH, db);
+        console.log('✔ [store] restaurados ' + merged + ' tema(s) do kvdb');
+      }
+    } else if (db.files.length > 0) {
+      kvdbSaveStore(db);
+    }
+  } catch (e) {
+    console.warn('! [store] falha ao sincronizar kvdb:', e.message);
+  }
+
   if (!storeEnabled) {
     console.log('! [store] TELEGRAM_TOKEN não configurado — loja ativa apenas em modo estático');
     return;

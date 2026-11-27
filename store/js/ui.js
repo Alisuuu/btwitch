@@ -49,12 +49,19 @@
        2. imagem real (asset do tema)
        3. arte gerada (SVG)
      ------------------------------------------------------------------ */
+  function isImageAsset(url) {
+    return /\.(png|jpe?g|webp|gif|svg)(\?|$)/i.test(String(url || ''));
+  }
+
   function previewHtml(p, opts) {
     opts = opts || {};
 
     // 1. Topo do Popup (Modal): SEMPRE a Tela de Espera
     if (opts.modal || opts.controls) {
       if (p.standbyVideo) {
+        if (isImageAsset(p.standbyVideo)) {
+          return '<img class="preview-video modal-preview-video" src="' + esc(p.standbyVideo) + '" alt="' + esc(t('standby_aria')) + '" style="object-fit:cover">';
+        }
         return '<video class="preview-video modal-preview-video" autoplay loop muted playsinline controls src="' + esc(p.standbyVideo) + '" aria-label="' + esc(t('standby_aria')) + '"></video>';
       }
       if (p.isAnime) {
@@ -70,8 +77,11 @@
     }
 
     // 2. Nos Cards do Grid:
-    // A. Comunidade: Tela de espera (vídeo loop real como capa)
+    // A. Comunidade: Tela de espera (vídeo loop real ou imagem como capa)
     if (p.standbyVideo) {
+      if (isImageAsset(p.standbyVideo)) {
+        return '<img src="' + esc(p.standbyVideo) + '" alt="' + esc(t('preview_of', { name: p.name })) + '" loading="lazy">';
+      }
       return '<video class="preview-video" autoplay muted loop playsinline webkit-playsinline preload="auto" ' +
         (p.image ? 'poster="' + esc(p.image) + '" ' : '') +
         'src="' + esc(p.standbyVideo) + '"></video>';
