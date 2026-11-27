@@ -1011,6 +1011,149 @@
     return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
   }
 
+  async function renderStandbyVideoOrImage(layer) {
+    const w = 1280;
+    const h = 720;
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+
+    const bgImg = layer.imageUrl ? await loadImageSafe(layer.imageUrl) : null;
+    const logoImg = layer.standbyLogoUrl ? await loadImageSafe(layer.standbyLogoUrl) : null;
+    const crop = layer.crop || defaultCrop();
+    const titleStr = (layer.standbyTitle || '').trim();
+    const subStr = (layer.standbySub || '').trim();
+    const fSize = Math.round((layer.standbyFontSize || 54) * (w / 1920));
+    const tColor = layer.standbyColor || '#ffffff';
+    const lScale = (layer.standbyLogoScale || 65) / 100;
+
+    const drawFrame = (progress) => {
+      const pulse = 0.5 + 0.5 * Math.sin(progress * Math.PI * 2);
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = '#07070a';
+      ctx.fillRect(0, 0, w, h);
+
+      if (bgImg) {
+        ctx.save();
+        const cover = Math.max(w / bgImg.width, h / bgImg.height);
+        const breath = 1 + 0.025 * pulse;
+        const dw = bgImg.width * cover * (crop.zoom || 1) * breath;
+        const dh = bgImg.height * cover * (crop.zoom || 1) * breath;
+        const cx = w / 2 + ((crop.x || 50) - 50) / 100 * w * 0.5;
+        const cy = h / 2 + ((crop.y || 50) - 50) / 100 * h * 0.5;
+        ctx.translate(cx, cy);
+        if (crop.flip) ctx.scale(-1, 1);
+        ctx.drawImage(bgImg, -dw / 2, -dh / 2, dw, dh);
+        ctx.restore();
+      }
+
+      if ((crop.dim || 0) > 0) {
+        ctx.fillStyle = `rgba(0,0,0,${Math.min(0.85, (crop.dim || 0) / 100)})`;
+        ctx.fillRect(0, 0, w, h);
+      }
+
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, 'rgba(7,7,10,0.35)');
+      grad.addColorStop(1, 'rgba(7,7,10,0.88)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+
+      if (logoImg) {
+        const maxW = w * 0.45 * lScale;
+        const maxH = h * 0.36 * lScale;
+        const ratio = Math.min(maxW / logoImg.width, maxH / logoImg.height);
+        const dw = logoImg.width * ratio;
+        const dh = logoImg.height * ratio;
+        const logoY = (titleStr || subStr) ? (h * 0.38 - dh / 2) : (h / 2 - dh / 2);
+        ctx.save();
+        ctx.globalAlpha = 0.9 + 0.1 * pulse;
+        ctx.drawImage(logoImg, (w - dw) / 2, logoY, dw, dh);
+        ctx.restore();
+      } else if (titleStr) {
+        ctx.save();
+        ctx.fillStyle = STATE.accentColor || '#ffffff';
+        ctx.shadowColor = STATE.accentColor || '#ffffff';
+        ctx.shadowBlur = 10 + 14 * pulse;
+        ctx.beginPath();
+        ctx.arc(w / 2, h / 2 - 44, 6 + 2 * pulse, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const titleY = logoImg ? h * 0.65 : h / 2;
+      if (titleStr) {
+        ctx.fillStyle = tColor;
+        ctx.font = `800 ${fSize}px Sora, Inter, sans-serif`;
+        ctx.fillText(titleStr, w / 2, titleY);
+      }
+      if (subStr) {
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.font = '500 20px Inter, sans-serif';
+        ctx.fillText(subStr, w / 2, titleStr ? (titleY + fSize * 1.15) : titleY);
+      }
+    };
+
+    drawFrame(0);
+
+    if (typeof MediaRecorder !== 'undefined' && typeof canvas.captureStream === 'function') {
+      const candidateMimes = [
+        'video/mp4;codecs=avc1',
+        'video/mp4',
+        'video/webm;codecs=vp9',
+        'video/webm;codecs=vp8',
+        'video/webm'
+      ];
+      const mime = candidateMimes.find((m) => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) || '';
+      if (mime) {
+        try {
+          const stream = canvas.captureStream(25);
+          const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 2500000 });
+          const chunks = [];
+          recorder.ondataavailable = (e) => {
+            if (e.data && e.data.size > 0) chunks.push(e.data);
+          };
+          const recorded = await new Promise((resolve) => {
+            let finished = false;
+            const finish = () => {
+              if (finished) return;
+              finished = true;
+              resolve(chunks.length > 0 ? { blob: new Blob(chunks, { type: mime }), isVideo: true } : null);
+            };
+            recorder.onstop = finish;
+            recorder.onerror = () => finish();
+            recorder.start();
+            let frame = 0;
+            const totalFrames = 30;
+            const interval = setInterval(() => {
+              frame++;
+              drawFrame(frame / totalFrames);
+              if (frame >= totalFrames) {
+                clearInterval(interval);
+                try { recorder.stop(); } catch (e) { finish(); }
+              }
+            }, 40);
+            setTimeout(() => {
+              clearInterval(interval);
+              try { if (recorder.state === 'recording') recorder.stop(); } catch (e) {}
+              finish();
+            }, 2500);
+          });
+          if (recorded && recorded.blob && recorded.blob.size > 1000) {
+            return recorded;
+          }
+        } catch (recErr) {
+          console.warn('MediaRecorder standby falhou:', recErr);
+        }
+      }
+    }
+
+    const imgBlob = await renderCroppedLayerToBlob(layer);
+    return imgBlob ? { blob: imgBlob, isVideo: false } : null;
+  }
+
   async function exportThemeZip() {
     if (!window.JSZip) return alert('JSZip não carregado.');
     const btn = $('#btnExportZip');
@@ -1077,15 +1220,23 @@
       const standby = getLayer('standby');
       let standbyObj = { enabled: false, file: '', title: '', subtitle: '', type: '' };
       if (standby && standby.enabled) {
-        const stBlob = await renderCroppedLayerToBlob(standby);
-        if (stBlob) {
-          zip.file('standby.png', stBlob);
+        const stRes = await renderStandbyVideoOrImage(standby);
+        if (stRes && stRes.blob) {
+          const stFile = stRes.isVideo ? 'standby.mp4' : 'standby.png';
+          zip.file(stFile, stRes.blob);
+          if (!previewFile) {
+            const stPreview = stRes.isVideo ? await renderCroppedLayerToBlob(standby) : stRes.blob;
+            if (stPreview) {
+              zip.file('preview.png', stPreview);
+              previewFile = 'preview.png';
+            }
+          }
           standbyObj = {
             enabled: true,
-            file: 'standby.png',
+            file: stFile,
             title: standby.standbyTitle || 'Aguarde um momento',
             subtitle: standby.standbySub || '',
-            type: 'image'
+            type: stRes.isVideo ? 'video' : 'image'
           };
         }
       }
